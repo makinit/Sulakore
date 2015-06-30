@@ -112,7 +112,7 @@ namespace Sulakore.Habbo
                 int y = packet.ReadInteger();
                 double z = double.Parse(packet.ReadString());
 
-                packet.ReadInteger();
+                var x1 = packet.ReadInteger();
                 int type = packet.ReadInteger();
 
                 HGender gender = HGender.Unknown;
@@ -123,12 +123,14 @@ namespace Sulakore.Habbo
                     case 1:
                     {
                         gender = SKore.ToGender(packet.ReadString());
-                        packet.ReadInteger();
-                        packet.ReadInteger();
+                        var x2 = packet.ReadInteger();
+                        var x3 = packet.ReadInteger();
+                        
                         favoriteGroup = packet.ReadString();
-                        packet.ReadString();
-                        packet.ReadInteger();
-                        packet.ReadBoolean();
+
+                        var x4 = packet.ReadString();
+                        var x5 = packet.ReadInteger();
+                        var x6 = packet.ReadBoolean();
 
                         break;
                     }
@@ -136,15 +138,20 @@ namespace Sulakore.Habbo
                     {
                         packet.ReadInteger();
                         packet.ReadInteger();
+
                         packet.ReadString();
+
                         packet.ReadInteger();
+
                         packet.ReadBoolean();
                         packet.ReadBoolean();
                         packet.ReadBoolean();
                         packet.ReadBoolean();
                         packet.ReadBoolean();
                         packet.ReadBoolean();
+
                         packet.ReadInteger();
+
                         packet.ReadString();
                         break;
                     }

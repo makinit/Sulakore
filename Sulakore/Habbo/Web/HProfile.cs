@@ -70,6 +70,7 @@ namespace Sulakore.Habbo.Web
 
         public static HProfile Load(string path) =>
             Create(File.ReadAllText(path));
+
         public static HProfile Create(string json)
         {
             byte[] data = Encoding.UTF8.GetBytes(json);

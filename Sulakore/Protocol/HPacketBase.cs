@@ -22,6 +22,8 @@
     See License.txt in the project root for license information.
 */
 
+using System.Text;
+
 namespace Sulakore.Protocol
 {
     public abstract class HPacketBase : IHPacket
@@ -69,7 +71,7 @@ namespace Sulakore.Protocol
         {
             int index = Position;
             string value = ReadString(ref index);
-            Position = index + value.Length;
+            Position = index + Encoding.UTF8.GetByteCount(value);
             return value;
         }
         public virtual string ReadString(int index) => ReadString(ref index);
