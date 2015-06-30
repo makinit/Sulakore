@@ -30,8 +30,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Sulakore.Protocol;
 using Sulakore.Communication;
-using Sulakore.Habbo.Protocol;
 
 namespace Sulakore.Habbo.Web
 {
@@ -203,7 +203,7 @@ namespace Sulakore.Habbo.Web
 
         private async Task ReadIncomingAsync()
         {
-            byte[] packet = await Remote.ReceiveAsync().ConfigureAwait(false);
+            byte[] packet = await Remote.ReceiveWireMessageAsync().ConfigureAwait(false);
             HandleIncoming(packet, ++TotalIncoming);
         }
         private async Task ExtractGameDataAsync()

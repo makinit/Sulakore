@@ -30,8 +30,8 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 using Sulakore.Habbo.Headers;
-using Sulakore.Habbo.Protocol;
-using Sulakore.Habbo.Protocol.Encoders;
+using Sulakore.Protocol;
+using Sulakore.Protocol.Encoders;
 
 namespace Sulakore.Communication
 {
@@ -44,7 +44,7 @@ namespace Sulakore.Communication
         private static readonly string _hostsFile;
 
         /// <summary>
-        /// Occurs when the intercepted local node initiates the handshake with the server.
+        /// Occurs when the intercepted local <see cref="HNode"/> initiates the handshake with the server.
         /// </summary>
         public event EventHandler<EventArgs> Connected;
         /// <summary>
@@ -57,7 +57,7 @@ namespace Sulakore.Communication
             if (handler != null) handler(this, e);
         }
         /// <summary>
-        /// Occurs when either client/server have been disconnected, or when <see cref="Disconnect"/> has been called if the <see cref="HConnection"/> is currently connected.
+        /// Occurs when either client/server have been disconnected, or when <see cref="Disconnect"/> has been called if <see cref="IsConnected"/> is true.
         /// </summary>
         public event EventHandler<EventArgs> Disconnected;
         /// <summary>
@@ -70,7 +70,7 @@ namespace Sulakore.Communication
             if (handler != null) handler(this, e);
         }
         /// <summary>
-        /// Occurs when incoming data from the server has been intercepted.
+        /// Occurs when incoming data from the remote <see cref="HNode"/> has been intercepted.
         /// </summary>
         public event EventHandler<InterceptedEventArgs> DataIncoming;
         /// <summary>
@@ -84,7 +84,7 @@ namespace Sulakore.Communication
             if (handler != null) handler(this, e);
         }
         /// <summary>
-        /// Occurs when outgoing data from the client has been intercepted.
+        /// Occurs when outgoing data from the local <see cref="HNode"/> has been intercepted.
         /// </summary>
         public event EventHandler<InterceptedEventArgs> DataOutgoing;
         /// <summary>
@@ -135,11 +135,11 @@ namespace Sulakore.Communication
         /// </summary>
         public IDictionary<ushort, byte[]> ReplacedIncoming { get; }
         /// <summary>
-        /// Gets the total amount of packets that have been intercepted going to the server.
+        /// Gets the total amount of packets the remote <see cref="HNode"/> has been sent from local.
         /// </summary>
         public int TotalOutgoing { get; private set; }
         /// <summary>
-        /// Gets the total amount of packets that have been intercepted going to the client.
+        /// Gets the total amount of packets the local <see cref="HNode"/> received from remote.
         /// </summary>
         public int TotalIncoming { get; private set; }
 
@@ -286,7 +286,7 @@ namespace Sulakore.Communication
 
         private async Task ReadOutgoingAsync()
         {
-            byte[] packet = await Local.ReceiveAsync().ConfigureAwait(false);
+            byte[] packet = await Local.ReceiveWireMessageAsync().ConfigureAwait(false);
             HandleOutgoing(packet, ++TotalOutgoing);
         }
         private void HandleOutgoing(byte[] data, int count)
@@ -299,7 +299,7 @@ namespace Sulakore.Communication
                 OnDataOutgoing(args);
 
                 if (!args.Cancel)
-                    SendToServerAsync(args.Packet.ToBytes());
+                    SendToServerAsync(args.Packet.ToBytes()).Wait();
             }
 
             if (!args.WasContinued)
@@ -308,7 +308,7 @@ namespace Sulakore.Communication
 
         private async Task ReadIncomingAsync()
         {
-            byte[] packet = await Remote.ReceiveAsync().ConfigureAwait(false);
+            byte[] packet = await Remote.ReceiveWireMessageAsync().ConfigureAwait(false);
             HandleIncoming(packet, ++TotalIncoming);
         }
         private void HandleIncoming(byte[] data, int count)
@@ -321,7 +321,7 @@ namespace Sulakore.Communication
                 OnDataIncoming(args);
 
                 if (!args.Cancel)
-                    SendToClientAsync(args.Packet.ToBytes());
+                    SendToClientAsync(args.Packet.ToBytes()).Wait();
             }
 
             if (!args.WasContinued)

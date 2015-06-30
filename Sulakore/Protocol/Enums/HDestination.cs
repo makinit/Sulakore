@@ -22,22 +22,11 @@
     See License.txt in the project root for license information.
 */
 
-namespace Sulakore.Habbo.Protocol
+namespace Sulakore.Protocol
 {
-    public interface IHPacket
+    public enum HDestination
     {
-        int Position { get;}
-        ushort Header { get; }
-        HDestination Destination { get; set; }
-
-        bool IsCorrupted { get; }
-        int Length { get; }
-        byte[] Body { get; }
-
-        int ReadInteger();
-        ushort ReadShort();
-        bool ReadBoolean();
-        string ReadString();
-        byte[] ReadBytes(int length);
+        Client = 0,
+        Server = 1
     }
 }

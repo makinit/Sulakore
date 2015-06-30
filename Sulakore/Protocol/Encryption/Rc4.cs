@@ -24,7 +24,7 @@
 
 using System;
 
-namespace Sulakore.Habbo.Protocol.Encryption
+namespace Sulakore.Protocol.Encryption
 {
     public class Rc4
     {

@@ -25,7 +25,7 @@
 using System;
 using System.Collections.Generic;
 
-using Sulakore.Habbo.Protocol;
+using Sulakore.Protocol;
 
 namespace Sulakore.Habbo
 {

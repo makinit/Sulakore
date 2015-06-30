@@ -22,9 +22,9 @@
     See License.txt in the project root for license information.
 */
 
-namespace Sulakore.Habbo.Protocol.Encryption
+namespace Sulakore.Protocol.Encryption
 {
-    public enum Padding
+    public enum PkcsPadding
     {
         /// <summary>
         /// Represents a padding type that will attempt to fill a byte array with the maximum value of a <see cref="byte"/>.

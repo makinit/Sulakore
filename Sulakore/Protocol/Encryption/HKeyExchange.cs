@@ -26,7 +26,7 @@ using System;
 using System.Text;
 using System.Drawing;
 
-namespace Sulakore.Habbo.Protocol.Encryption
+namespace Sulakore.Protocol.Encryption
 {
     public class HKeyExchange : IDisposable
     {

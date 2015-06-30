@@ -26,9 +26,9 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 
-using Sulakore.Habbo.Protocol.Encoders;
+using Sulakore.Protocol.Encoders;
 
-namespace Sulakore.Habbo.Protocol
+namespace Sulakore.Protocol
 {
     public class HMessage : HPacketBase
     {

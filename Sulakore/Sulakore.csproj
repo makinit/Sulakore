@@ -94,16 +94,16 @@
     <Compile Include="Habbo\HEntity.cs" />
     <Compile Include="Habbo\HPoint.cs" />
     <Compile Include="Habbo\IHEntity.cs" />
-    <Compile Include="Habbo\Protocol\Encoders\BigEndian.cs" />
-    <Compile Include="Habbo\Protocol\Encryption\BigInteger.cs" />
-    <Compile Include="Habbo\Protocol\Encryption\Enums\Padding.cs" />
-    <Compile Include="Habbo\Protocol\Encryption\HKeyExchange.cs" />
-    <Compile Include="Habbo\Protocol\Encryption\Rc4.cs" />
-    <Compile Include="Habbo\Protocol\Encryption\RsaKey.cs" />
-    <Compile Include="Habbo\Protocol\Enums\HDestination.cs" />
-    <Compile Include="Habbo\Protocol\HMessage.cs" />
-    <Compile Include="Habbo\Protocol\HPacketBase.cs" />
-    <Compile Include="Habbo\Protocol\IHPacket.cs" />
+    <Compile Include="Protocol\Encoders\BigEndian.cs" />
+    <Compile Include="Protocol\Encryption\BigInteger.cs" />
+    <Compile Include="Protocol\Encryption\Enums\PkcsPadding.cs" />
+    <Compile Include="Protocol\Encryption\HKeyExchange.cs" />
+    <Compile Include="Protocol\Encryption\Rc4.cs" />
+    <Compile Include="Protocol\Encryption\RsaKey.cs" />
+    <Compile Include="Protocol\Enums\HDestination.cs" />
+    <Compile Include="Protocol\HMessage.cs" />
+    <Compile Include="Protocol\HPacketBase.cs" />
+    <Compile Include="Protocol\IHPacket.cs" />
     <Compile Include="Habbo\Web\HBadge.cs" />
     <Compile Include="Habbo\Web\HFriend.cs" />
     <Compile Include="Habbo\Web\HGameData.cs" />
@@ -113,8 +113,8 @@
     <Compile Include="Habbo\Web\HSession.cs" />
     <Compile Include="Habbo\Web\HUser.cs" />
     <Compile Include="HHotel.cs" />
-    <Compile Include="SKore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SKore.cs" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />

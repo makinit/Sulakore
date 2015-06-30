@@ -22,7 +22,7 @@
 
 using System;
 
-namespace Sulakore.Habbo.Protocol.Encryption
+namespace Sulakore.Protocol.Encryption
 {
     /// <summary>
     /// Represents a large number.

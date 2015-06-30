@@ -28,7 +28,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 using Sulakore.Habbo;
-using Sulakore.Habbo.Protocol;
+using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {

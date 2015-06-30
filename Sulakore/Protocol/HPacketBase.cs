@@ -22,7 +22,7 @@
     See License.txt in the project root for license information.
 */
 
-namespace Sulakore.Habbo.Protocol
+namespace Sulakore.Protocol
 {
     public abstract class HPacketBase : IHPacket
     {

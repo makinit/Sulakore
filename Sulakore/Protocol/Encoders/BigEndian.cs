@@ -22,7 +22,7 @@
     See License.txt in the project root for license information.
 */
 
-namespace Sulakore.Habbo.Protocol.Encoders
+namespace Sulakore.Protocol.Encoders
 {
     public static class BigEndian
     {

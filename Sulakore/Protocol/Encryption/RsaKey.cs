@@ -24,7 +24,7 @@
 
 using System;
 
-namespace Sulakore.Habbo.Protocol.Encryption
+namespace Sulakore.Protocol.Encryption
 {
     public class RsaKey : IDisposable
     {
@@ -109,29 +109,29 @@ namespace Sulakore.Habbo.Protocol.Encryption
         
         public void Sign(ref byte[] data)
         {
-            Encrypt(DoPrivate, ref data, Padding.MaxByte);
+            Encrypt(DoPrivate, ref data, PkcsPadding.MaxByte);
         }
         public void Verify(ref byte[] data)
         {
-            Decrypt(DoPublic, ref data, Padding.MaxByte);
+            Decrypt(DoPublic, ref data, PkcsPadding.MaxByte);
         }
         
         public void Decrypt(ref byte[] data)
         {
-            Decrypt(DoPrivate, ref data, Padding.RandomByte);
+            Decrypt(DoPrivate, ref data, PkcsPadding.RandomByte);
         }
         private void Decrypt(Func<BigInteger, BigInteger> doFunc,
-            ref byte[] data, Padding type)
+            ref byte[] data, PkcsPadding type)
         {
             data = Pkcs1Unpad(doFunc(new BigInteger(data)).ToBytes(), BlockSize, type);
         }
 
         public void Encrypt(ref byte[] data)
         {
-            Encrypt(DoPublic, ref data, Padding.RandomByte);
+            Encrypt(DoPublic, ref data, PkcsPadding.RandomByte);
         }
         private void Encrypt(Func<BigInteger, BigInteger> doFunc,
-            ref byte[] data, Padding type)
+            ref byte[] data, PkcsPadding type)
         {
             data = doFunc(new BigInteger(Pkcs1Pad(data, BlockSize, type))).ToBytes();
         }
@@ -149,7 +149,7 @@ namespace Sulakore.Habbo.Protocol.Encryption
         }
         private BigInteger DoPublic(BigInteger x) => x.ModPow(E, N);
 
-        private byte[] Pkcs1Pad(byte[] data, int length, Padding padding)
+        private byte[] Pkcs1Pad(byte[] data, int length, PkcsPadding padding)
         {
             var buffer = new byte[length];
 
@@ -159,7 +159,7 @@ namespace Sulakore.Habbo.Protocol.Encryption
             buffer[--length] = 0;
             while (length > 2)
             {
-                byte x = (padding == Padding.RandomByte) ?
+                byte x = (padding == PkcsPadding.RandomByte) ?
                     (byte)_byteGen.Next(1, 256) : byte.MaxValue;
 
                 buffer[--length] = x;
@@ -168,7 +168,7 @@ namespace Sulakore.Habbo.Protocol.Encryption
             buffer[--length] = 0;
             return buffer;
         }
-        private byte[] Pkcs1Unpad(byte[] data, int length, Padding padding)
+        private byte[] Pkcs1Unpad(byte[] data, int length, PkcsPadding padding)
         {
             int offset = 0;
             while (offset < data.Length && data[offset] == 0) ++offset;

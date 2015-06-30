@@ -23,12 +23,13 @@
 */
 
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-using Sulakore.Habbo.Protocol.Encoders;
-using Sulakore.Habbo.Protocol.Encryption;
+using Sulakore.Protocol.Encoders;
+using Sulakore.Protocol.Encryption;
 
 namespace Sulakore.Communication
 {
@@ -38,9 +39,9 @@ namespace Sulakore.Communication
     public class HNode : IDisposable
     {
         /// <summary>
-        /// Gets the <see cref="Socket"/> that is being sent data, and receiving data.
+        /// Gets the underlying <see cref="Socket"/>.
         /// </summary>
-        public Socket Node { get; }
+        public Socket Client { get; }
         /// <summary>
         /// Gets or sets the <see cref="Rc4"/> for encrypting the data being sent.
         /// </summary>
@@ -49,6 +50,7 @@ namespace Sulakore.Communication
         /// Gets or sets the <see cref="Rc4"/> for decrypting the data being received.
         /// </summary>
         public Rc4 Decrypter { get; set; }
+        public NetworkStream SocketStream { get; }
         /// <summary>
         /// Gets or sets the value that determines whether the <see cref="HNode"/> has already been disposed.
         /// </summary>
@@ -57,10 +59,14 @@ namespace Sulakore.Communication
         /// <summary>
         /// Initializes a new instance of the <see cref="HNode"/> class.
         /// </summary>
-        /// <param name="node"></param>
-        public HNode(Socket node)
+        /// <param name="client"></param>
+        public HNode(Socket client)
         {
-            Node = node;
+            if (client == null)
+                throw new NullReferenceException(nameof(client));
+
+            Client = client;
+            SocketStream = new NetworkStream(Client);
         }
 
         /// <summary>
@@ -82,17 +88,32 @@ namespace Sulakore.Communication
         /// <returns></returns>
         public Task<int> SendAsync(byte[] buffer, int offset, int size)
         {
-            IAsyncResult result = Node.BeginSend(buffer, offset,
+            IAsyncResult result = Client.BeginSend(buffer, offset,
                 size, SocketFlags.None, null, null);
 
-            return Task.Factory.FromAsync(result, Node.EndSend);
+            return Task.Factory.FromAsync(result, Client.EndSend);
         }
 
+        public async Task<byte[]> ReceiveUntilEndAsync()
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                while (Client.Available > 0)
+                {
+                    byte[] buffer = new byte[Client.Available];
+                    int length = await ReceiveAsync(buffer, 0, buffer.Length)
+                        .ConfigureAwait(false);
+
+                    memoryStream.Write(buffer, 0, length);
+                }
+                return memoryStream.ToArray();
+            }
+        }
         /// <summary>
-        /// Receives an array of type <see cref="byte"/> that contains data convertible to an <see cref="HMessage"/> in an asynchronous operation.
+        /// Receives an array of type <see cref="byte"/> that is of a specific length determined by the four bytes at the beginning in an asynchronous operation.
         /// </summary>
         /// <returns></returns>
-        public async Task<byte[]> ReceiveAsync()
+        public async Task<byte[]> ReceiveWireMessageAsync()
         {
             byte[] lengthBlock = new byte[4];
             await ReceiveAsync(lengthBlock, 0, 4).ConfigureAwait(false);
@@ -130,10 +151,10 @@ namespace Sulakore.Communication
         /// <returns></returns>
         public Task<int> ReceiveAsync(byte[] buffer, int offset, int size)
         {
-            IAsyncResult result = Node.BeginReceive(buffer, offset,
+            IAsyncResult result = Client.BeginReceive(buffer, offset,
                 size, SocketFlags.None, null, null);
 
-            return Task.Factory.FromAsync(result, Node.EndReceive);
+            return Task.Factory.FromAsync(result, Client.EndReceive);
         }
 
         /// <summary>
@@ -185,11 +206,11 @@ namespace Sulakore.Communication
             {
                 if (disposing)
                 {
-                    if (Node != null)
-                    {
-                        Node.Shutdown(SocketShutdown.Both);
-                        Node.Close();
-                    }
+                    SocketStream.Dispose();
+
+                    Client.Shutdown(SocketShutdown.Both);
+                    Client.Close();
+
                     Encrypter = null;
                     Decrypter = null;
                 }

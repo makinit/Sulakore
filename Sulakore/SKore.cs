@@ -40,7 +40,7 @@ namespace Sulakore
     {
         private const string USER_API_SUFFIX = "/api/public/users?name=";
         private const string PROFILE_API_FORMAT = "{0}/api/public/users/{1}/profile";
-        private const string IP_COOKIE_PREFIX = "YPF8827340282Jdskjhfiw_928937459182JAX666=";
+        private const string IP_COOKIE_PREFIX = "YPF8827340282Jdskjhfiw_928937459182JAX666";
 
         private static string _ipCookie;
 
@@ -72,10 +72,11 @@ namespace Sulakore
         public static async Task<string> GetIPCookieAsync(HHotel hotel)
         {
             if (!string.IsNullOrEmpty(_ipCookie)) return _ipCookie;
-            string body = await _httpClient.GetStringAsync(hotel.ToUrl());
+            string body = await _httpClient.GetStringAsync(hotel.ToUrl())
+                .ConfigureAwait(false);
 
             return _ipCookie = (body.Contains("setCookie")) ?
-                IP_COOKIE_PREFIX + body.GetChilds("setCookie", '\'', false)[3] : string.Empty;
+               $"{IP_COOKIE_PREFIX}={body.GetChild($"{IP_COOKIE_PREFIX}', '", '\'')}" : string.Empty;
         }
         /// <summary>
         /// Returns the <seealso cref="HUser"/> from the specified hotel associated with the given name in an asynchronous operation.
@@ -226,7 +227,8 @@ namespace Sulakore
         /// </summary>
         /// <param name="gender">The string representation of the <see cref="HGender"/> object.</param>
         /// <returns></returns>
-        public static HGender ToGender(string gender) => (HGender)gender.ToUpper()[0];
+        public static HGender ToGender(string gender) =>
+            (HGender)gender.ToUpper()[0];
 
         /// <summary>
         /// Iterates through an event's list of subscribed delegates, and begins to unsubscribe them from the event.
@@ -237,39 +239,66 @@ namespace Sulakore
         {
             if (eventHandler == null) return;
             Delegate[] subscriptions = eventHandler.GetInvocationList();
-            eventHandler = subscriptions.Aggregate(eventHandler, (current, subscription) => current - (EventHandler<T>)subscription);
+
+            eventHandler = subscriptions.Aggregate(eventHandler,
+                (current, subscription) => current - (EventHandler<T>)subscription);
         }
 
         /// <summary>
-        /// Returns a new string that begins from where the parent ended in the source.
+        /// Returns a new string that begins where the parent ends in the source.
         /// </summary>
-        /// <param name="source">The string that is to be processed.</param>
-        /// <param name="parent">The string that determines where the substring operation will take place.</param>
+        /// <param name="source">The string that contains the child.</param>
+        /// <param name="parent">The string that comes before the child.</param>
         /// <returns></returns>
-        public static string GetChild(this string source, string parent) =>
-            source.Substring(source.IndexOf(parent, StringComparison.OrdinalIgnoreCase) + parent.Length).Trim();
-
-        /// <summary>
-        /// Returns a new string that is in between the parent and the delimiter in the source.
-        /// </summary>
-        /// <param name="source">The string that is to be processed.</param>
-        /// <param name="parent">The string that determines where the substring operation will take place.</param>
-        /// <param name="delimiter">The Unicode character that will be used to delimit the substring.</param>
-        /// <returns></returns>
-        public static string GetChild(this string source, string parent, char delimiter) =>
-            GetChilds(source, parent, delimiter, false)[0].Trim();
-
-        /// <summary>Returns a string array that contains the substrings in the source that are delimited after the parent.
-        /// </summary>
-        /// <param name="source">The string that is to be processed.</param>
-        /// <param name="parent">The string that determines where the substring operation will take place.</param>
-        /// <param name="delimiter">The Unicode character that will be used to delimit the substring.</param>
-        /// <param name="withNested">True if you wish to... actually, I forgot why I did this, you'll be fine with the default setting.<para>hhhhh</para></param>
-        /// <returns></returns>
-        public static string[] GetChilds(this string source, string parent, char delimiter, bool withNested = true)
+        public static string GetChild(this string source, string parent)
         {
-            char[] delimiters = (withNested ? (parent + delimiter).ToCharArray() : new[] { delimiter });
-            return GetChild(source, parent).Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
+            int sourceIndex = source
+                .IndexOf(parent, StringComparison.OrdinalIgnoreCase);
+
+            return sourceIndex >= 0 ?
+                source.Substring(sourceIndex + parent.Length) : string.Empty;
+        }
+        /// <summary>
+        /// Returns a new string that ends where the child begins in the source.
+        /// </summary>
+        /// <param name="source">The string that contains the parent.</param>
+        /// <param name="child">The string that comes after the parent.</param>
+        /// <returns></returns>
+        public static string GetParent(this string source, string child)
+        {
+            int sourceIndex = source
+                .IndexOf(child, StringComparison.OrdinalIgnoreCase);
+
+            return sourceIndex >= 0 ?
+                source.Remove(sourceIndex) : string.Empty;
+        }
+        /// <summary>
+        /// Returns a new string that is between the delimiters, and the child in the source.
+        /// </summary>
+        /// <param name="source">The string that contains the parent.</param>
+        /// <param name="child">The string that comes after the parent.</param>
+        /// <param name="delimiters">The Unicode characters that will be used to split the parent, returning the last split value.</param>
+        /// <returns></returns>
+        public static string GetParent(this string source, string child, params char[] delimiters)
+        {
+            string parentSource = source.GetParent(child);
+
+            return !string.IsNullOrWhiteSpace(parentSource) ?
+                parentSource.Split(delimiters, StringSplitOptions.RemoveEmptyEntries).Last() : string.Empty;
+        }
+        /// <summary>
+        /// Returns a new string that is between the parent, and the delimiters in the source.
+        /// </summary>
+        /// <param name="source">The string that contains the child.</param>
+        /// <param name="parent">The string that comes before the child.</param>
+        /// <param name="delimiters">The Unicode characters that will be used to split the child, returning the first split value.</param>
+        /// <returns></returns>
+        public static string GetChild(this string source, string parent, params char[] delimiters)
+        {
+            string childSource = source.GetChild(parent);
+
+            return !string.IsNullOrWhiteSpace(childSource) ?
+                childSource.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)[0] : string.Empty;
         }
     }
 }
