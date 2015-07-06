@@ -37,41 +37,41 @@ namespace Sulakore.Habbo
         /// <summary>
         /// Gets the room index value of the <see cref="IHEntity"/>.
         /// </summary>
-        public int Index { get; }
+        public int Index { get; private set; }
         /// <summary>
         /// Gets a value that determines whether the <see cref="IHEntity"/> has privileges.
         /// </summary>
-        public bool IsEmpowered { get; }
+        public bool IsEmpowered { get; private set; }
 
         /// <summary>
         /// Gets the <see cref="HPoint"/> of where the <see cref="IHEntity"/> is currently on.
         /// </summary>
-        public HPoint Tile { get; }
+        public HPoint Tile { get; private set; }
         /// <summary>
         /// Gets the <see cref="HPoint"/> of where the <see cref="IHEntity"/> will move to next.
         /// </summary>
-        public HPoint MovingTo { get; }
+        public HPoint MovingTo { get; private set; }
 
         /// <summary>
         /// Gets the <see cref="HSign"/> that the <see cref="IHEntity"/> has raised.
         /// </summary>
-        public HSign Sign { get; }
+        public HSign Sign { get; private set; }
         /// <summary>
         /// Gets the current <see cref="HStance"/> of the <see cref="IHEntity"/>.
         /// </summary>
-        public HStance Stance { get; }
+        public HStance Stance { get; private set; }
         /// <summary>
         /// Gets the <see cref="HAction"/> that the <see cref="IHEntity"/> has recently done.
         /// </summary>
-        public HAction LastAction { get; }
+        public HAction LastAction { get; private set; }
         /// <summary>
         /// Gets the head <see cref="HDirection"/> of the <see cref="IHEntity"/>.
         /// </summary>
-        public HDirection HeadDirection { get; }
+        public HDirection HeadDirection { get; private set; }
         /// <summary>
         /// Gets the body <see cref="HDirection"/> of the <see cref="IHEntity"/>.
         /// </summary>
-        public HDirection BodyDirection { get; }
+        public HDirection BodyDirection { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HEntityAction"/> class with the specified information.
@@ -194,9 +194,10 @@ namespace Sulakore.Habbo
         /// Converts the <see cref="HEntityAction"/> to a human-readable string.
         /// </summary>
         /// <returns></returns>
-        public override string ToString() =>
-            $"{nameof(IsEmpowered)}: {IsEmpowered}, {nameof(Index)}: {Index}, " +
-            $"{nameof(Tile)}: {Tile}, {nameof(MovingTo)}: {MovingTo}, {nameof(HeadDirection)}: {HeadDirection}, " +
-            $"{nameof(BodyDirection)}: {BodyDirection}, {nameof(LastAction)}: {LastAction}";
+        public override string ToString()
+        {
+            return string.Format("IsEmpowered: {0}, Index: {1}, Tile: {2}, MovingTo: {3}, HeadDirection: {4}, BodyDirection: {5}, LastAction: {6}",
+                IsEmpowered, Index, Tile, MovingTo, HeadDirection, BodyDirection, LastAction);
+        }
     }
 }
