@@ -29,51 +29,51 @@ namespace Sulakore.Protocol.Encryption
     public class RsaKey : IDisposable
     {
         private static readonly Random _byteGen;
-        
+
         /// <summary>
         /// Gets the block size of the <see cref="RsaKey"/>.
         /// </summary>
-        public int BlockSize { get; }
+        public int BlockSize { get; private set; }
         /// <summary>
         /// Public Exponent
         /// </summary>
-        public BigInteger E { get; }
+        public BigInteger E { get; private set; }
         /// <summary>
         /// Public Modulus
         /// </summary>
-        public BigInteger N { get; }
+        public BigInteger N { get; private set; }
         /// <summary>
         /// Private Exponent
         /// </summary>
-        public BigInteger D { get; }
+        public BigInteger D { get; private set; }
         /// <summary>
         /// Secret Prime Factor (P * Q = N)
         /// </summary>
-        public BigInteger P { get; }
+        public BigInteger P { get; private set; }
         /// <summary>
         /// Secret Prime Factor (P * Q = N)
         /// </summary>
-        public BigInteger Q { get; }
+        public BigInteger Q { get; private set; }
         /// <summary>
         /// D Mod (P - 1)
         /// </summary>
-        public BigInteger Dmp1 { get; }
+        public BigInteger Dmp1 { get; private set; }
         /// <summary>
         /// D Mod (Q - 1)
         /// </summary>
-        public BigInteger Dmq1 { get; }
+        public BigInteger Dmq1 { get; private set; }
         /// <summary>
         /// (Inverse)Q Mod P
         /// </summary>
-        public BigInteger Iqmp { get; }
+        public BigInteger Iqmp { get; private set; }
         /// <summary>
         /// Gets a value that determines whether the <see cref="RsaKey"/> can encrypt data.
         /// </summary>
-        public bool CanEncrypt { get; }
+        public bool CanEncrypt { get; private set; }
         /// <summary>
         /// Gets a value that determines whether the <see cref="RsaKey"/> can decrypt data.
         /// </summary>
-        public bool CanDecrypt { get; }
+        public bool CanDecrypt { get; private set; }
         /// <summary>
         /// Gets a value that determines whether the <see cref="RsaKey"/> has already been disposed.
         /// </summary>
@@ -106,7 +106,7 @@ namespace Sulakore.Protocol.Encryption
 
             BlockSize = (N.BitCount() + 7) / 8;
         }
-        
+
         public void Sign(ref byte[] data)
         {
             Encrypt(DoPrivate, ref data, PkcsPadding.MaxByte);
@@ -115,7 +115,7 @@ namespace Sulakore.Protocol.Encryption
         {
             Decrypt(DoPublic, ref data, PkcsPadding.MaxByte);
         }
-        
+
         public void Decrypt(ref byte[] data)
         {
             Decrypt(DoPrivate, ref data, PkcsPadding.RandomByte);
@@ -147,13 +147,16 @@ namespace Sulakore.Protocol.Encryption
             while (xp < xq) xp = xp + P;
             return ((((xp - xq) * (Iqmp)) % P) * Q) + xq;
         }
-        private BigInteger DoPublic(BigInteger x) => x.ModPow(E, N);
+        private BigInteger DoPublic(BigInteger x)
+        {
+            return x.ModPow(E, N);
+        }
 
         private byte[] Pkcs1Pad(byte[] data, int length, PkcsPadding padding)
         {
             var buffer = new byte[length];
 
-            for (int i = data.Length - 1; (i >= 0 && length > 11);)
+            for (int i = data.Length - 1; (i >= 0 && length > 11); )
                 buffer[--length] = data[i--];
 
             buffer[--length] = 0;
@@ -174,13 +177,13 @@ namespace Sulakore.Protocol.Encryption
             while (offset < data.Length && data[offset] == 0) ++offset;
 
             if (data.Length - offset != length - 1 || data[offset] != ((byte)padding + 1))
-                throw new Exception($"Offset: {offset}\n\nExpected: {padding + 1}\n\nReceived: {data[offset]}");
+                throw new Exception(string.Format("Offset: {0}\n\nExpected: {1}\n\nReceived: {2}", offset, padding + 1, data[offset]));
 
             ++offset;
             while (data[offset] != 0)
             {
                 if (++offset >= data.Length)
-                    throw new Exception($"Offset: {offset}\n\n{data[offset] - 1} != 0");
+                    throw new Exception(string.Format("Offset: {0}\n\n{1} != 0", offset, data[offset] - 1));
             }
 
             var buffer = new byte[(data.Length - offset) - 1];
@@ -190,13 +193,17 @@ namespace Sulakore.Protocol.Encryption
             return buffer;
         }
 
-        public static RsaKey ParsePublicKey(int e, string n) =>
-            new RsaKey(new BigInteger(e.ToString(), 16), new BigInteger(n, 16));
-
-        public static RsaKey ParsePrivateKey(int e, string n, string d) =>
-            new RsaKey(new BigInteger(e.ToString(), 16),
+        public static RsaKey ParsePublicKey(int e, string n)
+        {
+            return new RsaKey(new BigInteger(
+                e.ToString(), 16), new BigInteger(n, 16));
+        }
+        public static RsaKey ParsePrivateKey(int e, string n, string d)
+        {
+            return new RsaKey(new BigInteger(e.ToString(), 16),
                 new BigInteger(n, 16), new BigInteger(d, 16));
-        
+        }
+
         public static RsaKey Create(int exponent, int bitSize)
         {
             BigInteger p, q, e = new BigInteger(exponent.ToString(), 16);
@@ -238,13 +245,26 @@ namespace Sulakore.Protocol.Encryption
             {
                 if (disposing)
                 {
-                    E?.Dispose();
-                    N?.Dispose();
-                    D?.Dispose();
-                    P?.Dispose();
-                    Q?.Dispose();
-                    Dmp1?.Dispose();
-                    Iqmp?.Dispose();
+                    if (E != null)
+                        E.Dispose();
+
+                    if (N != null)
+                        N.Dispose();
+
+                    if (D != null)
+                        D.Dispose();
+
+                    if (P != null)
+                        P.Dispose();
+
+                    if (Q != null)
+                        Q.Dispose();
+
+                    if (Dmp1 != null)
+                        Dmp1.Dispose();
+
+                    if (Iqmp != null)
+                        Iqmp.Dispose();
                 }
                 IsDisposed = true;
             }
