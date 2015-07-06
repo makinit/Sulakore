@@ -23,7 +23,6 @@
 */
 
 using System;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -44,19 +43,18 @@ namespace Sulakore
 
         private static string _ipCookie;
 
+        private static readonly Array _randomThemes;
         private static readonly HttpClient _httpClient;
-        private static readonly Random _randomSign, _randomTheme;
         private static readonly HttpClientHandler _httpClientHandler;
-        private static readonly object _randomSignLock, _randomThemeLock;
+        private static readonly Random _randomSignGen, _randomThemeGen;
         private static readonly IDictionary<HHotel, IDictionary<string, string>> _uniqueIds;
 
         static SKore()
         {
-            _randomSign = new Random();
-            _randomTheme = new Random();
+            _randomSignGen = new Random();
+            _randomThemeGen = new Random();
 
-            _randomSignLock = new object();
-            _randomThemeLock = new object();
+            _randomThemes = Enum.GetValues(typeof(HTheme));
 
             _httpClientHandler = new HttpClientHandler() { UseProxy = false };
             _httpClient = new HttpClient(_httpClientHandler, true);
@@ -75,8 +73,8 @@ namespace Sulakore
             string body = await _httpClient.GetStringAsync(hotel.ToUrl())
                 .ConfigureAwait(false);
 
-            return _ipCookie = (body.Contains("setCookie")) ?
-               $"{IP_COOKIE_PREFIX}={body.GetChild($"{IP_COOKIE_PREFIX}', '", '\'')}" : string.Empty;
+            string ip = body.GetChild(IP_COOKIE_PREFIX + "', '", '\'');
+            return _ipCookie = (IP_COOKIE_PREFIX + "=" + ip);
         }
         /// <summary>
         /// Returns the <seealso cref="HUser"/> from the specified hotel associated with the given name in an asynchronous operation.
@@ -135,8 +133,7 @@ namespace Sulakore
             if (sign != HSign.Random)
                 return (int)sign;
 
-            lock (_randomSignLock)
-                return _randomSign.Next(0, 19);
+            return _randomSignGen.Next(0, 19);
         }
         /// <summary>
         /// Returns the primitive value for the specified <see cref="HBan"/>.
@@ -164,8 +161,11 @@ namespace Sulakore
             if (theme != HTheme.Random)
                 return (int)theme;
 
-            lock (_randomThemeLock)
-                return _randomTheme.Next(0, 30);
+            int randomIndex = _randomThemeGen.Next(0,
+                _randomThemes.Length - 1);
+
+            return (int)_randomThemes
+                .GetValue(randomIndex);
         }
 
         /// <summary>
@@ -208,27 +208,36 @@ namespace Sulakore
         /// <summary>
         /// Returns the <see cref="HHotel"/> associated with the specified value.
         /// </summary>
-        /// <param name="value">The string representation of the <see cref="HHotel"/> object.</param>
+        /// <param name="host">The string representation of the <see cref="HHotel"/> object.</param>
         /// <returns></returns>
-        public static HHotel ToHotel(string value)
+        public static HHotel ToHotel(string host)
         {
-            if (value.Contains("game-")) value = value.GetChild("game-", '.');
-            else if (value.Contains("habbo")) value = value.GetChild("habbo.");
-            value = value.Replace(".", string.Empty);
+            HHotel hotel = HHotel.Unknown;
+            string identifier = host.GetChild("game-", '.')
+                .Replace("us", "com");
 
-            if (value == "us") value = "com";
-            if (value == "br" || value == "tr") value = "com" + value;
+            if (string.IsNullOrWhiteSpace(identifier))
+            {
+                identifier = host.GetChild("habbo.", '/')
+                    .Replace(".", string.Empty);
+            }
+            else if (identifier == "tr" || identifier == "br")
+                identifier = "com" + identifier;
 
-            HHotel hotel;
-            return Enum.TryParse(value, true, out hotel) ? hotel : (HHotel)(-1);
+            if (!string.IsNullOrWhiteSpace(identifier))
+                Enum.TryParse(identifier, true, out hotel);
+
+            return hotel;
         }
         /// <summary>
         /// Returns the <see cref="HGender"/> associated with the specified value.
         /// </summary>
         /// <param name="gender">The string representation of the <see cref="HGender"/> object.</param>
         /// <returns></returns>
-        public static HGender ToGender(string gender) =>
-            (HGender)gender.ToUpper()[0];
+        public static HGender ToGender(string gender)
+        {
+            return (HGender)gender.ToUpper()[0];
+        }
 
         /// <summary>
         /// Iterates through an event's list of subscribed delegates, and begins to unsubscribe them from the event.
@@ -240,8 +249,8 @@ namespace Sulakore
             if (eventHandler == null) return;
             Delegate[] subscriptions = eventHandler.GetInvocationList();
 
-            eventHandler = subscriptions.Aggregate(eventHandler,
-                (current, subscription) => current - (EventHandler<T>)subscription);
+            foreach (Delegate subscription in subscriptions)
+                eventHandler -= (EventHandler<T>)subscription;
         }
 
         /// <summary>
@@ -252,8 +261,11 @@ namespace Sulakore
         /// <returns></returns>
         public static string GetChild(this string source, string parent)
         {
+            if (string.IsNullOrWhiteSpace(source))
+                return string.Empty;
+
             int sourceIndex = source
-                .IndexOf(parent, StringComparison.OrdinalIgnoreCase);
+                .IndexOf(parent ?? string.Empty, StringComparison.OrdinalIgnoreCase);
 
             return sourceIndex >= 0 ?
                 source.Substring(sourceIndex + parent.Length) : string.Empty;
@@ -266,8 +278,11 @@ namespace Sulakore
         /// <returns></returns>
         public static string GetParent(this string source, string child)
         {
+            if (string.IsNullOrWhiteSpace(source))
+                return string.Empty;
+
             int sourceIndex = source
-                .IndexOf(child, StringComparison.OrdinalIgnoreCase);
+                .IndexOf(child ?? string.Empty, StringComparison.OrdinalIgnoreCase);
 
             return sourceIndex >= 0 ?
                 source.Remove(sourceIndex) : string.Empty;
@@ -282,9 +297,14 @@ namespace Sulakore
         public static string GetParent(this string source, string child, params char[] delimiters)
         {
             string parentSource = source.GetParent(child);
+            if (!string.IsNullOrWhiteSpace(parentSource))
+            {
+                string[] childSplits = parentSource.Split(delimiters,
+                    StringSplitOptions.RemoveEmptyEntries);
 
-            return !string.IsNullOrWhiteSpace(parentSource) ?
-                parentSource.Split(delimiters, StringSplitOptions.RemoveEmptyEntries).Last() : string.Empty;
+                return childSplits[childSplits.Length - 1];
+            }
+            else return string.Empty;
         }
         /// <summary>
         /// Returns a new string that is between the parent, and the delimiters in the source.
