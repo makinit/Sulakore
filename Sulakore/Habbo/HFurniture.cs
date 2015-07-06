@@ -30,13 +30,13 @@ namespace Sulakore.Habbo
 {
     public class HFurniture
     {
-        public int Id { get; }
-        public int TypeId { get; }
-        public int OwnerId { get; }
-        public string OwnerName { get; }
+        public int Id { get; private set; }
+        public int TypeId { get; private set; }
+        public int OwnerId { get; private set; }
+        public string OwnerName { get; private set; }
 
-        public HPoint Tile { get; }
-        public HDirection Direction { get; }
+        public HPoint Tile { get; private set; }
+        public HDirection Direction { get; private set; }
 
         public HFurniture(int id, int typeId, int ownerId,
             string ownerName, HPoint tile, HDirection direction)
@@ -159,12 +159,14 @@ namespace Sulakore.Habbo
 
                 furnitureList.Add(furniture);
             }
-            
+
             return furnitureList;
         }
 
-        public override string ToString() =>
-            $"{nameof(Id)}: {Id}, {nameof(TypeId)}: {TypeId}, " +
-            $"{nameof(OwnerId)}: {OwnerId}, {nameof(OwnerName)}: {OwnerName}";
+        public override string ToString()
+        {
+            return string.Format("Id: {0}, TypeId: {1}, OwnerId: {2}, OwnerName: {3}",
+                Id, TypeId, OwnerId, OwnerName);
+        }
     }
 }
