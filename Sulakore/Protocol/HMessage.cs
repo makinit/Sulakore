@@ -32,8 +32,6 @@ namespace Sulakore.Protocol
 {
     public class HMessage : HPacketBase
     {
-        private static readonly object _splitLock;
-
         private readonly List<byte> _body;
 
         private byte[] _toBytesCache;
@@ -97,10 +95,6 @@ namespace Sulakore.Protocol
             get { return _written; }
         }
 
-        static HMessage()
-        {
-            _splitLock = new object();
-        }
         private HMessage()
         {
             _body = new List<byte>();
