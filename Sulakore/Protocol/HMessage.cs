@@ -32,13 +32,13 @@ namespace Sulakore.Protocol
 {
     public class HMessage : HPacketBase
     {
-        private byte[] _toBytesCache;
-        private string _toStringCache;
-        private bool _beganConstructing;
+        private static readonly object _splitLock;
 
         private readonly List<byte> _body;
 
-        private static readonly object _splitLock;
+        private byte[] _toBytesCache;
+        private string _toStringCache;
+        private bool _beganConstructing;
 
         private ushort _header;
         /// <summary>
@@ -69,7 +69,7 @@ namespace Sulakore.Protocol
         /// <summary>
         /// Gets a value that determines whether the <see cref="HMessage"/> is readable/writable.
         /// </summary>
-        public override bool IsCorrupted { get; }
+        public override bool IsCorrupted { get; protected set; }
         /// <summary>
         /// Gets the length of the <see cref="HMessage"/>.
         /// </summary>
@@ -83,13 +83,19 @@ namespace Sulakore.Protocol
         /// <summary>
         /// Gets a <see cref="IReadOnlyList{T}"/> of type <see cref="object"/> containing read values from the <see cref="HMessage"/>.
         /// </summary>
-        public IReadOnlyList<object> ValuesRead => _read;
+        public IReadOnlyList<object> ValuesRead
+        {
+            get { return _read; }
+        }
 
         private readonly List<object> _written;
         /// <summary>
         /// Gets a <see cref="IReadOnlyList{T}"/> of type <see cref="object"/> containing the written values of the <see cref="HMessage"/>.
         /// </summary>
-        public IReadOnlyList<object> ValuesWritten => _written;
+        public IReadOnlyList<object> ValuesWritten
+        {
+            get { return _written; }
+        }
 
         static HMessage()
         {
@@ -121,11 +127,11 @@ namespace Sulakore.Protocol
                 throw new Exception("Insufficient data, minimum length is '6'(Six). [Length{4}][Header{2}]");
 
             Destination = destination;
-            IsCorrupted = (BigEndian.DecypherInt(data) != data.Length - 4);
+            IsCorrupted = (BigEndian.ToSI32(data) != data.Length - 4);
 
             if (!IsCorrupted)
             {
-                Header = BigEndian.DecypherShort(data, 4);
+                Header = BigEndian.ToUI16(data, 4);
 
                 _body.AddRange(data);
                 _body.RemoveRange(0, 6);
@@ -158,8 +164,8 @@ namespace Sulakore.Protocol
             if (index + 4 > Body.Length)
                 throw new Exception("Not enough data at the current position to read an integer.");
 
-            int value = BigEndian.DecypherInt(Body[index++],
-                Body[index++], Body[index++], Body[index++]);
+            int value = BigEndian.ToSI32(Body, index);
+            index += 4;
 
             AddToRead(value);
             return value;
@@ -169,8 +175,8 @@ namespace Sulakore.Protocol
             if (index + 2 > Body.Length)
                 throw new Exception("Not enough data at the current position to read a short.");
 
-            ushort value = BigEndian.DecypherShort(
-                Body[index++], Body[index++]);
+            ushort value = BigEndian.ToUI16(Body, index);
+            index += 2;
 
             AddToRead(value);
             return value;
@@ -223,7 +229,7 @@ namespace Sulakore.Protocol
                 case TypeCode.Boolean: valueSize = 1; break;
                 case TypeCode.String:
                 {
-                    int stringLength = BigEndian.DecypherShort(Body, index);
+                    int stringLength = BigEndian.ToUI16(Body, index);
                     valueSize = (2 + stringLength);
                     break;
                 }
@@ -246,7 +252,7 @@ namespace Sulakore.Protocol
                 {
                     if (bytesLeft > 2)
                     {
-                        int stringLength = BigEndian.DecypherShort(Body, index);
+                        int stringLength = BigEndian.ToUI16(Body, index);
                         bytesNeeded = (2 + stringLength);
                     }
                     break;
@@ -263,7 +269,7 @@ namespace Sulakore.Protocol
                 case TypeCode.Boolean: _body.RemoveAt(index); break;
                 case TypeCode.String:
                 {
-                    int stringLength = BigEndian.DecypherShort(Body, index);
+                    int stringLength = BigEndian.ToUI16(Body, index);
                     _body.RemoveRange(index, 2 + stringLength);
                     break;
                 }
@@ -359,11 +365,16 @@ namespace Sulakore.Protocol
             Buffer.BlockCopy(_body.ToArray(), 0, Body, 0, Body.Length);
         }
 
-        public byte[] ToBytes() =>
-            _toBytesCache ?? (_toBytesCache = Construct(Header, Body));
-
-        public override string ToString() =>
-            _toStringCache ?? (_toStringCache = ToString(ToBytes()));
+        public byte[] ToBytes()
+        {
+            return _toBytesCache ??
+                (_toBytesCache = Construct(Header, Body));
+        }
+        public override string ToString()
+        {
+            return _toStringCache ??
+                (_toStringCache = ToString(ToBytes()));
+        }
 
         public static byte[] ToBytes(string packet)
         {
@@ -429,11 +440,12 @@ namespace Sulakore.Protocol
         public static string ToString(byte[] packet)
         {
             string result = Encoding.Default.GetString(packet);
+
             for (int i = 0; i <= 13; i++)
                 result = result.Replace(((char)i).ToString(), "[" + i + "]");
+
             return result;
         }
-
         public static byte[] Encode(params object[] chunks)
         {
             if (chunks == null)
@@ -453,8 +465,8 @@ namespace Sulakore.Protocol
                 {
                     case TypeCode.Byte: buffer.Add((byte)chunk); break;
                     case TypeCode.Boolean: buffer.Add(Convert.ToByte((bool)chunk)); break;
-                    case TypeCode.Int32: buffer.AddRange(BigEndian.CypherInt((int)chunk)); break;
-                    case TypeCode.UInt16: buffer.AddRange(BigEndian.CypherShort((ushort)chunk)); break;
+                    case TypeCode.Int32: buffer.AddRange(BigEndian.FromSI32((int)chunk)); break;
+                    case TypeCode.UInt16: buffer.AddRange(BigEndian.FromUI16((ushort)chunk)); break;
 
                     default:
                     case TypeCode.String:
@@ -467,7 +479,7 @@ namespace Sulakore.Protocol
                             value = value.Replace("\\n", "\n");
 
                             data = new byte[2 + Encoding.UTF8.GetByteCount(value)];
-                            Buffer.BlockCopy(BigEndian.CypherShort((ushort)(data.Length - 2)), 0, data, 0, 2);
+                            Buffer.BlockCopy(BigEndian.FromUI16((ushort)(data.Length - 2)), 0, data, 0, 2);
                             Buffer.BlockCopy(Encoding.UTF8.GetBytes(value), 0, data, 2, data.Length - 2);
                         }
                         buffer.AddRange(data);
@@ -477,58 +489,15 @@ namespace Sulakore.Protocol
             }
             return buffer.ToArray();
         }
-        public static IList<byte[]> Split(ref byte[] cache, byte[] data)
-        {
-            lock (_splitLock)
-            {
-                if (cache != null)
-                {
-                    byte[] buffer = new byte[cache.Length + data.Length];
-                    Buffer.BlockCopy(cache, 0, buffer, 0, cache.Length);
-                    Buffer.BlockCopy(data, 0, buffer, cache.Length, data.Length);
-                    data = buffer;
-                    cache = null;
-                }
-
-                var chunks = new List<byte[]>();
-                int length = BigEndian.DecypherInt(data);
-                if (length == data.Length - 4) chunks.Add(data);
-                else
-                {
-                    byte[] slice, buffer;
-                    do
-                    {
-                        if (length > data.Length - 4)
-                        {
-                            cache = data;
-                            break;
-                        }
-
-                        slice = new byte[length + 4];
-                        Buffer.BlockCopy(data, 0, slice, 0, slice.Length);
-                        chunks.Add(slice);
-
-                        buffer = new byte[data.Length - slice.Length];
-                        Buffer.BlockCopy(data, slice.Length, buffer, 0, buffer.Length);
-                        data = buffer;
-
-                        if (data.Length >= 4)
-                            length = BigEndian.DecypherInt(data);
-                    }
-                    while (data.Length != 0);
-                }
-                return chunks;
-            }
-        }
         public static byte[] Construct(ushort header, params object[] chunks)
         {
-            byte[] body = chunks != null && chunks.Length > 0 ? Encode(chunks) : new byte[0];
+            byte[] body = (chunks != null && chunks.Length > 0) ?
+                Encode(chunks) : new byte[0];
+
             byte[] data = new byte[6 + body.Length];
-
-            Buffer.BlockCopy(BigEndian.CypherInt(body.Length + 2), 0, data, 0, 4);
-            Buffer.BlockCopy(BigEndian.CypherShort(header), 0, data, 4, 2);
+            Buffer.BlockCopy(BigEndian.FromSI32(body.Length + 2), 0, data, 0, 4);
+            Buffer.BlockCopy(BigEndian.FromUI16(header), 0, data, 4, 2);
             Buffer.BlockCopy(body, 0, data, 6, body.Length);
-
             return data;
         }
     }
