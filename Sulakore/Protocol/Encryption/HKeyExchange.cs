@@ -37,16 +37,16 @@ namespace Sulakore.Protocol.Encryption
         private readonly int _bitSize;
         private static readonly Random _byteGen;
 
-        public RsaKey Rsa { get; }
+        public RsaKey Rsa { get; private set; }
         public BigInteger DhPrime { get; private set; }
         public BigInteger DhPublic { get; private set; }
         public BigInteger DhPrivate { get; private set; }
         public BigInteger DhGenerator { get; private set; }
 
-        public bool IsInitiator { get; }
         public bool IsDisposed { get; private set; }
+        public bool IsInitiator { get; private set; }
         public bool IsBannerHandshake { get; private set; }
-        
+
         static HKeyExchange()
         {
             _byteGen = new Random();
@@ -175,7 +175,11 @@ namespace Sulakore.Protocol.Encryption
                 throw new Exception("Prime cannot be <= 2!\nPrime: " + DhPrime);
 
             if (DhGenerator >= DhPrime)
-                throw new Exception($"Generator cannot be >= Prime!\nPrime: {DhPrime}\nGenerator: {DhGenerator}");
+            {
+                throw new Exception(string.Format(
+                    "Generator cannot be >= Prime!\nPrime: {0}\nGenerator: {1}",
+                    DhPrime, DhGenerator));
+            }
 
             DhPrivate = new BigInteger(RandomHex(30), _bitSize);
             DhPublic = DhGenerator.ModPow(DhPrivate, DhPrime);
@@ -244,18 +248,25 @@ namespace Sulakore.Protocol.Encryption
         }
         protected virtual void Dispose(bool disposing)
         {
-            if (!IsDisposed)
+            if (!IsDisposed) return;
+            if (disposing)
             {
-                if (disposing)
-                {
-                    Rsa?.Dispose();
-                    DhPrime?.Dispose();
-                    DhGenerator?.Dispose();
-                    DhPublic?.Dispose();
-                    DhPrivate?.Dispose();
-                }
-                IsDisposed = true;
+                if (Rsa != null)
+                    Rsa.Dispose();
+
+                if (DhPrime != null)
+                    DhPrime.Dispose();
+
+                if (DhGenerator != null)
+                    DhGenerator.Dispose();
+
+                if (DhPublic != null)
+                    DhPublic.Dispose();
+
+                if (DhPrivate != null)
+                    DhPrivate.Dispose();
             }
+            IsDisposed = true;
         }
     }
 }
