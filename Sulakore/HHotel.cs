@@ -32,42 +32,42 @@ namespace Sulakore
         /// <summary>
         /// Represents an unidentified hotel.
         /// </summary>
-        Unknown = 0,
+        Unknown = -1,
         /// <summary>
         /// Represents http://www.Habbo.com (Global).
         /// </summary>
-        Com = 1,
+        Com = 0,
         /// <summary>
         /// Represents http://www.Habbo.com.br (Brazil).
         /// </summary>
-        ComBr = 2,
+        ComBr = 1,
         /// <summary>
         /// Represents http://www.Habbo.com.tr (Turkey).
         /// </summary>
-        ComTr = 3,
+        ComTr = 2,
         /// <summary>
         /// Represents http://www.Habbo.de (Germany).
         /// </summary>
-        De = 4,
+        De = 3,
         /// <summary>
         /// Represents http://www.Habbo.es (Spain).
         /// </summary>
-        Es = 5,
+        Es = 4,
         /// <summary>
         /// Represents http://www.Habbo.fi (Finland).
         /// </summary>
-        Fi = 6,
+        Fi = 5,
         /// <summary>
         /// Represents http://www.Habbo.fr (France).
         /// </summary>
-        Fr = 7,
+        Fr = 6,
         /// <summary>
         /// Represents http://www.Habbo.it (Italy).
         /// </summary>
-        It = 8,
+        It = 7,
         /// <summary>
         /// Represents http://www.Habbo.nl (Netherlands).
         /// </summary>
-        Nl = 9
+        Nl = 8
     }
 }
