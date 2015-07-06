@@ -36,36 +36,36 @@ namespace Sulakore.Habbo
         /// <summary>
         /// Gets the id of the <see cref="HEntity"/>.
         /// </summary>
-        public int Id { get; }
+        public int Id { get; private set; }
         /// <summary>
         /// Gets the room index value of the <see cref="HEntity"/>.
         /// </summary>
-        public int Index { get; }
+        public int Index { get; private set; }
         /// <summary>
         /// Gets the name of the <see cref="HEntity"/>.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; private set; }
         /// <summary>
         /// Gets the motto of the <see cref="HEntity"/>.
         /// </summary>
-        public string Motto { get; }
+        public string Motto { get; private set; }
         /// <summary>
         /// Gets the figure id of the <see cref="HEntity"/>.
         /// </summary>
-        public string FigureId { get; }
+        public string FigureId { get; private set; }
         /// <summary>
         /// Gets the favorite group badge of the <see cref="HEntity"/>.
         /// </summary>
-        public string FavoriteGroup { get; }
+        public string FavoriteGroup { get; private set; }
 
         /// <summary>
         /// Gets the <see cref="HPoint"/> of the <see cref="HEntity"/>.
         /// </summary>
-        public HPoint Tile { get; }
+        public HPoint Tile { get; private set; }
         /// <summary>
         /// Gets the gender of the <see cref="HEntity"/>.
         /// </summary>
-        public HGender Gender { get; }
+        public HGender Gender { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HEntity"/> class with the specified information,
@@ -125,9 +125,7 @@ namespace Sulakore.Habbo
                         gender = SKore.ToGender(packet.ReadString());
                         packet.ReadInteger();
                         packet.ReadInteger();
-                        
                         favoriteGroup = packet.ReadString();
-
                         packet.ReadString();
                         packet.ReadInteger();
                         packet.ReadBoolean();
@@ -138,20 +136,15 @@ namespace Sulakore.Habbo
                     {
                         packet.ReadInteger();
                         packet.ReadInteger();
-
                         packet.ReadString();
-
                         packet.ReadInteger();
-
                         packet.ReadBoolean();
                         packet.ReadBoolean();
                         packet.ReadBoolean();
                         packet.ReadBoolean();
                         packet.ReadBoolean();
                         packet.ReadBoolean();
-
                         packet.ReadInteger();
-
                         packet.ReadString();
                         break;
                     }
@@ -182,9 +175,10 @@ namespace Sulakore.Habbo
         /// Converts the <see cref="HEntity"/> to a human-readable string.
         /// </summary>
         /// <returns></returns>
-        public override string ToString() =>
-            $"{nameof(Id)}: {Id}, {nameof(Index)}: {Index}, {nameof(Name)}: {Name}, " +
-            $"{nameof(Tile)}: {Tile}, {nameof(Motto)}: {Motto}, {nameof(Gender)}: {Gender}, " +
-            $"{nameof(FigureId)}: {FigureId}, {nameof(FavoriteGroup)}: {FavoriteGroup}";
+        public override string ToString()
+        {
+            return string.Format("Id: {0}, Index: {1}, Name: {2}, Tile: {3}, Motto: {4}, Gender: {5}, FigureId: {6}, FavoriteGroup: {7}",
+                Id, Index, Name, Tile, Motto, Gender, FigureId, FavoriteGroup);
+        }
     }
 }
