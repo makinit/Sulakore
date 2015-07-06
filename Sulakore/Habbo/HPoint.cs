@@ -29,18 +29,32 @@ namespace Sulakore.Habbo
     /// </summary>
     public struct HPoint
     {
+        private readonly int _x;
         /// <summary>
         /// Gets or sets the x-coordinate of the <see cref="HPoint"/>.
         /// </summary>
-        public int X { get; set; }
+        public int X
+        {
+            get { return _x; }
+        }
+
+        private readonly int _y;
         /// <summary>
         /// Gets or sets the y-coordinate of the <see cref="HPoint"/>.
         /// </summary>
-        public int Y { get; set; }
+        public int Y
+        {
+            get { return _y; }
+        }
+
+        private readonly double _z;
         /// <summary>
         /// Gets or sets the z-coordinate of the <see cref="HPoint"/>.
         /// </summary>
-        public double Z { get; set; }
+        public double Z
+        {
+            get { return _z; }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HPoint"/> class with the specified floor object coordinates.
@@ -58,9 +72,9 @@ namespace Sulakore.Habbo
         /// <param name="z">The elevated position of the floor object.</param>
         public HPoint(int x, int y, double z)
         {
-            X = x;
-            Y = y;
-            Z = z;
+            _x = x;
+            _y = y;
+            _z = z;
         }
 
         /// <summary>
@@ -68,6 +82,8 @@ namespace Sulakore.Habbo
         /// </summary>
         /// <returns></returns>
         public override string ToString()
-            => $"{{{nameof(X)}={X},{nameof(Y)}={Y},{nameof(Z)}={Z}}}";
+        {
+            return string.Format("{{X={0},Y={1},Z={2}}}", X, Y, Z);
+        }
     }
 }
