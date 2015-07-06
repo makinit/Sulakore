@@ -241,33 +241,32 @@ namespace Sulakore.Protocol.Encryption
         }
         protected virtual void Dispose(bool disposing)
         {
-            if (!IsDisposed)
+            if (IsDisposed) return;
+            if (disposing)
             {
-                if (disposing)
-                {
-                    if (E != null)
-                        E.Dispose();
+                if (E != null)
+                    E.Dispose();
 
-                    if (N != null)
-                        N.Dispose();
+                if (N != null)
+                    N.Dispose();
 
-                    if (D != null)
-                        D.Dispose();
+                if (D != null)
+                    D.Dispose();
 
-                    if (P != null)
-                        P.Dispose();
+                if (P != null)
+                    P.Dispose();
 
-                    if (Q != null)
-                        Q.Dispose();
+                if (Q != null)
+                    Q.Dispose();
 
-                    if (Dmp1 != null)
-                        Dmp1.Dispose();
+                if (Dmp1 != null)
+                    Dmp1.Dispose();
 
-                    if (Iqmp != null)
-                        Iqmp.Dispose();
-                }
-                IsDisposed = true;
+                if (Iqmp != null)
+                    Iqmp.Dispose();
             }
+            IsDisposed = true;
+
         }
     }
 }
