@@ -28,14 +28,13 @@ namespace Sulakore.Protocol
 {
     public abstract class HPacketBase : IHPacket
     {
-        public abstract ushort Header { get; set; }
-
         public abstract int Position { get; set; }
+        public abstract ushort Header { get; set; }
         public abstract HDestination Destination { get; set; }
 
-        public abstract bool IsCorrupted { get; }
         public abstract int Length { get; protected set; }
         public abstract byte[] Body { get; protected set; }
+        public abstract bool IsCorrupted { get; protected set; }
 
         public virtual int ReadInteger()
         {
@@ -44,7 +43,10 @@ namespace Sulakore.Protocol
             Position = index;
             return value;
         }
-        public virtual int ReadInteger(int index) => ReadInteger(ref index);
+        public virtual int ReadInteger(int index)
+        {
+            return ReadInteger(ref index);
+        }
         public abstract int ReadInteger(ref int index);
 
         public virtual ushort ReadShort()
@@ -54,7 +56,10 @@ namespace Sulakore.Protocol
             Position = index;
             return value;
         }
-        public virtual ushort ReadShort(int index) => ReadShort(ref index);
+        public virtual ushort ReadShort(int index)
+        {
+            return ReadShort(ref index);
+        }
         public abstract ushort ReadShort(ref int index);
 
         public virtual bool ReadBoolean()
@@ -64,7 +69,10 @@ namespace Sulakore.Protocol
             Position = index;
             return value;
         }
-        public virtual bool ReadBoolean(int index) => ReadBoolean(ref index);
+        public virtual bool ReadBoolean(int index)
+        {
+            return ReadBoolean(ref index);
+        }
         public abstract bool ReadBoolean(ref int index);
 
         public virtual string ReadString()
@@ -74,7 +82,10 @@ namespace Sulakore.Protocol
             Position = index + Encoding.UTF8.GetByteCount(value);
             return value;
         }
-        public virtual string ReadString(int index) => ReadString(ref index);
+        public virtual string ReadString(int index)
+        {
+            return ReadString(ref index);
+        }
         public abstract string ReadString(ref int index);
 
         public virtual byte[] ReadBytes(int length)
@@ -84,7 +95,10 @@ namespace Sulakore.Protocol
             Position = index;
             return value;
         }
-        public virtual byte[] ReadBytes(int length, int index) => ReadBytes(length, ref index);
+        public virtual byte[] ReadBytes(int length, int index)
+        {
+            return ReadBytes(length, ref index);
+        }
         public abstract byte[] ReadBytes(int length, ref int index);
 
         public virtual void Remove<T>()
@@ -93,7 +107,10 @@ namespace Sulakore.Protocol
         }
         public abstract void Remove<T>(int index);
 
-        public virtual bool CanRead<T>() => CanRead<T>(Position);
+        public virtual bool CanRead<T>()
+        {
+            return CanRead<T>(Position);
+        }
         public abstract bool CanRead<T>(int index);
 
         public virtual void Replace<T>(object chunk)
