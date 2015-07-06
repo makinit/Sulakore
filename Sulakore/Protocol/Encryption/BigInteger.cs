@@ -40,7 +40,12 @@ namespace Sulakore.Protocol.Encryption
         /// <summary>
         /// Contains a list of primes that are under 2000.
         /// </summary>
-        public static int[] PrimesBelow2000 { get; } =
+        public static int[] PrimesBelow2000
+        {
+            get { return _primesBelow2000; }
+        }
+        #region Primes Below 200
+        private static readonly int[] _primesBelow2000 =
         {
             2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
             101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199,
@@ -63,7 +68,8 @@ namespace Sulakore.Protocol.Encryption
             1801, 1811, 1823, 1831, 1847, 1861, 1867, 1871, 1873, 1877, 1879, 1889,
             1901, 1907, 1913, 1931, 1933, 1949, 1951, 1973, 1979, 1987, 1993, 1997, 1999
         };
-        
+        #endregion
+
         /// <summary>
         /// Initializes a new instance of the BigInteger class with the default value of 0.
         /// </summary>
@@ -72,7 +78,6 @@ namespace Sulakore.Protocol.Encryption
             _data = new uint[MAX_LENGTH];
             DataLength = 1;
         }
-
         /// <summary>
         /// Initializes a new instance of the BigInteger class.
         /// </summary>
@@ -104,7 +109,6 @@ namespace Sulakore.Protocol.Encryption
             if (DataLength == 0)
                 DataLength = 1;
         }
-
         /// <summary>
         /// Initializes a new instance of the BigInteger class.
         /// </summary>
@@ -127,7 +131,6 @@ namespace Sulakore.Protocol.Encryption
             if (DataLength == 0)
                 DataLength = 1;
         }
-
         /// <summary>
         /// Initializes a new instance of the BigInteger class.
         /// </summary>
@@ -141,7 +144,6 @@ namespace Sulakore.Protocol.Encryption
             for (int i = 0; i < DataLength; i++)
                 _data[i] = bigInteger._data[i];
         }
-
         /// <summary>
         /// Initializes a new instance of the BigInteger class.
         /// </summary>
@@ -200,7 +202,6 @@ namespace Sulakore.Protocol.Encryption
 
             DataLength = result.DataLength;
         }
-
         /// <summary>
         /// Initializes a new instance of the BigInteger class.
         /// </summary>
@@ -235,7 +236,6 @@ namespace Sulakore.Protocol.Encryption
             while (DataLength > 1 && _data[DataLength - 1] == 0)
                 DataLength--;
         }
-
         /// <summary>
         /// Initializes a new instance of the BigInteger class.
         /// </summary>
@@ -273,7 +273,6 @@ namespace Sulakore.Protocol.Encryption
             while (DataLength > 1 && _data[DataLength - 1] == 0)
                 DataLength--;
         }
-
         /// <summary>
         /// Initializes a new instance of the BigInteger class.
         /// </summary>
@@ -293,12 +292,24 @@ namespace Sulakore.Protocol.Encryption
             while (DataLength > 1 && _data[DataLength - 1] == 0)
                 DataLength--;
         }
-        
-        public static implicit operator BigInteger(long value) => (new BigInteger(value));
-        public static implicit operator BigInteger(ulong value) => (new BigInteger(value));
-        public static implicit operator BigInteger(int value) => (new BigInteger(value));
-        public static implicit operator BigInteger(uint value) => (new BigInteger((ulong)value));
-        
+
+        public static implicit operator BigInteger(long value)
+        {
+            return (new BigInteger(value));
+        }
+        public static implicit operator BigInteger(ulong value)
+        {
+            return (new BigInteger(value));
+        }
+        public static implicit operator BigInteger(int value)
+        {
+            return (new BigInteger(value));
+        }
+        public static implicit operator BigInteger(uint value)
+        {
+            return (new BigInteger((ulong)value));
+        }
+
         public static BigInteger operator --(BigInteger instance)
         {
             BigInteger result = new BigInteger(instance);
@@ -713,7 +724,7 @@ namespace Sulakore.Protocol.Encryption
             while (bufLen > 1 && buffer[bufLen - 1] == 0)
                 bufLen--;
 
-            for (int count = shift; count > 0;)
+            for (int count = shift; count > 0; )
             {
                 if (count < shiftAmount)
                     shiftAmount = count;
@@ -775,7 +786,7 @@ namespace Sulakore.Protocol.Encryption
             while (bufLen > 1 && buffer[bufLen - 1] == 0)
                 bufLen--;
 
-            for (int count = shift; count > 0;)
+            for (int count = shift; count > 0; )
             {
                 if (count < shiftAmount)
                 {
@@ -809,7 +820,10 @@ namespace Sulakore.Protocol.Encryption
 
             return left.Equals(right);
         }
-        public static bool operator !=(BigInteger left, BigInteger right) => !(left == right);
+        public static bool operator !=(BigInteger left, BigInteger right)
+        {
+            return !(left == right);
+        }
 
         public static bool operator >(BigInteger left, BigInteger right)
         {
@@ -853,9 +867,15 @@ namespace Sulakore.Protocol.Encryption
             }
             return false;
         }
-        public static bool operator >=(BigInteger left, BigInteger right) => (left == right || left > right);
-        public static bool operator <=(BigInteger left, BigInteger right) => (left == right || left < right);
-        
+        public static bool operator >=(BigInteger left, BigInteger right)
+        {
+            return (left == right || left > right);
+        }
+        public static bool operator <=(BigInteger left, BigInteger right)
+        {
+            return (left == right || left < right);
+        }
+
         private bool LucasStrongTestHelper(BigInteger thisVal)
         {
             long D = 5, sign = -1, dCount = 0;
@@ -1194,7 +1214,7 @@ namespace Sulakore.Protocol.Encryption
             for (; y < MAX_LENGTH; y++)
                 outRemainder._data[y] = 0;
         }
-        
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
@@ -1719,7 +1739,10 @@ namespace Sulakore.Protocol.Encryption
         /// Returns the lowest System.Int32 from the byte array of the current instance. (4 bytes)
         /// </summary>
         /// <returns></returns>
-        public int IntValue() => (int)_data[0];
+        public int IntValue()
+        {
+            return (int)_data[0];
+        }
 
         /// <summary>
         /// Returns the Jacobi symbol for the provided BigInteger values.
@@ -1940,12 +1963,18 @@ namespace Sulakore.Protocol.Encryption
         /// Returns a string that represents the current object in base 10.
         /// </summary>
         /// <returns>A string that represents the current object in base 10.</returns>
-        public override string ToString() => ToString(10);
+        public override string ToString()
+        {
+            return ToString(10);
+        }
         /// <summary>
         /// Serves as a hash function for a particular type.
         /// </summary>
         /// <returns>A hash code for the current System.Object.</returns>
-        public override int GetHashCode() => ToString().GetHashCode();
+        public override int GetHashCode()
+        {
+            return ToString().GetHashCode();
+        }
         /// <summary>
         /// Determines whether the specified System.Object is equal to the current System.Object.
         /// </summary>
