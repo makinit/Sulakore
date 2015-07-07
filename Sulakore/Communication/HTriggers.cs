@@ -39,16 +39,8 @@ namespace Sulakore.Communication
             if (FurnitureLoad != null)
             {
                 var args = new FurnitureLoadEventArgs(e.Continuation, e.Step, e.Packet);
-                OnFurnitureLoad(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(FurnitureLoad, args, e);
             }
-        }
-        protected virtual void OnFurnitureLoad(FurnitureLoadEventArgs e)
-        {
-            EventHandler<FurnitureLoadEventArgs> handler = FurnitureLoad;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<FurnitureDropEventArgs> FurnitureDrop;
@@ -57,16 +49,8 @@ namespace Sulakore.Communication
             if (FurnitureDrop != null)
             {
                 var args = new FurnitureDropEventArgs(e.Continuation, e.Step, e.Packet);
-                OnFurnitureDrop(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(FurnitureDrop, args, e);
             }
-        }
-        protected virtual void OnFurnitureDrop(FurnitureDropEventArgs e)
-        {
-            EventHandler<FurnitureDropEventArgs> handler = FurnitureDrop;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<FurnitureMoveEventArgs> FurnitureMove;
@@ -75,16 +59,8 @@ namespace Sulakore.Communication
             if (FurnitureMove != null)
             {
                 var args = new FurnitureMoveEventArgs(e.Continuation, e.Step, e.Packet);
-                OnFurnitureMove(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(FurnitureMove, args, e);
             }
-        }
-        protected virtual void OnFurnitureMove(FurnitureMoveEventArgs e)
-        {
-            EventHandler<FurnitureMoveEventArgs> handler = FurnitureMove;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<EntityLoadEventArgs> EntityLoad;
@@ -93,16 +69,8 @@ namespace Sulakore.Communication
             if (EntityLoad != null)
             {
                 var args = new EntityLoadEventArgs(e.Continuation, e.Step, e.Packet);
-                OnEntityLoad(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(EntityLoad, args, e);
             }
-        }
-        protected virtual void OnEntityLoad(EntityLoadEventArgs e)
-        {
-            EventHandler<EntityLoadEventArgs> handler = EntityLoad;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<EntityActionEventArgs> EntityAction;
@@ -111,16 +79,8 @@ namespace Sulakore.Communication
             if (EntityAction != null)
             {
                 var args = new EntityActionEventArgs(e.Continuation, e.Step, e.Packet);
-                OnEntityAction(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(EntityAction, args, e);
             }
-        }
-        protected virtual void OnEntityAction(EntityActionEventArgs e)
-        {
-            EventHandler<EntityActionEventArgs> handler = EntityAction;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<PlayerKickHostEventArgs> PlayerKickHost;
@@ -129,16 +89,8 @@ namespace Sulakore.Communication
             if (PlayerKickHost != null)
             {
                 var args = new PlayerKickHostEventArgs(e.Continuation, e.Step, e.Packet);
-                OnPlayerKickHost(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(PlayerKickHost, args, e);
             }
-        }
-        protected virtual void OnPlayerKickHost(PlayerKickHostEventArgs e)
-        {
-            EventHandler<PlayerKickHostEventArgs> handler = PlayerKickHost;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<PlayerUpdateEventArgs> PlayerUpdate;
@@ -147,16 +99,8 @@ namespace Sulakore.Communication
             if (PlayerUpdate != null)
             {
                 var args = new PlayerUpdateEventArgs(e.Continuation, e.Step, e.Packet);
-                OnPlayerUpdate(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(PlayerUpdate, args, e);
             }
-        }
-        protected virtual void OnPlayerUpdate(PlayerUpdateEventArgs e)
-        {
-            EventHandler<PlayerUpdateEventArgs> handler = PlayerUpdate;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<PlayerDanceEventArgs> PlayerDance;
@@ -165,16 +109,8 @@ namespace Sulakore.Communication
             if (PlayerDance != null)
             {
                 var args = new PlayerDanceEventArgs(e.Continuation, e.Step, e.Packet);
-                OnPlayerDance(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(PlayerDance, args, e);
             }
-        }
-        protected virtual void OnPlayerDance(PlayerDanceEventArgs e)
-        {
-            EventHandler<PlayerDanceEventArgs> handler = PlayerDance;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<PlayerGestureEventArgs> PlayerGesture;
@@ -183,16 +119,8 @@ namespace Sulakore.Communication
             if (PlayerGesture != null)
             {
                 var args = new PlayerGestureEventArgs(e.Continuation, e.Step, e.Packet);
-                OnPlayerGesture(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(PlayerGesture, args, e);
             }
-        }
-        protected virtual void OnPlayerGesture(PlayerGestureEventArgs e)
-        {
-            EventHandler<PlayerGestureEventArgs> handler = PlayerGesture;
-            if (handler != null) handler(this, e);
         }
         #endregion
         #region Outgoing Game Event Handlers
@@ -202,16 +130,8 @@ namespace Sulakore.Communication
             if (HostBanPlayer != null)
             {
                 var args = new HostBanPlayerEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostBanPlayer(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostBanPlayer, args, e);
             }
-        }
-        protected virtual void OnHostBanPlayer(HostBanPlayerEventArgs e)
-        {
-            EventHandler<HostBanPlayerEventArgs> handler = HostBanPlayer;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostUpdateClothesEventArgs> HostUpdateClothes;
@@ -220,16 +140,8 @@ namespace Sulakore.Communication
             if (HostUpdateClothes != null)
             {
                 var args = new HostUpdateClothesEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostUpdateClothes(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostUpdateClothes, args, e);
             }
-        }
-        protected virtual void OnHostUpdateClothes(HostUpdateClothesEventArgs e)
-        {
-            EventHandler<HostUpdateClothesEventArgs> handler = HostUpdateClothes;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostUpdateMottoEventArgs> HostUpdateMotto;
@@ -238,16 +150,8 @@ namespace Sulakore.Communication
             if (HostUpdateMotto != null)
             {
                 var args = new HostUpdateMottoEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostUpdateMotto(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostUpdateMotto, args, e);
             }
-        }
-        protected virtual void OnHostUpdateMotto(HostUpdateMottoEventArgs e)
-        {
-            EventHandler<HostUpdateMottoEventArgs> handler = HostUpdateMotto;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostUpdateStanceEventArgs> HostUpdateStance;
@@ -256,16 +160,8 @@ namespace Sulakore.Communication
             if (HostUpdateStance != null)
             {
                 var args = new HostUpdateStanceEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostUpdateStance(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostUpdateStance, args, e);
             }
-        }
-        protected virtual void OnHostUpdateStance(HostUpdateStanceEventArgs e)
-        {
-            EventHandler<HostUpdateStanceEventArgs> handler = HostUpdateStance;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostClickPlayerEventArgs> HostClickPlayer;
@@ -274,16 +170,8 @@ namespace Sulakore.Communication
             if (HostClickPlayer != null)
             {
                 var args = new HostClickPlayerEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostClickPlayer(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostClickPlayer, args, e);
             }
-        }
-        protected virtual void OnHostClickPlayer(HostClickPlayerEventArgs e)
-        {
-            EventHandler<HostClickPlayerEventArgs> handler = HostClickPlayer;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostDanceEventArgs> HostDance;
@@ -292,16 +180,8 @@ namespace Sulakore.Communication
             if (HostDance != null)
             {
                 var args = new HostDanceEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostDance(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostDance, args, e);
             }
-        }
-        protected virtual void OnHostDance(HostDanceEventArgs e)
-        {
-            EventHandler<HostDanceEventArgs> handler = HostDance;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostGestureEventArgs> HostGesture;
@@ -310,16 +190,8 @@ namespace Sulakore.Communication
             if (HostGesture != null)
             {
                 var args = new HostGestureEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostGesture(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostGesture, args, e);
             }
-        }
-        protected virtual void OnHostGesture(HostGestureEventArgs e)
-        {
-            EventHandler<HostGestureEventArgs> handler = HostGesture;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostKickPlayerEventArgs> HostKickPlayer;
@@ -328,16 +200,8 @@ namespace Sulakore.Communication
             if (HostKickPlayer != null)
             {
                 var args = new HostKickPlayerEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostKickPlayer(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostKickPlayer, args, e);
             }
-        }
-        protected virtual void OnHostKickPlayer(HostKickPlayerEventArgs e)
-        {
-            EventHandler<HostKickPlayerEventArgs> handler = HostKickPlayer;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostMoveFurnitureEventArgs> HostMoveFurniture;
@@ -346,16 +210,8 @@ namespace Sulakore.Communication
             if (HostMoveFurniture != null)
             {
                 var args = new HostMoveFurnitureEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostMoveFurniture(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostMoveFurniture, args, e);
             }
-        }
-        protected virtual void OnHostMoveFurniture(HostMoveFurnitureEventArgs e)
-        {
-            EventHandler<HostMoveFurnitureEventArgs> handler = HostMoveFurniture;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostMutePlayerEventArgs> HostMutePlayer;
@@ -364,16 +220,8 @@ namespace Sulakore.Communication
             if (HostMutePlayer != null)
             {
                 var args = new HostMutePlayerEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostMutePlayer(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostMutePlayer, args, e);
             }
-        }
-        protected virtual void OnHostMutePlayer(HostMutePlayerEventArgs e)
-        {
-            EventHandler<HostMutePlayerEventArgs> handler = HostMutePlayer;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostRaiseSignEventArgs> HostRaiseSign;
@@ -382,16 +230,8 @@ namespace Sulakore.Communication
             if (HostRaiseSign != null)
             {
                 var args = new HostRaiseSignEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostRaiseSign(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostRaiseSign, args, e);
             }
-        }
-        protected virtual void OnHostRaiseSign(HostRaiseSignEventArgs e)
-        {
-            EventHandler<HostRaiseSignEventArgs> handler = HostRaiseSign;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostExitRoomEventArgs> HostExitRoom;
@@ -400,16 +240,8 @@ namespace Sulakore.Communication
             if (HostExitRoom != null)
             {
                 var args = new HostExitRoomEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostExitRoom(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostExitRoom, args, e);
             }
-        }
-        protected virtual void OnHostExitRoom(HostExitRoomEventArgs e)
-        {
-            EventHandler<HostExitRoomEventArgs> handler = HostExitRoom;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostNavigateRoomEventArgs> HostNavigateRoom;
@@ -418,16 +250,8 @@ namespace Sulakore.Communication
             if (HostNavigateRoom != null)
             {
                 var args = new HostNavigateRoomEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostNavigateRoom(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostNavigateRoom, args, e);
             }
-        }
-        protected virtual void OnHostNavigateRoom(HostNavigateRoomEventArgs e)
-        {
-            EventHandler<HostNavigateRoomEventArgs> handler = HostNavigateRoom;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostSayEventArgs> HostSay;
@@ -436,16 +260,8 @@ namespace Sulakore.Communication
             if (HostSay != null)
             {
                 var args = new HostSayEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostSay(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostSay, args, e);
             }
-        }
-        protected virtual void OnHostSay(HostSayEventArgs e)
-        {
-            EventHandler<HostSayEventArgs> handler = HostSay;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostShoutEventArgs> HostShout;
@@ -454,16 +270,8 @@ namespace Sulakore.Communication
             if (HostShout != null)
             {
                 var args = new HostShoutEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostShout(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostShout, args, e);
             }
-        }
-        protected virtual void OnHostShout(HostShoutEventArgs e)
-        {
-            EventHandler<HostShoutEventArgs> handler = HostShout;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostTradeEventArgs> HostTradePlayer;
@@ -472,16 +280,8 @@ namespace Sulakore.Communication
             if (HostTradePlayer != null)
             {
                 var args = new HostTradeEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostTradePlayer(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostTradePlayer, args, e);
             }
-        }
-        protected virtual void OnHostTradePlayer(HostTradeEventArgs e)
-        {
-            EventHandler<HostTradeEventArgs> handler = HostTradePlayer;
-            if (handler != null) handler(this, e);
         }
 
         public event EventHandler<HostWalkEventArgs> HostWalk;
@@ -490,16 +290,8 @@ namespace Sulakore.Communication
             if (HostWalk != null)
             {
                 var args = new HostWalkEventArgs(e.Continuation, e.Step, e.Packet);
-                OnHostWalk(args);
-
-                e.Cancel = args.Cancel;
-                e.WasContinued = args.WasContinued;
+                OnGameEvent(HostWalk, args, e);
             }
-        }
-        protected virtual void OnHostWalk(HostWalkEventArgs e)
-        {
-            EventHandler<HostWalkEventArgs> handler = HostWalk;
-            if (handler != null) handler(this, e);
         }
         #endregion
 
@@ -680,6 +472,25 @@ namespace Sulakore.Communication
                 if (TryHandlePlayerKickHost(current, previous)) return true;
             }
             return false;
+        }
+
+        protected virtual void OnGameEvent<TEventArgs>(EventHandler<TEventArgs> gameEvent,
+            TEventArgs gameArguments, InterceptedEventArgs toUpdate) where TEventArgs : InterceptedEventArgs
+        {
+            EventHandler<TEventArgs> handler = gameEvent;
+            if (handler != null)
+            {
+                try { handler(this, gameArguments); }
+                catch
+                {
+                    // TODO: Notify subscriber(s) that an exception has been thrown?
+                }
+                finally
+                {
+                    toUpdate.IsBlocked = gameArguments.IsBlocked;
+                    toUpdate.WasContinued = gameArguments.WasContinued;
+                }
+            }
         }
 
         private bool TryHandleHostExitRoom(HMessage current, HMessage previous)
