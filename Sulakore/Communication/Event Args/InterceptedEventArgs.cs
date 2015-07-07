@@ -23,7 +23,6 @@
 */
 
 using System;
-using System.ComponentModel;
 using System.Threading.Tasks;
 
 using Sulakore.Protocol;
@@ -33,7 +32,7 @@ namespace Sulakore.Communication
     /// <summary>
     /// Represents an intercepted message that will be returned to the caller with blocking/replacing information.
     /// </summary>
-    public class InterceptedEventArgs : CancelEventArgs
+    public class InterceptedEventArgs : EventArgs
     {
         /// <summary>
         /// Gets the current count/step/order from which this data was intercepted.
@@ -66,6 +65,10 @@ namespace Sulakore.Communication
         {
             get { return !Packet.ToString().Equals(Replacement.ToString()); }
         }
+        /// <summary>
+        /// Gets or sets a value that determines whether the data should be sent.
+        /// </summary>
+        public bool IsBlocked { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InterceptedEventArgs"/> class.
