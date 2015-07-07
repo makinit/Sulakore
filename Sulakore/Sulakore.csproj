@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Sulakore</RootNamespace>
     <AssemblyName>Sulakore</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -31,20 +32,9 @@
     <DocumentationFile>bin\Release\Sulakore.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
+    <Compile Include="Communication\Eavesdropper.cs" />
+    <Compile Include="Communication\Event Args\EavesdropperRequestEventArgs.cs" />
+    <Compile Include="Communication\Event Args\EavesdropperResponseEventArgs.cs" />
     <Compile Include="Communication\Event Args\InterceptedEventArgs.cs" />
     <Compile Include="Communication\Event Args\Incoming Event Args\FurnitureLoadEventArgs.cs" />
     <Compile Include="Communication\Event Args\Incoming Event Args\EntityActionEventArgs.cs" />
@@ -76,6 +66,35 @@
     <Compile Include="Communication\HConnection.cs" />
     <Compile Include="Communication\HNode.cs" />
     <Compile Include="Communication\HTriggers.cs" />
+    <Compile Include="Communication\IHConnection.cs" />
+    <Compile Include="Components\SKoreButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Components\SKoreConstructView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Components\SKoreExtensionView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Components\SKoreLabel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Components\SKoreListView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Components\SKoreScheduleView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Components\SKoreTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Extensions\Enums\ExtensionActionType.cs" />
+    <Compile Include="Extensions\Event Args\ExtensionActionEventArgs.cs" />
+    <Compile Include="Extensions\Contractor.cs" />
+    <Compile Include="Extensions\ExtensionInfo.cs" />
+    <Compile Include="Extensions\ExtensionForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Habbo\Enums\HAction.cs" />
     <Compile Include="Habbo\Enums\HBan.cs" />
     <Compile Include="Habbo\Enums\HDance.cs" />
@@ -94,6 +113,39 @@
     <Compile Include="Habbo\HEntity.cs" />
     <Compile Include="Habbo\HPoint.cs" />
     <Compile Include="Habbo\IHEntity.cs" />
+    <Compile Include="Inspector\Enums\Edition.cs" />
+    <Compile Include="Inspector\Enums\FillStyle.cs" />
+    <Compile Include="Inspector\Enums\LanguageCode.cs" />
+    <Compile Include="Inspector\Enums\Product.cs" />
+    <Compile Include="Inspector\Enums\TagType.cs" />
+    <Compile Include="Inspector\FillStyle.cs" />
+    <Compile Include="Inspector\FillStyleArray.cs" />
+    <Compile Include="Inspector\RecordHeader.cs" />
+    <Compile Include="Inspector\Rect.cs" />
+    <Compile Include="Inspector\Shapes\EndShapeRecord.cs" />
+    <Compile Include="Inspector\Shapes\IShapeRecord.cs" />
+    <Compile Include="Inspector\Shapes\Shape.cs" />
+    <Compile Include="Inspector\Shapes\StyleChangeRecord.cs" />
+    <Compile Include="Inspector\ShockwaveFlash.cs" />
+    <Compile Include="Inspector\Symbol.cs" />
+    <Compile Include="Inspector\Tags\DebugIdTag.cs" />
+    <Compile Include="Inspector\Tags\DefineBinaryDataTag.cs" />
+    <Compile Include="Inspector\Tags\DefineFont3Tag.cs" />
+    <Compile Include="Inspector\Tags\DoAbcTag.cs" />
+    <Compile Include="Inspector\Tags\EnableDebugger2Tag.cs" />
+    <Compile Include="Inspector\Tags\EndTag.cs" />
+    <Compile Include="Inspector\Tags\FileAttributesTag.cs" />
+    <Compile Include="Inspector\Tags\FrameLabelTag.cs" />
+    <Compile Include="Inspector\Tags\IFlashTag.cs" />
+    <Compile Include="Inspector\Tags\MetadataTag.cs" />
+    <Compile Include="Inspector\Tags\ProductInfoTag.cs" />
+    <Compile Include="Inspector\Tags\ScriptLimitsTag.cs" />
+    <Compile Include="Inspector\Tags\SetBackgroundColorTag.cs" />
+    <Compile Include="Inspector\Tags\ShowFrameTag.cs" />
+    <Compile Include="Inspector\Tags\SymbolClassTag.cs" />
+    <Compile Include="Inspector\Tags\UnsupportedTag.cs" />
+    <Compile Include="Internals\CertificateManager.cs" />
+    <Compile Include="Internals\NativeMethods.cs" />
     <Compile Include="Protocol\Encoders\BigEndian.cs" />
     <Compile Include="Protocol\Encryption\BigInteger.cs" />
     <Compile Include="Protocol\Encryption\Enums\PkcsPadding.cs" />
@@ -119,7 +171,19 @@
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Extensions\ExtensionForm.resx">
+      <DependentUpon>ExtensionForm.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.XML" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
