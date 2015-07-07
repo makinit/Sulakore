@@ -117,19 +117,19 @@ namespace Sulakore.Communication
         /// <summary>
         /// Gets the <see cref="IList{T}"/> that contains the headers of outgoing packets to block.
         /// </summary>
-        public IList<ushort> OutgoingBlocked { get; private set;}
+        public IList<ushort> OutgoingBlocked { get; private set; }
         /// <summary>
         /// Gets the <see cref="IList{T}"/> that contains the headers of incoming packets to block.
         /// </summary>
-        public IList<ushort> IncomingBlocked { get; private set;}
+        public IList<ushort> IncomingBlocked { get; private set; }
         /// <summary>
         /// Gets the <see cref="IDictionary{TKey, TValue}"/> that contains the replacement data for an outgoing packet determined by the header.
         /// </summary>
-        public IDictionary<ushort, byte[]> OutgoingReplaced { get; private set;}
+        public IDictionary<ushort, byte[]> OutgoingReplaced { get; private set; }
         /// <summary>
         /// Gets the <see cref="IDictionary{TKey, TValue}"/> that contains the replacement data for an incoming packet determined by the header.
         /// </summary>
-        public IDictionary<ushort, byte[]> IncomingReplaced { get; private set;}
+        public IDictionary<ushort, byte[]> IncomingReplaced { get; private set; }
         /// <summary>
         /// Gets the total amount of packets the remote <see cref="HNode"/> has been sent from local.
         /// </summary>
@@ -208,7 +208,7 @@ namespace Sulakore.Communication
             RestoreHosts();
             while (true)
             {
-                File.AppendAllText(_hostsFile, string.Format("127.0.0.1\t\t{0}\t\t#Sulakore",host));
+                File.AppendAllText(_hostsFile, string.Format("127.0.0.1\t\t{0}\t\t#Sulakore", host));
                 Local = await HNode.InterceptAsync(port).ConfigureAwait(true);
 
                 RestoreHosts();
@@ -305,13 +305,12 @@ namespace Sulakore.Communication
                 ushort header = args.Packet.Header;
                 args.Replacement = new HMessage(OutgoingReplaced[header], HDestination.Server);
             }
-            if (!args.Cancel && !OutgoingBlocked.Contains(args.Replacement.Header))
-            {
-                OnDataOutgoing(args);
 
-                if (!args.Cancel && !OutgoingBlocked.Contains(args.Replacement.Header))
-                    SendToServerAsync(args.Replacement.ToBytes()).Wait();
-            }
+            args.IsBlocked = OutgoingBlocked.Contains(args.Replacement.Header);
+            OnDataOutgoing(args);
+
+            if (!args.IsBlocked)
+                SendToServerAsync(args.Replacement.ToBytes()).Wait();
 
             if (!args.WasContinued)
                 ReadOutgoingAsync();
@@ -332,13 +331,12 @@ namespace Sulakore.Communication
                 ushort header = args.Packet.Header;
                 args.Replacement = new HMessage(IncomingReplaced[header], HDestination.Client);
             }
-            if (!IncomingBlocked.Contains(args.Replacement.Header))
-            {
-                OnDataIncoming(args);
 
-                if (!args.Cancel && !IncomingBlocked.Contains(args.Replacement.Header))
-                    SendToClientAsync(args.Replacement.ToBytes()).Wait();
-            }
+            args.IsBlocked = IncomingBlocked.Contains(args.Replacement.Header);
+            OnDataIncoming(args);
+
+            if (!args.IsBlocked)
+                SendToClientAsync(args.Replacement.ToBytes()).Wait();
 
             if (!args.WasContinued)
                 ReadIncomingAsync();
