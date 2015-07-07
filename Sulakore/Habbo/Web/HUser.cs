@@ -33,117 +33,68 @@ namespace Sulakore.Habbo.Web
     [DataContract]
     public class HUser
     {
-        private static readonly DataContractJsonSerializer _serializer;
+        private static readonly DataContractJsonSerializer _deserializer =
+            new DataContractJsonSerializer(typeof(HUser));
 
         [DataMember(Name = "uniqueId")]
-        private readonly string _uniqueId;
-        public string UniqueId => _uniqueId;
+        public string UniqueId { get; set; }
 
         [DataMember(Name = "name")]
-        private readonly string _name;
-        public string Name => _name;
+        public string Name { get; set; }
 
         [DataMember(Name = "figureString")]
-        private readonly string _figureId;
-        public string FigureId => _figureId;
+        public string FigureId { get; set; }
 
         [DataMember(Name = "selectedBadges")]
-        private readonly IList<HBadge> _selectedBadges;
-        public IList<HBadge> SelectedBadges => _selectedBadges;
+        public IList<HBadge> SelectedBadges { get; set; }
 
         [DataMember(Name = "motto")]
-        private readonly string _motto;
-        public string Motto => _motto;
+        public string Motto { get; set; }
 
         [DataMember(Name = "memberSince")]
-        private readonly string _memberSince;
-        public string MemberSince => _memberSince;
+        public string MemberSince { get; set; }
 
         [DataMember(Name = "profileVisible")]
-        private readonly bool _isProfileVisible;
-        public bool IsProfileVisible => _isProfileVisible;
+        public bool IsProfileVisible { get; set; }
 
         [DataMember(Name = "lastWebAccess")]
-        private readonly string _lastWebAccess;
-        public string LastWebAccess => _lastWebAccess;
+        public string LastWebAccess { get; set; }
 
         [DataMember(Name = "sessionLogId", EmitDefaultValue = false)]
-        private readonly long _sessionLogId;
-        public long SessionLogId => _sessionLogId;
+        public long SessionLogId { get; set; }
 
         [DataMember(Name = "loginLogId", EmitDefaultValue = false)]
-        private readonly long _loginLogId;
-        public long LoginLodId => _loginLogId;
+        public long LoginLodId { get; set; }
 
         [DataMember(Name = "email", EmitDefaultValue = false)]
-        private readonly string _email;
-        public string Email => _email;
+        public string Email { get; set; }
 
         [DataMember(Name = "identityId", EmitDefaultValue = false)]
-        private readonly int _identityId;
-        public int IdentityId => _identityId;
+        public int IdentityId { get; set; }
 
         [DataMember(Name = "emailVerified", EmitDefaultValue = false)]
-        private readonly bool? _isEmailVerified;
-        public bool IsEmailVerified => (bool)_isEmailVerified;
+        public bool IsEmailVerified { get; set; }
 
         [DataMember(Name = "trusted", EmitDefaultValue = false)]
-        private readonly bool? _isTrusted;
-        public bool IsTrusted => (bool)_isTrusted;
+        public bool IsTrusted { get; set; }
 
         [DataMember(Name = "accountId", EmitDefaultValue = false)]
-        private readonly int _accountId;
-        public int AccountId => _accountId;
+        public int AccountId { get; set; }
 
         [DataMember(Name = "country", EmitDefaultValue = false)]
-        private readonly string _country;
-        public string Country => _country;
+        public string Country { get; set; }
 
         [DataMember(Name = "traits", EmitDefaultValue = false)]
-        private readonly string _traits;
-        public string Traits => _traits;
+        public string Traits { get; set; }
 
         [DataMember(Name = "partner", EmitDefaultValue = false)]
-        private readonly string _partner;
-        public string Partner => _partner;
+        public string Partner { get; set; }
 
-        static HUser()
+        public static HUser Create(string userJson)
         {
-            _serializer = new DataContractJsonSerializer(typeof(HUser));
+            byte[] rawJson = Encoding.UTF8.GetBytes(userJson);
+            using (var jsonStream = new MemoryStream(rawJson))
+                return (HUser)_deserializer.ReadObject(jsonStream);
         }
-        public HUser()
-        {
-            _uniqueId = null;
-            _name = null;
-            _figureId = null;
-            _selectedBadges = new List<HBadge>(0);
-            _motto = null;
-            _memberSince = null;
-            _isProfileVisible = false;
-            _lastWebAccess = null;
-            _sessionLogId = default(long);
-            _loginLogId = default(long);
-            _email = null;
-            _identityId = default(int);
-            _isEmailVerified = null;
-            _isTrusted = null;
-            _accountId = default(int);
-            _country = null;
-            _traits = null;
-            _partner = null;
-        }
-        
-        public static HUser Load(string path) =>
-            Create(File.ReadAllText(path));
-        
-        public static HUser Create(string json)
-        {
-            byte[] data = Encoding.UTF8.GetBytes(json);
-            using (var memoryStream = new MemoryStream(data))
-                return (HUser)_serializer.ReadObject(memoryStream);
-        }
-        
-        public static HUser Create(Stream stream) =>
-            (HUser)_serializer.ReadObject(stream);
     }
 }

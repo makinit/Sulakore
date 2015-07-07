@@ -30,54 +30,30 @@ namespace Sulakore.Habbo.Web
     public class HGroup
     {
         [DataMember(Name = "id")]
-        private readonly string _id;
-        public string Id => _id;
+        public string Id { get; set; }
 
         [DataMember(Name = "name")]
-        private readonly string _name;
-        public string Name => _name;
+        public string Name { get; set; }
 
         [DataMember(Name = "description")]
-        private readonly string _description;
-        public string Description => _description;
+        public string Description { get; set; }
 
         [DataMember(Name = "type")]
-        private readonly string _type;
-        public string Type => _type;
+        public string Type { get; set; }
 
         [DataMember(Name = "roomId")]
-        private readonly string _roomId;
-        public string RoomId => _roomId;
+        public string RoomId { get; set; }
 
         [DataMember(Name = "badgeCode")]
-        private readonly string _badgeCode;
-        public string BadgeCode => _badgeCode;
+        public string BadgeCode { get; set; }
 
         [DataMember(Name = "primaryColour")]
-        private readonly string _primaryColor;
-        public string PrimaryColor => _primaryColor;
+        public string PrimaryColor { get; set; }
 
         [DataMember(Name = "secondaryColour")]
-        private readonly string _secondaryColor;
-        public string SecondaryColor => _secondaryColor;
+        public string SecondaryColor { get; set; }
 
         [DataMember(Name = "isAdmin")]
-        private readonly bool _isAdmin;
-        public bool IsAdmin => _isAdmin;
-
-        public HGroup(string id, string name, string description,
-            string type, string roomId, string badgeCode,
-            string primaryColor, string secondaryColor, bool isAdmin)
-        {
-            _id = id;
-            _name = name;
-            _description = description;
-            _type = type;
-            _roomId = roomId;
-            _badgeCode = badgeCode;
-            _primaryColor = primaryColor;
-            _secondaryColor = secondaryColor;
-            _isAdmin = isAdmin;
-        }
+        public bool IsAdmin { get; set; }
     }
 }

@@ -30,28 +30,15 @@ namespace Sulakore.Habbo.Web
     public class HRoom
     {
         [DataMember(Name = "id")]
-        private readonly string _id;
-        public string Id => _id;
+        public string Id { get; set; }
 
         [DataMember(Name = "name")]
-        private readonly string _name;
-        public string Name => _name;
+        public string Name { get; set; }
 
         [DataMember(Name = "description")]
-        private readonly string _description;
-        public string Description => _description;
+        public string Description { get; set; }
 
         [DataMember(Name = "ownerUniqueId")]
-        private readonly string _ownerUniqueId;
-        public string OwnerUniqueId => _ownerUniqueId;
-
-        public HRoom(string id, string name,
-            string description, string ownerUniqueId)
-        {
-            _id = id;
-            _name = name;
-            _description = description;
-            _ownerUniqueId = ownerUniqueId;
-        }
+        public string OwnerUniqueId { get; set; }
     }
 }

@@ -32,6 +32,7 @@ using System.Threading.Tasks;
 
 using Sulakore.Protocol;
 using Sulakore.Communication;
+using System.Collections.Generic;
 
 namespace Sulakore.Habbo.Web
 {
@@ -81,11 +82,11 @@ namespace Sulakore.Habbo.Web
             if (handler != null) handler(this, e);
         }
 
-        public HHotel Hotel { get; }
-        public string Email { get; }
-        public string Password { get; }
-        public HTriggers Triggers { get; }
-        public CookieContainer Cookies { get; }
+        public HHotel Hotel { get; private set; }
+        public string Email { get; private set; }
+        public string Password { get; private set; }
+        public HTriggers Triggers { get; private set; }
+        public CookieContainer Cookies { get; private set; }
 
         public HUser User { get; private set; }
         public HNode Remote { get; private set; }
@@ -161,35 +162,45 @@ namespace Sulakore.Habbo.Web
         }
         public async Task<bool> LoginAsync()
         {
-            IsAuthenticated = false;
-            Cookies.SetCookies(_hotelUri, await SKore.GetIPCookieAsync(Hotel).ConfigureAwait(false));
-            byte[] postData = Encoding.UTF8.GetBytes($"{{\"email\":\"{Email}\",\"password\":\"{Password}\"}}");
-
-            var loginRequest = (HttpWebRequest)WebRequest.Create($"{_hotelUri.OriginalString}/api/public/authentication/login");
-            loginRequest.ContentType = "application/json;charset=UTF-8";
-            loginRequest.CookieContainer = Cookies;
-            loginRequest.AllowAutoRedirect = false;
-            loginRequest.Method = "POST";
-            loginRequest.Proxy = null;
-
-            using (Stream requestStream = await loginRequest.GetRequestStreamAsync().ConfigureAwait(false))
-                await requestStream.WriteAsync(postData, 0, postData.Length).ConfigureAwait(false);
-
-            using (WebResponse loginResponse = await loginRequest.GetResponseAsync().ConfigureAwait(false))
-            using (Stream loginStream = loginResponse.GetResponseStream())
-            using (var loginReader = new StreamReader(loginStream))
+            try
             {
-                string body = await loginReader.ReadToEndAsync().ConfigureAwait(false);
+                IsAuthenticated = false;
+                Cookies.SetCookies(_hotelUri, await SKore.GetIPCookieAsync(Hotel).ConfigureAwait(false));
+                byte[] postData = Encoding.UTF8.GetBytes(string.Format("{{\"email\":\"{0}\",\"password\":\"{0}\"}}", Email, Password));
 
-                User = HUser.Create(body);
-                Cookies.SetCookies(_hotelUri, loginResponse.Headers["Set-Cookie"]);
-                IsAuthenticated = ((HttpWebResponse)loginResponse).StatusCode == HttpStatusCode.OK;
+                var loginRequest = (HttpWebRequest)WebRequest.Create(_hotelUri.OriginalString + "/api/public/authentication/login");
+                loginRequest.ContentType = "application/json;charset=UTF-8";
+                loginRequest.CookieContainer = Cookies;
+                loginRequest.AllowAutoRedirect = false;
+                loginRequest.Method = "POST";
+                loginRequest.Proxy = null;
 
-                if (IsAuthenticated)
-                    await ExtractGameDataAsync().ConfigureAwait(false);
+                using (Stream requestStream = await loginRequest.GetRequestStreamAsync().ConfigureAwait(false))
+                    await requestStream.WriteAsync(postData, 0, postData.Length).ConfigureAwait(false);
 
-                return IsAuthenticated;
+                using (WebResponse loginResponse = await loginRequest.GetResponseAsync().ConfigureAwait(false))
+                using (Stream loginStream = loginResponse.GetResponseStream())
+                using (var loginReader = new StreamReader(loginStream))
+                {
+                    string body = await loginReader.ReadToEndAsync()
+                        .ConfigureAwait(false);
+
+                    User = HUser.Create(body);
+                    Cookies.SetCookies(_hotelUri, loginResponse.Headers["Set-Cookie"]);
+
+                    IsAuthenticated =
+                        ((HttpWebResponse)loginResponse).StatusCode == HttpStatusCode.OK;
+
+                    if (IsAuthenticated)
+                    {
+                        await ExtractGameDataAsync()
+                            .ConfigureAwait(false);
+                    }
+                }
             }
+            catch { IsAuthenticated = false; }
+
+            return IsAuthenticated;
         }
 
         public Task<int> SendToServerAsync(byte[] data)
@@ -203,12 +214,14 @@ namespace Sulakore.Habbo.Web
 
         private async Task ReadIncomingAsync()
         {
-            byte[] packet = await Remote.ReceiveWireMessageAsync().ConfigureAwait(false);
+            byte[] packet = await Remote.ReceiveWireMessageAsync()
+                .ConfigureAwait(false);
+
             HandleIncoming(packet, ++TotalIncoming);
         }
         private async Task ExtractGameDataAsync()
         {
-            var clientUrlRequest = (HttpWebRequest)WebRequest.Create($"{_hotelUri.OriginalString}/api/client/clienturl");
+            var clientUrlRequest = (HttpWebRequest)WebRequest.Create(_hotelUri.OriginalString + "/api/client/clienturl");
             clientUrlRequest.ContentType = "application/json;charset=UTF-8";
             clientUrlRequest.CookieContainer = Cookies;
             clientUrlRequest.AllowAutoRedirect = false;
@@ -245,8 +258,41 @@ namespace Sulakore.Habbo.Web
                 ReadIncomingAsync();
         }
 
+        public static IList<HSession> Extract(string path, char delimiter = ':')
+        {
+            var sessions = new List<HSession>();
+            using (var streamReader = new StreamReader(path))
+            {
+                while (!streamReader.EndOfStream)
+                {
+                    string line = streamReader.ReadLine();
+                    if (line.Contains(delimiter))
+                    {
+                        string[] credentials = line.Split(delimiter);
+                        if (credentials.Count(x => !string.IsNullOrEmpty(x)) != 3) break;
+                        sessions.Add(new HSession(credentials[0], credentials[1], SKore.ToHotel(credentials[2])));
+                        continue;
+                    }
+                    if (line.Contains('@') && !streamReader.EndOfStream)
+                    {
+                        string email = line;
+                        string password = streamReader.ReadLine();
+                        if (!streamReader.EndOfStream)
+                        {
+                            HHotel hotel = SKore.ToHotel((streamReader.ReadLine()).GetChild(" / "));
+                            sessions.Add(new HSession(email, password, hotel));
+                        }
+                        else return sessions.ToArray();
+                    }
+                }
+            }
+            return sessions;
+        }
+
         public override string ToString()
-            => $"{Email}:{Password}:{Hotel.ToDomain()}";
+        {
+            return string.Format("{0}:{1}:{2}", Email, Password, Hotel.ToDomain());
+        }
 
         public void Dispose()
         {

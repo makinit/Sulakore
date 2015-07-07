@@ -33,49 +33,29 @@ namespace Sulakore.Habbo.Web
     [DataContract]
     public class HProfile
     {
-        private static readonly DataContractJsonSerializer _serializer;
+        private static readonly DataContractJsonSerializer _deserializer =
+            new DataContractJsonSerializer(typeof(HProfile));
 
         [DataMember(Name = "user")]
-        private readonly HUser _user;
-        public HUser User => _user;
+        public HUser User { get; set; }
 
         [DataMember(Name = "friends")]
-        private readonly IList<HFriend> _friends;
-        public IList<HFriend> Friends => _friends;
+        public IList<HFriend> Friends { get; set; }
 
         [DataMember(Name = "groups")]
-        private readonly IList<HGroup> _groups;
-        public IList<HGroup> Groups => _groups;
+        public IList<HGroup> Groups { get; set; }
 
         [DataMember(Name = "rooms")]
-        private readonly IList<HRoom> _rooms;
-        public IList<HRoom> Rooms => _rooms;
+        public IList<HRoom> Rooms { get; set; }
 
         [DataMember(Name = "badges")]
-        private readonly IList<HBadge> _badges;
-        public IList<HBadge> Badges => _badges;
+        public IList<HBadge> Badges { get; set; }
 
-        static HProfile()
+        public static HProfile Create(string profileJson)
         {
-            _serializer = new DataContractJsonSerializer(typeof(HProfile));
-        }
-        public HProfile()
-        {
-            _user = new HUser();
-            _friends = new List<HFriend>(0);
-            _groups = new List<HGroup>(0);
-            _rooms = new List<HRoom>(0);
-            _badges = new List<HBadge>(0);
-        }
-
-        public static HProfile Load(string path) =>
-            Create(File.ReadAllText(path));
-
-        public static HProfile Create(string json)
-        {
-            byte[] data = Encoding.UTF8.GetBytes(json);
-            using (var memoryStream = new MemoryStream(data))
-                return (HProfile)_serializer.ReadObject(memoryStream);
+            byte[] rawJson = Encoding.UTF8.GetBytes(profileJson);
+            using (var jsonStream = new MemoryStream(rawJson))
+                return (HProfile)_deserializer.ReadObject(jsonStream);
         }
     }
 }

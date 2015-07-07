@@ -30,23 +30,12 @@ namespace Sulakore.Habbo.Web
     public class HBadge
     {
         [DataMember(Name = "code")]
-        private readonly string _code;
-        public string Code => _code;
+        public string Code { get; set; }
 
         [DataMember(Name = "name")]
-        private readonly string _name;
-        public string Name => _name;
+        public string Name { get; set; }
 
         [DataMember(Name = "description")]
-        private readonly string _description;
-        public string Description => _description;
-
-        public HBadge(string code, string name,
-            string description)
-        {
-            _code = code;
-            _name = name;
-            _description = description;
-        }
+        public string Description { get; set; }
     }
 }

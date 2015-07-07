@@ -30,28 +30,15 @@ namespace Sulakore.Habbo.Web
     public class HFriend
     {
         [DataMember(Name = "name")]
-        private readonly string _name;
-        public string Name => _name;
+        public string Name { get; set; }
 
         [DataMember(Name = "motto")]
-        private readonly string _motto;
-        public string Motto => _motto;
+        public string Motto { get; set; }
 
         [DataMember(Name = "uniqueId")]
-        private readonly string _uniqueId;
-        public string UniqueId => _uniqueId;
+        public string UniqueId { get; set; }
 
         [DataMember(Name = "figureString")]
-        private readonly string _figureId;
-        public string FigureId => _figureId;
-
-        public HFriend(string name, string motto,
-            string uniqueId, string figureId)
-        {
-            _name = name;
-            _motto = motto;
-            _uniqueId = uniqueId;
-            _figureId = figureId;
-        }
+        public string FigureId { get; set; }
     }
 }
