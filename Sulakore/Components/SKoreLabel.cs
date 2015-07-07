@@ -9,8 +9,6 @@ namespace Sulakore.Components
     [DesignerCategory("Code")]
     public class SKoreLabel : Label
     {
-        private string _format, _frames;
-        private int _currentAnimationReach = 1;
         private readonly System.Timers.Timer _animateTimer;
 
         private int _borderWidth = 2;
@@ -58,48 +56,25 @@ namespace Sulakore.Components
 
             _animateTimer = new System.Timers.Timer(_animationInterval);
             _animateTimer.SynchronizingObject = this;
-            _animateTimer.Elapsed += DoAnimate;
+            _animateTimer.Elapsed += DoAnimation;
         }
 
-        public void EndAnimation(string text)
+        public void StopDotAnimation(string text)
         {
-            _currentAnimationReach = 1;
             _animateTimer.Stop();
-
-            if (!string.IsNullOrEmpty(text))
-                FindForm().Invoke(new MethodInvoker(() => Text = text));
+            Text = text;
         }
-        public void BeginAnimation(string format, string frames)
+        public void StartDotAnimation(string prefix)
         {
-            EndAnimation(string.Empty);
+            StopDotAnimation(string.Empty);
 
-            if (string.IsNullOrWhiteSpace(format))
-                throw new Exception("Invalid string format.");
-
-            if (string.IsNullOrEmpty(frames) || frames.Length < 2)
-                throw new Exception("frames must at least be two chars long.");
-
-            _format = format;
-            _frames = frames;
-
-            FindForm().Invoke(new MethodInvoker(() => Text = string.Format(format, frames)));
+            Text = (prefix + ".");
             _animateTimer.Start();
-        }
-        private void DoAnimate(object sender, ElapsedEventArgs e)
-        {
-            if (!_animateTimer.Enabled) return;
-
-            Text = string.Format(_format,
-                _frames.Substring(0, _currentAnimationReach++));
-
-            if (_currentAnimationReach > _frames.Length)
-                _currentAnimationReach = 1;
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.Clear(Color.White);
-
             if (DisplayBoundary)
             {
                 using (var solidBrush = new SolidBrush(Skin))
@@ -108,8 +83,14 @@ namespace Sulakore.Components
                     e.Graphics.FillRectangle(solidBrush, Width - BorderWidth, 0, BorderWidth, Height);
                 }
             }
-
             base.OnPaint(e);
+        }
+        private void DoAnimation(object sender, ElapsedEventArgs e)
+        {
+            if (!_animateTimer.Enabled) return;
+
+            if (!Text.EndsWith("...")) Text += ".";
+            else Text = Text.Replace("...", ".");
         }
 
         protected override void Dispose(bool disposing)
