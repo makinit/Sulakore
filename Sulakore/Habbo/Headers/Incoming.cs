@@ -29,9 +29,14 @@ namespace Sulakore.Habbo.Headers
 {
     public class Incoming
     {
-        private static readonly DataContractJsonSerializer _serializer;
-        
-        public static Incoming Global { get; }
+        private static readonly DataContractJsonSerializer _serializer =
+            new DataContractJsonSerializer(typeof(Incoming));
+
+        private static readonly Incoming _global = new Incoming();
+        public static Incoming Global
+        {
+            get { return _global; }
+        }
 
         public const ushort SERVER_DISCONNECT = 4000;
 
@@ -55,12 +60,6 @@ namespace Sulakore.Habbo.Headers
         public ushort PlayerSay { get; set; }
         public ushort PlayerShout { get; set; }
         public ushort PlayerWhisper { get; set; }
-
-        static Incoming()
-        {
-            Global = new Incoming();
-            _serializer = new DataContractJsonSerializer(typeof(Incoming));
-        }
 
         public void Save(string path)
         {

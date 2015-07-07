@@ -29,9 +29,14 @@ namespace Sulakore.Habbo.Headers
 {
     public class Outgoing
     {
-        private static DataContractJsonSerializer _serializer;
+        private static readonly DataContractJsonSerializer _serializer =
+            new DataContractJsonSerializer(typeof(Outgoing));
 
-        public static Outgoing Global { get; }
+        private static readonly Outgoing _global = new Outgoing();
+        public static Outgoing Global
+        {
+            get { return _global; }
+        }
 
         public const ushort CLIENT_CONNECT = 4000;
 
@@ -66,12 +71,6 @@ namespace Sulakore.Habbo.Headers
         public ushort Say { get; set; }
         public ushort Shout { get; set; }
         public ushort Whisper { get; set; }
-
-        static Outgoing()
-        {
-            Global = new Outgoing();
-            _serializer = new DataContractJsonSerializer(typeof(Outgoing));
-        }
 
         public void Save(string path)
         {
