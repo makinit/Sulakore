@@ -30,11 +30,12 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Sulakore
 {
-    internal class CertificateManager
+    internal class CertificateManager : IDisposable
     {
         private const string CERT_CREATE_FORMAT =
             "-ss {0} -n \"CN={1}, O={2}\" -sky {3} -cy {4} -m 120 -a sha256 -eku 1.3.6.1.5.5.7.3.1 -b {5:MM/dd/yyyy} {6}";
 
+        private readonly Process _certCreateProcess;
         private readonly IDictionary<string, X509Certificate2> _certificateCache;
 
         public string Issuer { get; private set; }
@@ -43,6 +44,8 @@ namespace Sulakore
         public X509Store MyStore { get; private set; }
         public X509Store RootStore { get; private set; }
 
+        public bool IsDisposed { get; private set; }
+
         public CertificateManager(string issuer, string rootCertificateName)
         {
             Issuer = issuer;
@@ -50,6 +53,12 @@ namespace Sulakore
 
             MyStore = new X509Store(StoreName.My, StoreLocation.CurrentUser);
             RootStore = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
+
+            _certCreateProcess = new Process();
+            _certCreateProcess.StartInfo.Verb = "runas";
+            _certCreateProcess.StartInfo.CreateNoWindow = true;
+            _certCreateProcess.StartInfo.UseShellExecute = false;
+            _certCreateProcess.StartInfo.FileName = "makecert.exe";
 
             _certificateCache = new Dictionary<string, X509Certificate2>();
         }
@@ -96,10 +105,11 @@ namespace Sulakore
                     store.Open(OpenFlags.ReadWrite);
                     string certificateSubject = string.Format("CN={0}, O={1}", certificateName, Issuer);
 
-                    X509Certificate2Collection certificates = FindCertificates(store, certificateSubject);
+                    X509Certificate2Collection certificates =
+                        FindCertificates(store, certificateSubject);
 
                     if (certificates != null)
-                        certificate = FindCertificates(store, certificateSubject)[0];
+                        certificate = certificates[0];
 
                     if (certificate == null)
                     {
@@ -109,8 +119,8 @@ namespace Sulakore
                         CreateCertificate(args);
                         certificates = FindCertificates(store, certificateSubject);
 
-                        return certificates != null ?
-                            certificates[0] : null;
+                        if (certificates != null)
+                            certificate = certificates[0];
                     }
                     return certificate;
                 }
@@ -121,23 +131,6 @@ namespace Sulakore
                     if (certificate != null && !_certificateCache.ContainsKey(certificateName))
                         _certificateCache.Add(certificateName, certificate);
                 }
-            }
-        }
-        protected virtual void CreateCertificate(string[] args)
-        {
-            using (var process = new Process())
-            {
-                if (!File.Exists("makecert.exe"))
-                    throw new Exception("Unable to locate 'makecert.exe'.");
-
-                process.StartInfo.Verb = "runas";
-                process.StartInfo.Arguments = args != null ? args[0] : string.Empty;
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.FileName = "makecert.exe";
-
-                process.Start();
-                process.WaitForExit();
             }
         }
 
@@ -176,6 +169,20 @@ namespace Sulakore
             }
         }
 
+        protected virtual void CreateCertificate(string[] args)
+        {
+            lock (_certCreateProcess)
+            {
+                if (!File.Exists("makecert.exe"))
+                    throw new Exception("Unable to locate 'makecert.exe'.");
+
+                _certCreateProcess.StartInfo.Arguments =
+                    (args != null ? args[0] : string.Empty);
+
+                _certCreateProcess.Start();
+                _certCreateProcess.WaitForExit();
+            }
+        }
         protected virtual string GetCertificateCreateArgs(X509Store store, string certificateName)
         {
             bool isRootCertificate =
@@ -188,6 +195,20 @@ namespace Sulakore
                 isRootCertificate ? "-h 1 -r" : string.Format("-pe -in \"{0}\" -is Root", RootCertificateName));
 
             return certCreatArgs;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+        protected virtual void Dispose(bool disposing)
+        {
+            if (IsDisposed) return;
+            if (disposing)
+            {
+                _certCreateProcess.Dispose();
+            }
+            IsDisposed = true;
         }
     }
 }
