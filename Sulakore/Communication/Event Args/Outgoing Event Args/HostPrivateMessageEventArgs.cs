@@ -31,8 +31,8 @@ namespace Sulakore.Communication
 {
     public class HostPrivateMessageEventArgs : InterceptedEventArgs
     {
-        public int Id { get; }
-        public string Message { get; }
+        public int Id { get; private set; }
+        public string Message { get; private set; }
 
         public HostPrivateMessageEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -53,8 +53,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, " +
-            $"{nameof(Id)}: {Id}, {nameof(Message)}: {Message}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Id: {1}, Message: {2}",
+                Packet.Header, Id, Message);
+        }
     }
 }

@@ -31,7 +31,7 @@ namespace Sulakore.Communication
 {
     public class HostUpdateMottoEventArgs : InterceptedEventArgs
     {
-        public string Motto { get; }
+        public string Motto { get; private set; }
 
         public HostUpdateMottoEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -51,7 +51,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Motto)}: {Motto}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Motto: {1}",
+                Packet.Header, Motto);
+        }
     }
 }

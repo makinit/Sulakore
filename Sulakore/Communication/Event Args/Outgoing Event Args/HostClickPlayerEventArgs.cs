@@ -32,8 +32,8 @@ namespace Sulakore.Communication
 {
     public class HostClickPlayerEventArgs : InterceptedEventArgs
     {
-        public int Id { get; }
-        public HPoint Tile { get; }
+        public int Id { get; private set; }
+        public HPoint Tile { get; private set; }
 
         public HostClickPlayerEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -54,8 +54,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, " +
-            $"{nameof(Id)}: {Id}, {nameof(Tile)}: {Tile}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Id: {1}, Tile: {2}",
+                Packet.Header, Id, Tile);
+        }
     }
 }

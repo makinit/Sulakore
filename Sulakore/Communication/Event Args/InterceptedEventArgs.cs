@@ -38,15 +38,19 @@ namespace Sulakore.Communication
         /// <summary>
         /// Gets the current count/step/order from which this data was intercepted.
         /// </summary>
-        public int Step { get; }
+        public int Step { get; private set; }
+        /// <summary>
+        /// Gets the originally intercepted <see cref="HMessage"/>.
+        /// </summary>
+        public HMessage Packet { get; private set; }
+        /// <summary>
+        /// Gets the replacement <see cref="HMessage"/> for the original data.
+        /// </summary>
+        public HMessage Replacement { get; set; }
         /// <summary>
         /// Gets a value that determines whether the <see cref="InterceptedEventArgs"/> can be turned into a non-blocking operation by calling <see cref="ContinueRead"/>.
         /// </summary>
-        public bool IsAsyncCapable { get; }
-        /// <summary>
-        /// Gets the intercepted <see cref="HMessage"/> that allows for read/write operations.
-        /// </summary>
-        public HMessage Packet { get; set; }
+        public bool IsAsyncCapable { get; private set; }
         /// <summary>
         /// Gets the <see cref="Func{TResult}"/> of type <see cref="Task"/> that will be invoked when <see cref="ContinueRead"/> is called.
         /// </summary>
@@ -55,6 +59,13 @@ namespace Sulakore.Communication
         /// Gets a value that determines whether <see cref="ContinueRead"/> was called by the receiver.
         /// </summary>
         public bool WasContinued { get; internal set; }
+        /// <summary>
+        /// Gets a value that determines whether the <see cref="Replacement"/> differs from the original.
+        /// </summary>
+        public bool WasReplaced
+        {
+            get { return !Packet.ToString().Equals(Replacement.ToString()); }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InterceptedEventArgs"/> class.
@@ -93,6 +104,7 @@ namespace Sulakore.Communication
 
             Step = step;
             Packet = packet;
+            Replacement = new HMessage(packet.ToBytes(), packet.Destination);
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="InterceptedEventArgs"/> class.

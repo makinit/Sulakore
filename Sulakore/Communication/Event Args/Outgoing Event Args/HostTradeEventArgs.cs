@@ -32,7 +32,7 @@ namespace Sulakore.Communication
 {
     public class HostTradeEventArgs : InterceptedEventArgs, IHEntity
     {
-        public int Index { get; }
+        public int Index { get; private set; }
 
         public HostTradeEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -52,7 +52,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Index)}: {Index}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Index: {1}",
+                Packet.Header, Index);
+        }
     }
 }

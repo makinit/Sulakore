@@ -25,8 +25,8 @@
 using System;
 using System.Collections.Generic;
 
-using Sulakore.Habbo.Headers;
 using Sulakore.Protocol;
+using Sulakore.Habbo.Headers;
 
 namespace Sulakore.Communication
 {
@@ -34,7 +34,7 @@ namespace Sulakore.Communication
     {
         #region Incoming Game Event Handlers
         public event EventHandler<FurnitureLoadEventArgs> FurnitureLoad;
-        protected void RaiseOnFurnitureLoad(InterceptedEventArgs e)
+        public void RaiseOnFurnitureLoad(InterceptedEventArgs e)
         {
             if (FurnitureLoad != null)
             {
@@ -52,7 +52,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<FurnitureDropEventArgs> FurnitureDrop;
-        protected void RaiseOnFurnitureDrop(InterceptedEventArgs e)
+        public void RaiseOnFurnitureDrop(InterceptedEventArgs e)
         {
             if (FurnitureDrop != null)
             {
@@ -70,7 +70,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<FurnitureMoveEventArgs> FurnitureMove;
-        protected void RaiseOnFurnitureMove(InterceptedEventArgs e)
+        public void RaiseOnFurnitureMove(InterceptedEventArgs e)
         {
             if (FurnitureMove != null)
             {
@@ -88,7 +88,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<EntityLoadEventArgs> EntityLoad;
-        protected void RaiseOnEntityLoad(InterceptedEventArgs e)
+        public void RaiseOnEntityLoad(InterceptedEventArgs e)
         {
             if (EntityLoad != null)
             {
@@ -106,7 +106,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<EntityActionEventArgs> EntityAction;
-        protected void RaiseOnEntityAction(InterceptedEventArgs e)
+        public void RaiseOnEntityAction(InterceptedEventArgs e)
         {
             if (EntityAction != null)
             {
@@ -124,7 +124,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<PlayerKickHostEventArgs> PlayerKickHost;
-        protected void RaiseOnPlayerKickHost(InterceptedEventArgs e)
+        public void RaiseOnPlayerKickHost(InterceptedEventArgs e)
         {
             if (PlayerKickHost != null)
             {
@@ -142,7 +142,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<PlayerUpdateEventArgs> PlayerUpdate;
-        protected void RaiseOnPlayerUpdate(InterceptedEventArgs e)
+        public void RaiseOnPlayerUpdate(InterceptedEventArgs e)
         {
             if (PlayerUpdate != null)
             {
@@ -160,7 +160,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<PlayerDanceEventArgs> PlayerDance;
-        protected void RaiseOnPlayerDance(InterceptedEventArgs e)
+        public void RaiseOnPlayerDance(InterceptedEventArgs e)
         {
             if (PlayerDance != null)
             {
@@ -178,7 +178,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<PlayerGestureEventArgs> PlayerGesture;
-        protected void RaiseOnPlayerGesture(InterceptedEventArgs e)
+        public void RaiseOnPlayerGesture(InterceptedEventArgs e)
         {
             if (PlayerGesture != null)
             {
@@ -197,7 +197,7 @@ namespace Sulakore.Communication
         #endregion
         #region Outgoing Game Event Handlers
         public event EventHandler<HostBanPlayerEventArgs> HostBanPlayer;
-        protected void RaiseOnHostBanPlayer(InterceptedEventArgs e)
+        public void RaiseOnHostBanPlayer(InterceptedEventArgs e)
         {
             if (HostBanPlayer != null)
             {
@@ -215,7 +215,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostUpdateClothesEventArgs> HostUpdateClothes;
-        protected void RaiseOnHostUpdateClothes(InterceptedEventArgs e)
+        public void RaiseOnHostUpdateClothes(InterceptedEventArgs e)
         {
             if (HostUpdateClothes != null)
             {
@@ -233,7 +233,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostUpdateMottoEventArgs> HostUpdateMotto;
-        protected void RaiseOnHostUpdateMotto(InterceptedEventArgs e)
+        public void RaiseOnHostUpdateMotto(InterceptedEventArgs e)
         {
             if (HostUpdateMotto != null)
             {
@@ -251,7 +251,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostUpdateStanceEventArgs> HostUpdateStance;
-        protected void RaiseOnHostUpdateStance(InterceptedEventArgs e)
+        public void RaiseOnHostUpdateStance(InterceptedEventArgs e)
         {
             if (HostUpdateStance != null)
             {
@@ -269,7 +269,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostClickPlayerEventArgs> HostClickPlayer;
-        protected void RaiseOnHostClickPlayer(InterceptedEventArgs e)
+        public void RaiseOnHostClickPlayer(InterceptedEventArgs e)
         {
             if (HostClickPlayer != null)
             {
@@ -287,7 +287,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostDanceEventArgs> HostDance;
-        protected void RaiseOnHostDance(InterceptedEventArgs e)
+        public void RaiseOnHostDance(InterceptedEventArgs e)
         {
             if (HostDance != null)
             {
@@ -305,7 +305,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostGestureEventArgs> HostGesture;
-        protected void RaiseOnHostGesture(InterceptedEventArgs e)
+        public void RaiseOnHostGesture(InterceptedEventArgs e)
         {
             if (HostGesture != null)
             {
@@ -323,7 +323,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostKickPlayerEventArgs> HostKickPlayer;
-        protected void RaiseOnHostKickPlayer(InterceptedEventArgs e)
+        public void RaiseOnHostKickPlayer(InterceptedEventArgs e)
         {
             if (HostKickPlayer != null)
             {
@@ -341,7 +341,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostMoveFurnitureEventArgs> HostMoveFurniture;
-        protected void RaiseOnHostMoveFurniture(InterceptedEventArgs e)
+        public void RaiseOnHostMoveFurniture(InterceptedEventArgs e)
         {
             if (HostMoveFurniture != null)
             {
@@ -359,7 +359,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostMutePlayerEventArgs> HostMutePlayer;
-        protected void RaiseOnHostMutePlayer(InterceptedEventArgs e)
+        public void RaiseOnHostMutePlayer(InterceptedEventArgs e)
         {
             if (HostMutePlayer != null)
             {
@@ -377,7 +377,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostRaiseSignEventArgs> HostRaiseSign;
-        protected void RaiseOnHostRaiseSign(InterceptedEventArgs e)
+        public void RaiseOnHostRaiseSign(InterceptedEventArgs e)
         {
             if (HostRaiseSign != null)
             {
@@ -395,7 +395,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostExitRoomEventArgs> HostExitRoom;
-        protected void RaiseOnHostExitRoom(InterceptedEventArgs e)
+        public void RaiseOnHostExitRoom(InterceptedEventArgs e)
         {
             if (HostExitRoom != null)
             {
@@ -413,7 +413,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostNavigateRoomEventArgs> HostNavigateRoom;
-        protected void RaiseOnHostNavigateRoom(InterceptedEventArgs e)
+        public void RaiseOnHostNavigateRoom(InterceptedEventArgs e)
         {
             if (HostNavigateRoom != null)
             {
@@ -431,7 +431,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostSayEventArgs> HostSay;
-        protected void RaiseOnHostSay(InterceptedEventArgs e)
+        public void RaiseOnHostSay(InterceptedEventArgs e)
         {
             if (HostSay != null)
             {
@@ -449,7 +449,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostShoutEventArgs> HostShout;
-        protected void RaiseOnHostShout(InterceptedEventArgs e)
+        public void RaiseOnHostShout(InterceptedEventArgs e)
         {
             if (HostShout != null)
             {
@@ -467,7 +467,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostTradeEventArgs> HostTradePlayer;
-        protected void RaiseOnHostTradePlayer(InterceptedEventArgs e)
+        public void RaiseOnHostTradePlayer(InterceptedEventArgs e)
         {
             if (HostTradePlayer != null)
             {
@@ -485,7 +485,7 @@ namespace Sulakore.Communication
         }
 
         public event EventHandler<HostWalkEventArgs> HostWalk;
-        protected void RaiseOnHostWalk(InterceptedEventArgs e)
+        public void RaiseOnHostWalk(InterceptedEventArgs e)
         {
             if (HostWalk != null)
             {
@@ -517,16 +517,15 @@ namespace Sulakore.Communication
         public bool DetectIncoming { get; set; }
         public bool IsDisposed { get; private set; }
 
-        public Incoming IncomingHeaders { get; }
-        public Outgoing OutgoingHeaders { get; }
+        public Outgoing OutgoingDetected { get; set; }
+        public Incoming IncomingDetected { get; set; }
 
         public HTriggers(bool isDetecting)
         {
-            DetectOutgoing = isDetecting;
-            DetectIncoming = isDetecting;
+            DetectOutgoing = DetectIncoming = isDetecting;
 
-            IncomingHeaders = new Incoming();
-            OutgoingHeaders = new Outgoing();
+            IncomingDetected = new Incoming();
+            OutgoingDetected = new Outgoing();
 
             _inPrevious = new Stack<HMessage>();
             _outPrevious = new Stack<HMessage>();
@@ -567,7 +566,8 @@ namespace Sulakore.Communication
 
         public void HandleOutgoing(InterceptedEventArgs e)
         {
-            if (e.Packet?.IsCorrupted ?? true) return;
+            if (e.Packet == null || e.Packet.IsCorrupted)
+                return;
 
             e.Packet.Position = 0;
             bool ignoreCurrent = false;
@@ -628,7 +628,8 @@ namespace Sulakore.Communication
 
         public void HandleIncoming(InterceptedEventArgs e)
         {
-            if (e.Packet?.IsCorrupted ?? true) return;
+            if (e.Packet == null || e.Packet.IsCorrupted)
+                return;
 
             e.Packet.Position = 0;
             bool ignoreCurrent = false;
@@ -686,7 +687,7 @@ namespace Sulakore.Communication
             if (previous.Length != 2 || current.ReadInteger(0) != -1)
                 return false;
 
-            OutgoingHeaders.HostExitRoom = previous.Header;
+            OutgoingDetected.HostExitRoom = previous.Header;
             _outLocked[previous.Header] = RaiseOnHostExitRoom;
             return true;
         }
@@ -695,7 +696,7 @@ namespace Sulakore.Communication
             bool isHostRaiseSign = false;
             if (current.CanRead<string>(22) && current.ReadString(22) == "sign")
             {
-                OutgoingHeaders.RaiseSign = previous.Header;
+                OutgoingDetected.RaiseSign = previous.Header;
                 _outLocked[previous.Header] = RaiseOnHostRaiseSign;
 
                 isHostRaiseSign = true;
@@ -707,7 +708,7 @@ namespace Sulakore.Communication
             bool isPlayerKickHost = (current.ReadInteger(0) == 4008);
             if (isPlayerKickHost)
             {
-                IncomingHeaders.PlayerKickHost = current.Header;
+                IncomingDetected.PlayerKickHost = current.Header;
                 _inLocked[current.Header] = RaiseOnPlayerKickHost;
             }
             return isPlayerKickHost;
@@ -720,7 +721,7 @@ namespace Sulakore.Communication
                 case "sit":
                 case "stand":
                 {
-                    OutgoingHeaders.UpdateStance = current.Header;
+                    OutgoingDetected.UpdateStance = current.Header;
                     _outLocked[current.Header] = RaiseOnHostUpdateStance;
                     return true;
                 }
@@ -728,7 +729,7 @@ namespace Sulakore.Communication
                 case "dance_stop":
                 case "dance_start":
                 {
-                    OutgoingHeaders.Dance = current.Header;
+                    OutgoingDetected.Dance = current.Header;
                     _outLocked[current.Header] = RaiseOnHostDance;
                     return true;
                 }
@@ -738,7 +739,7 @@ namespace Sulakore.Communication
                 case "laugh":
                 case "blow_kiss":
                 {
-                    OutgoingHeaders.Gesture = current.Header;
+                    OutgoingDetected.Gesture = current.Header;
                     _outLocked[current.Header] = RaiseOnHostGesture;
                     return true;
                 }
@@ -756,7 +757,7 @@ namespace Sulakore.Communication
 
                 if (previous.ReadInteger(0).ToString() == current.ReadString())
                 {
-                    OutgoingHeaders.NavigateRoom = previous.Header;
+                    OutgoingDetected.NavigateRoom = previous.Header;
 
                     _outLocked[previous.Header] = RaiseOnHostNavigateRoom;
                     return true;
@@ -771,49 +772,49 @@ namespace Sulakore.Communication
         }
         protected virtual void Dispose(bool disposing)
         {
-            if (!IsDisposed)
+            if (IsDisposed) return;
+            if (disposing)
             {
-                if (disposing)
-                {
-                    _inPrevious.Clear();
-                    _outPrevious.Clear();
+                _inPrevious.Clear();
+                _outPrevious.Clear();
 
-                    _inLocked.Clear();
-                    _outLocked.Clear();
+                _inLocked.Clear();
+                _outLocked.Clear();
 
-                    _inAttaches.Clear();
-                    _outAttaches.Clear();
+                _inAttaches.Clear();
+                _outAttaches.Clear();
 
-                    SKore.Unsubscribe(ref HostBanPlayer);
-                    SKore.Unsubscribe(ref HostUpdateClothes);
-                    SKore.Unsubscribe(ref HostUpdateMotto);
-                    SKore.Unsubscribe(ref HostUpdateStance);
-                    SKore.Unsubscribe(ref HostClickPlayer);
-                    SKore.Unsubscribe(ref HostDance);
-                    SKore.Unsubscribe(ref HostGesture);
-                    SKore.Unsubscribe(ref HostKickPlayer);
-                    SKore.Unsubscribe(ref HostMoveFurniture);
-                    SKore.Unsubscribe(ref HostMutePlayer);
-                    SKore.Unsubscribe(ref HostRaiseSign);
-                    SKore.Unsubscribe(ref HostExitRoom);
-                    SKore.Unsubscribe(ref HostNavigateRoom);
-                    SKore.Unsubscribe(ref HostSay);
-                    SKore.Unsubscribe(ref HostShout);
-                    SKore.Unsubscribe(ref HostTradePlayer);
-                    SKore.Unsubscribe(ref HostWalk);
+                #region Unsubscribe Game Events
+                SKore.Unsubscribe(ref HostBanPlayer);
+                SKore.Unsubscribe(ref HostUpdateClothes);
+                SKore.Unsubscribe(ref HostUpdateMotto);
+                SKore.Unsubscribe(ref HostUpdateStance);
+                SKore.Unsubscribe(ref HostClickPlayer);
+                SKore.Unsubscribe(ref HostDance);
+                SKore.Unsubscribe(ref HostGesture);
+                SKore.Unsubscribe(ref HostKickPlayer);
+                SKore.Unsubscribe(ref HostMoveFurniture);
+                SKore.Unsubscribe(ref HostMutePlayer);
+                SKore.Unsubscribe(ref HostRaiseSign);
+                SKore.Unsubscribe(ref HostExitRoom);
+                SKore.Unsubscribe(ref HostNavigateRoom);
+                SKore.Unsubscribe(ref HostSay);
+                SKore.Unsubscribe(ref HostShout);
+                SKore.Unsubscribe(ref HostTradePlayer);
+                SKore.Unsubscribe(ref HostWalk);
 
-                    SKore.Unsubscribe(ref FurnitureLoad);
-                    SKore.Unsubscribe(ref EntityAction);
-                    SKore.Unsubscribe(ref PlayerUpdate);
-                    SKore.Unsubscribe(ref PlayerDance);
-                    SKore.Unsubscribe(ref EntityLoad);
-                    SKore.Unsubscribe(ref FurnitureDrop);
-                    SKore.Unsubscribe(ref PlayerGesture);
-                    SKore.Unsubscribe(ref PlayerKickHost);
-                    SKore.Unsubscribe(ref FurnitureMove);
-                }
-                IsDisposed = true;
+                SKore.Unsubscribe(ref FurnitureLoad);
+                SKore.Unsubscribe(ref EntityAction);
+                SKore.Unsubscribe(ref PlayerUpdate);
+                SKore.Unsubscribe(ref PlayerDance);
+                SKore.Unsubscribe(ref EntityLoad);
+                SKore.Unsubscribe(ref FurnitureDrop);
+                SKore.Unsubscribe(ref PlayerGesture);
+                SKore.Unsubscribe(ref PlayerKickHost);
+                SKore.Unsubscribe(ref FurnitureMove);
+                #endregion
             }
+            IsDisposed = true;
         }
     }
 }

@@ -32,7 +32,7 @@ namespace Sulakore.Communication
 {
     public class HostDanceEventArgs : InterceptedEventArgs
     {
-        public HDance Dance { get; }
+        public HDance Dance { get; private set; }
 
         public HostDanceEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -52,7 +52,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Dance)}: {Dance}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Dance: {1}",
+                Packet.Header, Dance);
+        }
     }
 }

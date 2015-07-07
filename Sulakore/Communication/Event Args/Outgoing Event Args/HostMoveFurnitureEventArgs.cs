@@ -32,9 +32,9 @@ namespace Sulakore.Communication
 {
     public class HostMoveFurnitureEventArgs : InterceptedEventArgs
     {
-        public int Id { get; }
-        public HPoint Tile { get; }
-        public HDirection Direction { get; }
+        public int Id { get; private set; }
+        public HPoint Tile { get; private set; }
+        public HDirection Direction { get; private set; }
 
         public HostMoveFurnitureEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -56,8 +56,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Id)}: {Id}, " +
-            $"{nameof(Tile)}: {Tile}, {nameof(Direction)}: {Direction}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Id: {1}, Tile: {2}, Direction: {3}",
+                Packet.Header, Id, Tile, Direction);
+        }
     }
 }

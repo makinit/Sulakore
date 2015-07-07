@@ -32,8 +32,8 @@ namespace Sulakore.Communication
 {
     public class PlayerDanceEventArgs : InterceptedEventArgs, IHEntity
     {
-        public int Index { get; }
-        public HDance Dance { get; }
+        public int Index { get; private set; }
+        public HDance Dance { get; private set; }
 
         public PlayerDanceEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -54,8 +54,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, " +
-            $"{nameof(Index)}: {Index}, {nameof(Dance)}: {Dance}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Index: {1}, Dance: {2}",
+                Packet.Header, Index, Dance);
+        }
     }
 }

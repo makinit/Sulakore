@@ -38,7 +38,7 @@ namespace Sulakore.Communication
     /// <summary>
     /// Represents a connection handler to intercept incoming/outgoing data from a post-shuffle hotel.
     /// </summary>
-    public class HConnection : IDisposable
+    public class HConnection : IHConnection, IDisposable
     {
         private readonly object _disconnectLock;
         private static readonly string _hostsFile;
@@ -70,20 +70,6 @@ namespace Sulakore.Communication
             if (handler != null) handler(this, e);
         }
         /// <summary>
-        /// Occurs when incoming data from the remote <see cref="HNode"/> has been intercepted.
-        /// </summary>
-        public event EventHandler<InterceptedEventArgs> DataIncoming;
-        /// <summary>
-        /// Raises the <see cref="DataIncoming"/> event.
-        /// </summary>
-        /// <param name="e">An <see cref="InterceptedEventArgs"/> that contains the event data.</param>
-        /// <returns></returns>
-        protected virtual void OnDataIncoming(InterceptedEventArgs e)
-        {
-            EventHandler<InterceptedEventArgs> handler = DataIncoming;
-            if (handler != null) handler(this, e);
-        }
-        /// <summary>
         /// Occurs when outgoing data from the local <see cref="HNode"/> has been intercepted.
         /// </summary>
         public event EventHandler<InterceptedEventArgs> DataOutgoing;
@@ -97,11 +83,21 @@ namespace Sulakore.Communication
             EventHandler<InterceptedEventArgs> handler = DataOutgoing;
             if (handler != null) handler(this, e);
         }
-
         /// <summary>
-        /// Gets the <see cref="HTriggers"/> that handles the in-game callbacks/events.
+        /// Occurs when incoming data from the remote <see cref="HNode"/> has been intercepted.
         /// </summary>
-        public HTriggers Triggers { get; }
+        public event EventHandler<InterceptedEventArgs> DataIncoming;
+        /// <summary>
+        /// Raises the <see cref="DataIncoming"/> event.
+        /// </summary>
+        /// <param name="e">An <see cref="InterceptedEventArgs"/> that contains the event data.</param>
+        /// <returns></returns>
+        protected virtual void OnDataIncoming(InterceptedEventArgs e)
+        {
+            EventHandler<InterceptedEventArgs> handler = DataIncoming;
+            if (handler != null) handler(this, e);
+        }
+
         /// <summary>
         /// Gets the <see cref="HNode"/> representing the local connection.
         /// </summary>
@@ -121,19 +117,19 @@ namespace Sulakore.Communication
         /// <summary>
         /// Gets the <see cref="IList{T}"/> that contains the headers of outgoing packets to block.
         /// </summary>
-        public IList<ushort> BlockedOutgoing { get; }
+        public IList<ushort> OutgoingBlocked { get; private set;}
         /// <summary>
         /// Gets the <see cref="IList{T}"/> that contains the headers of incoming packets to block.
         /// </summary>
-        public IList<ushort> BlockedIncoming { get; }
+        public IList<ushort> IncomingBlocked { get; private set;}
         /// <summary>
         /// Gets the <see cref="IDictionary{TKey, TValue}"/> that contains the replacement data for an outgoing packet determined by the header.
         /// </summary>
-        public IDictionary<ushort, byte[]> ReplacedOutgoing { get; }
+        public IDictionary<ushort, byte[]> OutgoingReplaced { get; private set;}
         /// <summary>
         /// Gets the <see cref="IDictionary{TKey, TValue}"/> that contains the replacement data for an incoming packet determined by the header.
         /// </summary>
-        public IDictionary<ushort, byte[]> ReplacedIncoming { get; }
+        public IDictionary<ushort, byte[]> IncomingReplaced { get; private set;}
         /// <summary>
         /// Gets the total amount of packets the remote <see cref="HNode"/> has been sent from local.
         /// </summary>
@@ -142,6 +138,14 @@ namespace Sulakore.Communication
         /// Gets the total amount of packets the local <see cref="HNode"/> received from remote.
         /// </summary>
         public int TotalIncoming { get; private set; }
+        /// <summary>
+        /// Gets the port of the remote endpoint.
+        /// </summary>
+        public int GameHostPort { get; private set; }
+        /// <summary>
+        /// Gets the host name of the remote endpoint.
+        /// </summary>
+        public string GameHostName { get; private set; }
 
         static HConnection()
         {
@@ -155,11 +159,10 @@ namespace Sulakore.Communication
         {
             _disconnectLock = new object();
 
-            Triggers = new HTriggers(false);
-            BlockedOutgoing = new List<ushort>();
-            BlockedIncoming = new List<ushort>();
-            ReplacedOutgoing = new Dictionary<ushort, byte[]>();
-            ReplacedIncoming = new Dictionary<ushort, byte[]>();
+            OutgoingBlocked = new List<ushort>();
+            IncomingBlocked = new List<ushort>();
+            OutgoingReplaced = new Dictionary<ushort, byte[]>();
+            IncomingReplaced = new Dictionary<ushort, byte[]>();
 
             if (!File.Exists(_hostsFile))
                 File.Create(_hostsFile).Dispose();
@@ -199,10 +202,13 @@ namespace Sulakore.Communication
         /// <returns></returns>
         public async Task ConnectAsync(string host, int port)
         {
+            GameHostPort = port;
+            GameHostName = host;
+
             RestoreHosts();
             while (true)
             {
-                File.AppendAllText(_hostsFile, $"127.0.0.1\t\t{host}\t\t#Sulakore");
+                File.AppendAllText(_hostsFile, string.Format("127.0.0.1\t\t{0}\t\t#Sulakore",host));
                 Local = await HNode.InterceptAsync(port).ConfigureAwait(true);
 
                 RestoreHosts();
@@ -212,12 +218,12 @@ namespace Sulakore.Communication
                 int length = await Local.ReceiveAsync(buffer, 0, buffer.Length)
                     .ConfigureAwait(false);
 
-                if (BigEndian.DecypherShort(buffer, 4) == Outgoing.CLIENT_CONNECT)
+                if (BigEndian.ToUI16(buffer, 4) == Outgoing.CLIENT_CONNECT)
                 {
                     IsConnected = true;
                     OnConnected(EventArgs.Empty);
 
-                    byte[] packet = new byte[BigEndian.DecypherInt(buffer) + 4];
+                    byte[] packet = new byte[BigEndian.ToSI32(buffer) + 4];
                     Buffer.BlockCopy(buffer, 0, packet, 0, 6);
 
                     await Local.ReceiveAsync(packet, 6, packet.Length - 6)
@@ -291,15 +297,20 @@ namespace Sulakore.Communication
         }
         private void HandleOutgoing(byte[] data, int count)
         {
-            var args = new InterceptedEventArgs(ReadOutgoingAsync, count, data, HDestination.Server);
-            Triggers.HandleOutgoing(args);
+            var args = new InterceptedEventArgs(ReadOutgoingAsync,
+                count, data, HDestination.Server);
 
-            if (!args.Cancel && !BlockedOutgoing.Contains(args.Packet.Header))
+            if (OutgoingReplaced.ContainsKey(args.Packet.Header))
+            {
+                ushort header = args.Packet.Header;
+                args.Replacement = new HMessage(OutgoingReplaced[header], HDestination.Server);
+            }
+            if (!args.Cancel && !OutgoingBlocked.Contains(args.Replacement.Header))
             {
                 OnDataOutgoing(args);
 
-                if (!args.Cancel)
-                    SendToServerAsync(args.Packet.ToBytes()).Wait();
+                if (!args.Cancel && !OutgoingBlocked.Contains(args.Replacement.Header))
+                    SendToServerAsync(args.Replacement.ToBytes()).Wait();
             }
 
             if (!args.WasContinued)
@@ -313,15 +324,20 @@ namespace Sulakore.Communication
         }
         private void HandleIncoming(byte[] data, int count)
         {
-            var args = new InterceptedEventArgs(ReadIncomingAsync, count, data, HDestination.Client);
-            Triggers.HandleIncoming(args);
+            var args = new InterceptedEventArgs(ReadIncomingAsync,
+                count, data, HDestination.Client);
 
-            if (!args.Cancel && !BlockedIncoming.Contains(args.Packet.Header))
+            if (IncomingReplaced.ContainsKey(args.Packet.Header))
+            {
+                ushort header = args.Packet.Header;
+                args.Replacement = new HMessage(IncomingReplaced[header], HDestination.Client);
+            }
+            if (!IncomingBlocked.Contains(args.Replacement.Header))
             {
                 OnDataIncoming(args);
 
-                if (!args.Cancel)
-                    SendToClientAsync(args.Packet.ToBytes()).Wait();
+                if (!args.Cancel && !IncomingBlocked.Contains(args.Replacement.Header))
+                    SendToClientAsync(args.Replacement.ToBytes()).Wait();
             }
 
             if (!args.WasContinued)
@@ -334,8 +350,7 @@ namespace Sulakore.Communication
         public static void RestoreHosts()
         {
             string[] lines = File.ReadAllLines(_hostsFile)
-                .Where(line =>
-                !line.EndsWith("#Sulakore") &&
+                .Where(line => !line.EndsWith("#Sulakore") &&
                 !string.IsNullOrWhiteSpace(line)).ToArray();
 
             File.WriteAllLines(_hostsFile, lines);
@@ -358,7 +373,6 @@ namespace Sulakore.Communication
             {
                 if (disposing)
                 {
-                    Triggers.Dispose();
                     SKore.Unsubscribe(ref Connected);
                     SKore.Unsubscribe(ref Disconnected);
                     SKore.Unsubscribe(ref DataIncoming);

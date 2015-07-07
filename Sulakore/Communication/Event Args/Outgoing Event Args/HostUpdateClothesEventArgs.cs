@@ -32,8 +32,8 @@ namespace Sulakore.Communication
 {
     public class HostUpdateClothesEventArgs : InterceptedEventArgs
     {
-        public HGender Gender { get; }
-        public string FigureId { get; }
+        public HGender Gender { get; private set; }
+        public string FigureId { get; private set; }
 
         public HostUpdateClothesEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -54,8 +54,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, " +
-            $"{nameof(Gender)}: {Gender}, {nameof(FigureId)}: {FigureId}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Gender: {1}, FigureId: {2}",
+                Packet.Header, Gender, FigureId);
+        }
     }
 }

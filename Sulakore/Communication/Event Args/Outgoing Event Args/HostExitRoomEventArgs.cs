@@ -47,7 +47,9 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}";
+        public override string ToString()
+        {
+            return "Header: " + Packet.Header;
+        }
     }
 }

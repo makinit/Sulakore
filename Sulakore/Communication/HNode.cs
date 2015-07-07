@@ -41,7 +41,7 @@ namespace Sulakore.Communication
         /// <summary>
         /// Gets the underlying <see cref="Socket"/>.
         /// </summary>
-        public Socket Client { get; }
+        public Socket Client { get; private set; }
         /// <summary>
         /// Gets or sets the <see cref="Rc4"/> for encrypting the data being sent.
         /// </summary>
@@ -50,7 +50,7 @@ namespace Sulakore.Communication
         /// Gets or sets the <see cref="Rc4"/> for decrypting the data being received.
         /// </summary>
         public Rc4 Decrypter { get; set; }
-        public NetworkStream SocketStream { get; }
+        public NetworkStream SocketStream { get; private set; }
         /// <summary>
         /// Gets or sets the value that determines whether the <see cref="HNode"/> has already been disposed.
         /// </summary>
@@ -63,7 +63,7 @@ namespace Sulakore.Communication
         public HNode(Socket client)
         {
             if (client == null)
-                throw new NullReferenceException(nameof(client));
+                throw new NullReferenceException("client");
 
             Client = client;
             SocketStream = new NetworkStream(Client);
@@ -76,7 +76,9 @@ namespace Sulakore.Communication
         /// <returns></returns>
         public Task<int> SendAsync(byte[] buffer)
         {
-            buffer = Encrypter?.SafeParse(buffer) ?? buffer;
+            if (Encrypter != null)
+                buffer = Encrypter.SafeParse(buffer);
+
             return SendAsync(buffer, 0, buffer.Length);
         }
         /// <summary>
@@ -86,29 +88,18 @@ namespace Sulakore.Communication
         /// <param name="offset">The zero-based position in the buffer parameter at which to begin sending data.</param>
         /// <param name="size">The number of bytes to send.</param>
         /// <returns></returns>
-        public Task<int> SendAsync(byte[] buffer, int offset, int size)
+        public async Task<int> SendAsync(byte[] buffer, int offset, int size)
         {
-            IAsyncResult result = Client.BeginSend(buffer, offset,
-                size, SocketFlags.None, null, null);
-
-            return Task.Factory.FromAsync(result, Client.EndSend);
-        }
-
-        public async Task<byte[]> ReceiveUntilEndAsync()
-        {
-            using (var memoryStream = new MemoryStream())
+            try
             {
-                while (Client.Available > 0)
-                {
-                    byte[] buffer = new byte[Client.Available];
-                    int length = await ReceiveAsync(buffer, 0, buffer.Length)
-                        .ConfigureAwait(false);
+                IAsyncResult result = Client.BeginSend(buffer, offset,
+                    size, SocketFlags.None, null, null);
 
-                    memoryStream.Write(buffer, 0, length);
-                }
-                return memoryStream.ToArray();
+                return await Task.Factory.FromAsync<int>(result, Client.EndSend);
             }
+            catch (ObjectDisposedException) { return 0; }
         }
+
         /// <summary>
         /// Receives an array of type <see cref="byte"/> that is of a specific length determined by the four bytes at the beginning in an asynchronous operation.
         /// </summary>
@@ -118,8 +109,10 @@ namespace Sulakore.Communication
             byte[] lengthBlock = new byte[4];
             await ReceiveAsync(lengthBlock, 0, 4).ConfigureAwait(false);
 
-            Decrypter?.Parse(lengthBlock);
-            int bodyLength = BigEndian.DecypherInt(lengthBlock);
+            if (Decrypter != null)
+                Decrypter.Parse(lengthBlock);
+
+            int bodyLength = BigEndian.ToSI32(lengthBlock);
 
             int bytesRead = 0;
             int totalBytesRead = 0;
@@ -134,7 +127,9 @@ namespace Sulakore.Communication
                 Buffer.BlockCopy(block, 0, body, totalBytesRead, bytesRead);
                 totalBytesRead += bytesRead;
             }
-            Decrypter?.Parse(body);
+
+            if (Decrypter != null)
+                Decrypter.Parse(body);
 
             byte[] packet = new byte[4 + body.Length];
             Buffer.BlockCopy(lengthBlock, 0, packet, 0, 4);
@@ -149,12 +144,16 @@ namespace Sulakore.Communication
         /// <param name="offset">The location in buffer to store the received data.</param>
         /// <param name="size">The number of bytes to receive.</param>
         /// <returns></returns>
-        public Task<int> ReceiveAsync(byte[] buffer, int offset, int size)
+        public async Task<int> ReceiveAsync(byte[] buffer, int offset, int size)
         {
-            IAsyncResult result = Client.BeginReceive(buffer, offset,
-                size, SocketFlags.None, null, null);
+            try
+            {
+                IAsyncResult result = Client.BeginReceive(buffer, offset,
+                     size, SocketFlags.None, null, null);
 
-            return Task.Factory.FromAsync(result, Client.EndReceive);
+                return await Task.Factory.FromAsync<int>(result, Client.EndReceive);
+            }
+            catch (ObjectDisposedException) { return 0; }
         }
 
         /// <summary>
@@ -202,20 +201,18 @@ namespace Sulakore.Communication
         /// <param name="disposing">The value that determines whether managed resources should be disposed.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (!IsDisposed)
+            if (IsDisposed) return;
+            if (disposing)
             {
-                if (disposing)
-                {
-                    SocketStream.Dispose();
+                SocketStream.Dispose();
 
-                    Client.Shutdown(SocketShutdown.Both);
-                    Client.Close();
+                Client.Shutdown(SocketShutdown.Both);
+                Client.Close();
 
-                    Encrypter = null;
-                    Decrypter = null;
-                }
-                IsDisposed = true;
+                Encrypter = null;
+                Decrypter = null;
             }
+            IsDisposed = true;
         }
     }
 }

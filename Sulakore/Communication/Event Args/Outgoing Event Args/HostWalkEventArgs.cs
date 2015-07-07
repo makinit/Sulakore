@@ -32,7 +32,7 @@ namespace Sulakore.Communication
 {
     public class HostWalkEventArgs : InterceptedEventArgs
     {
-        public HPoint Tile { get; }
+        public HPoint Tile { get; private set; }
 
         public HostWalkEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -53,7 +53,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Tile)}: {Tile}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Tile: {1}",
+                Packet.Header, Tile);
+        }
     }
 }

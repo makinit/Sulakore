@@ -32,11 +32,11 @@ namespace Sulakore.Communication
 {
     public class FurnitureMoveEventArgs : InterceptedEventArgs
     {
-        public int Id { get; }
-        public int TypeId { get; }
-        public int OwnerId { get; }
-        public HPoint Tile { get; }
-        public HDirection Direction { get; }
+        public int Id { get; private set; }
+        public int TypeId { get; private set; }
+        public int OwnerId { get; private set; }
+        public HPoint Tile { get; private set; }
+        public HDirection Direction { get; private set; }
 
         public FurnitureMoveEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -66,8 +66,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Id)}: {Id}, " +
-            $"{nameof(OwnerId)}: {OwnerId}, {nameof(Tile)}: {Tile}, {nameof(Direction)}: {Direction}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Id: {1}, OwnerId: {2}, Tile: {3}, Direction: {4}",
+                Packet.Header, Id, OwnerId, Tile, Direction);
+        }
     }
 }

@@ -32,7 +32,7 @@ namespace Sulakore.Communication
 {
     public class HostGestureEventArgs : InterceptedEventArgs
     {
-        public HGesture Gesture { get; }
+        public HGesture Gesture { get; private set; }
 
         public HostGestureEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -52,7 +52,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Gesture)}: {Gesture}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Gesture: {1}",
+                Packet.Header, Gesture);
+        }
     }
 }

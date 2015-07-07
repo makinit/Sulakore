@@ -32,7 +32,7 @@ namespace Sulakore.Communication
 {
     public class HostRaiseSignEventArgs : InterceptedEventArgs
     {
-        public HSign Sign { get; }
+        public HSign Sign { get; private set; }
 
         public HostRaiseSignEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -52,7 +52,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Sign)}: {Sign}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Sign: {1}",
+                Packet.Header, Sign);
+        }
     }
 }

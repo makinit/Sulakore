@@ -32,7 +32,7 @@ namespace Sulakore.Communication
 {
     public class HostUpdateStanceEventArgs : InterceptedEventArgs
     {
-        public HStance Stance { get; }
+        public HStance Stance { get; private set; }
 
         public HostUpdateStanceEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -52,7 +52,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Stance)}: {Stance}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Stance: {1}",
+                Packet.Header, Stance);
+        }
     }
 }

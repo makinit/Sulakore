@@ -31,7 +31,7 @@ namespace Sulakore.Communication
 {
     public class HostKickPlayerEventArgs : InterceptedEventArgs
     {
-        public int Id { get; }
+        public int Id { get; private set; }
 
         public HostKickPlayerEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -51,7 +51,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Id)}: {Id}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Id: {1}",
+                Packet.Header, Id);
+        }
     }
 }

@@ -32,8 +32,8 @@ namespace Sulakore.Communication
 {
     public class PlayerGestureEventArgs : InterceptedEventArgs, IHEntity
     {
-        public int Index { get; }
-        public HGesture Gesture { get; }
+        public int Index { get; private set; }
+        public HGesture Gesture { get; private set; }
 
         public PlayerGestureEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -54,8 +54,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, " +
-            $"{nameof(Index)}: {Index}, {nameof(Gesture)}: {Gesture}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Index: {1}, Gesture: {2}",
+                Packet.Header, Index, Gesture);
+        }
     }
 }

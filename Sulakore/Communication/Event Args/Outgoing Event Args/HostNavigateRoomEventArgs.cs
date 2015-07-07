@@ -31,8 +31,8 @@ namespace Sulakore.Communication
 {
     public class HostNavigateRoomEventArgs : InterceptedEventArgs
     {
-        public int RoomId { get; }
-        public string Password { get; }
+        public int RoomId { get; private set; }
+        public string Password { get; private set; }
 
         public HostNavigateRoomEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -53,8 +53,10 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, " +
-            $"{nameof(RoomId)}: {RoomId}, {nameof(Password)}: {Password}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, RoomId: {1}, Password: {2}",
+                Packet.Header, RoomId, Password);
+        }
     }
 }

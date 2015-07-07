@@ -36,8 +36,14 @@ namespace Sulakore.Communication
     {
         private readonly IReadOnlyList<HEntity> _entityLoadList;
 
-        public int Count => _entityLoadList.Count;
-        public HEntity this[int index] => _entityLoadList[index];
+        public int Count
+        {
+            get { return _entityLoadList.Count; }
+        }
+        public HEntity this[int index]
+        {
+            get { return _entityLoadList[index]; }
+        }
 
         public EntityLoadEventArgs(HMessage packet)
             : this(null, -1, packet)
@@ -57,13 +63,18 @@ namespace Sulakore.Communication
             : this(continuation, step, new HMessage(data, destination))
         { }
 
-        public IEnumerator<HEntity> GetEnumerator() =>
-            _entityLoadList.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)_entityLoadList).GetEnumerator();
+        }
+        public IEnumerator<HEntity> GetEnumerator()
+        {
+            return _entityLoadList.GetEnumerator();
+        }
 
-        IEnumerator IEnumerable.GetEnumerator() =>
-            ((IEnumerable)_entityLoadList).GetEnumerator();
-
-        public override string ToString() =>
-            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Count)}: {Count}";
+        public override string ToString()
+        {
+            return string.Format("Header: {0}, Count: {1}", Packet.Header, Count);
+        }
     }
 }
