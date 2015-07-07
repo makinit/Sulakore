@@ -67,6 +67,7 @@
     <Compile Include="Communication\HNode.cs" />
     <Compile Include="Communication\HTriggers.cs" />
     <Compile Include="Communication\IHConnection.cs" />
+    <Compile Include="Components\Draw.cs" />
     <Compile Include="Components\Event Args\ScheduleTickEventArgs.cs" />
     <Compile Include="Components\SKoreButton.cs">
       <SubType>Component</SubType>
