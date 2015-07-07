@@ -65,8 +65,7 @@ namespace Sulakore.Communication
 
         public IEnumerator<HEntityAction> GetEnumerator()
         {
-            return
-                _entityActionList.GetEnumerator();
+            return _entityActionList.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
