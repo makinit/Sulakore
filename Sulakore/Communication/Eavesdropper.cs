@@ -8,6 +8,7 @@ using System.Net.Security;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Security.Authentication;
+using System.Text.RegularExpressions;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Sulakore.Communication
@@ -16,6 +17,7 @@ namespace Sulakore.Communication
     {
         private static TcpListener _listener;
 
+        private static readonly Regex _cookieSplitter;
         private static readonly CertificateManager _certManager;
         private static readonly List<Task> _handleClientRequestTasks;
         private static readonly object _initiateLock, _terminateLock;
@@ -41,23 +43,22 @@ namespace Sulakore.Communication
             get { return NativeMethods.IsSslSupported; }
             set { NativeMethods.IsSslSupported = value; }
         }
-        public static CookieContainer Cookies { get; private set; }
         public static int ListenPort { get; private set; }
         public static bool IsRunning { get; private set; }
-        public static bool IsProxyRegistered { get { return NativeMethods.IsProxyRegistered; } }
+        public static bool IsProxyRegistered
+        {
+            get { return NativeMethods.IsProxyRegistered; }
+        }
 
         static Eavesdropper()
         {
-            Cookies = new CookieContainer();
-
-            _handleClientRequestTasks = new List<Task>();
-
-            string identifier = "Eavesdropper";
-            _certManager = new CertificateManager(identifier,
-                identifier + " Root Certificate Authority");
+            _certManager = new CertificateManager("Eavesdropper",
+                "Eavesdropper Root Certificate Authority");
 
             _initiateLock = new object();
             _terminateLock = new object();
+            _cookieSplitter = new Regex(@",(?! )");
+            _handleClientRequestTasks = new List<Task>();
         }
 
         public static void Terminate()
@@ -119,9 +120,9 @@ namespace Sulakore.Communication
 
                 while (IsRunning)
                 {
-                    if (_handleClientRequestTasks.Count >= 5)
+                    if (_handleClientRequestTasks.Count >= 3)
                     {
-                        Task.WaitAny(_handleClientRequestTasks.ToArray());
+                        Task.WaitAny(_handleClientRequestTasks.ToArray(), 500);
                         _handleClientRequestTasks.RemoveAll(t => t.IsCompleted);
                     }
 
@@ -131,7 +132,7 @@ namespace Sulakore.Communication
                         Socket client = _listener.AcceptSocket();
 
                         Task readRequestTask = Task.Factory.StartNew(
-                            () => HandleClientRequestAsync(client));
+                            () => HandleClientRequest(client));
 
                         _handleClientRequestTasks.Add(readRequestTask);
                     }
@@ -140,12 +141,13 @@ namespace Sulakore.Communication
             }
             finally { _handleClientRequestTasks.Clear(); }
         }
-        private static void HandleClientRequestAsync(Socket socket)
+        private static void HandleClientRequest(Socket socket)
         {
-            Stream clientStream = new NetworkStream(socket, true);
+            Stream clientStream = null;
             try
             {
                 byte[] postRequestPayload = null;
+                clientStream = new NetworkStream(socket, true);
 
                 byte[] requestCommandPayload =
                     ReadRequestStreamData(clientStream, ref postRequestPayload);
@@ -156,14 +158,13 @@ namespace Sulakore.Communication
                 if (requestCommand.StartsWith("CONNECT"))
                 {
                     socket.Send(_fakeOkResponse);
-
-                    if (!requestCommand.Contains(":443"))
-                        return;
+                    if (!requestCommand.Contains(":443")) return;
 
                     string host = requestCommand.GetChild("Host: ", '\r');
                     clientStream = GetSecureClientStream(host, clientStream);
 
-                    requestCommandPayload = ReadRequestStreamData(clientStream, ref postRequestPayload);
+                    requestCommandPayload =
+                        ReadRequestStreamData(clientStream, ref postRequestPayload);
 
                     if (requestCommandPayload.Length < 1) return;
                     requestCommand = Encoding.ASCII.GetString(requestCommandPayload);
@@ -187,7 +188,11 @@ namespace Sulakore.Communication
 
                 HandleClientResponse(requestArgs, clientStream);
             }
-            finally { clientStream.Dispose(); }
+            finally
+            {
+                if (clientStream != null)
+                    clientStream.Dispose();
+            }
         }
         private static void HandleClientResponse(EavesdropperRequestEventArgs requestArgs, Stream clientStream)
         {
@@ -198,7 +203,7 @@ namespace Sulakore.Communication
             if (webResponse == null) return;
             using (var response = (HttpWebResponse)webResponse)
             {
-                if (requestArgs.Cancel) return; // TODO: Call a 404?
+                if (requestArgs.Cancel) return;
                 response.Headers["Cache-Control"] = "no-cache, no-store";
 
                 byte[] responsePayload = null;
@@ -211,13 +216,6 @@ namespace Sulakore.Communication
 
                 var responseArgs = new EavesdropperResponseEventArgs(response);
                 responseArgs.Payload = responsePayload;
-
-                if (responsePayload != null && responsePayload.Length > 0)
-                {
-                    response.Headers.Remove(HttpResponseHeader.TransferEncoding);
-                    if (string.IsNullOrWhiteSpace(response.Headers["Content-Encoding"]))
-                        response.Headers.Remove(HttpResponseHeader.ContentEncoding);
-                }
 
                 OnEavesdropperResponse(responseArgs);
                 if (!responseArgs.Cancel)
@@ -233,6 +231,15 @@ namespace Sulakore.Communication
 
                         responseCommand = responseCommand
                             .Replace("Set-Cookie: " + innerCookies + "\r\n", responseCookies);
+                    }
+
+                    if (responseCommand.Contains("Content-Length"))
+                    {
+                        string contentLengthChild =
+                            responseCommand.GetChild("Content-Length: ", '\r');
+
+                        responseCommand = responseCommand.Replace(
+                            contentLengthChild + "\r", responseArgs.Payload.Length + "\r");
                     }
 
                     byte[] responseCommandPayload = Encoding.ASCII.GetBytes(responseCommand);
@@ -263,7 +270,8 @@ namespace Sulakore.Communication
             if (requestCommand.StartsWith(method + " /") &&
                 !string.IsNullOrWhiteSpace(host))
             {
-                requestCommandArgs[1] = "https://" + host + requestCommandArgs[1];
+                requestCommandArgs[1] =
+                    "https://" + host + requestCommandArgs[1];
             }
             return requestCommandArgs;
         }
@@ -316,7 +324,6 @@ namespace Sulakore.Communication
             {
                 int contentLength = 0;
                 long lineStartPosition = 0;
-                string xx = string.Empty;
                 while (true)
                 {
                     int streamByte = clientStream.ReadByte();
@@ -331,7 +338,6 @@ namespace Sulakore.Communication
                         streamDataBuffer.Read(lineBuffer, 0, lineBuffer.Length);
 
                         string line = Encoding.ASCII.GetString(lineBuffer);
-                        xx += line;
 
                         if (line.StartsWith("Content-Length"))
                             contentLength = int.Parse(line.GetChild(": ", '\r'));
@@ -361,10 +367,11 @@ namespace Sulakore.Communication
             string cookies = response.Headers["Set-Cookie"];
             if (string.IsNullOrWhiteSpace(cookies)) return string.Empty;
 
-            var cookieBuilder = new StringBuilder();
-            Cookies.SetCookies(response.ResponseUri, cookies);
+            string[] cookieValues = _cookieSplitter.Split(cookies);
 
-            foreach (var cookie in Cookies.GetCookies(response.ResponseUri))
+            var cookieBuilder = new StringBuilder();
+
+            foreach (var cookie in cookieValues)
                 cookieBuilder.Append(string.Format("Set-Cookie: {0}\r\n", cookie));
 
             return cookieBuilder.ToString();
