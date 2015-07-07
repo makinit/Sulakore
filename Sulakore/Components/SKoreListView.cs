@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Windows.Forms;
 using System.ComponentModel;
 
@@ -123,19 +124,21 @@ namespace Sulakore.Components
 
             EnsureVisible(item.Index);
         }
-        public ListViewItem FocusAdd(params string[] items)
+        public ListViewItem FocusAdd(params object[] items)
         {
-            var listViewItem = new ListViewItem(items);
+            string[] stringItems = items
+                .Select(i => i.ToString()).ToArray();
+
+            var listViewItem = new ListViewItem(stringItems);
             FocusAdd(listViewItem);
+
             return listViewItem;
         }
 
         public ListViewItem GetSelectedItem()
         {
-            if (SelectedItems.Count < 1)
-                throw new Exception("No items are currently selected.");
-
-            return SelectedItems[0];
+            return SelectedItems.Count > 1 ?
+                SelectedItems[0] : null;
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
