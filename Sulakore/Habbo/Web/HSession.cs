@@ -291,7 +291,8 @@ namespace Sulakore.Habbo.Web
 
         public override string ToString()
         {
-            return string.Format("{0}:{1}:{2}", Email, Password, Hotel.ToDomain());
+            return string.Format("{0}:{1}:{2}",
+                Email, Password, Hotel.ToDomain());
         }
 
         public void Dispose()
