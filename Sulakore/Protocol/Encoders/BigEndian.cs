@@ -36,7 +36,7 @@ namespace Sulakore.Protocol.Encoders
         }
         public static ushort ToUI16(byte[] data, int offset)
         {
-            return (ushort)(data[offset] << 8 + data[offset + 1]);
+            return (ushort)((data[offset] << 8) + data[offset + 1]);
         }
 
         public static int ToSI32(byte[] data)
@@ -49,7 +49,10 @@ namespace Sulakore.Protocol.Encoders
         }
         public static int ToSI32(byte[] data, int offset)
         {
-            return ((data[offset] << 24) + (data[offset + 1] << 16) + (data[offset + 2] << 8) + data[offset + 3]);
+            return ((data[offset] << 24) +
+                (data[offset + 1] << 16) +
+                (data[offset + 2] << 8) +
+                data[offset + 3]);
         }
     }
 }
