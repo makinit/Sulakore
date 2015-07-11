@@ -26,13 +26,13 @@ namespace Sulakore.Protocol
 {
     public interface IHPacket
     {
-        int Position { get;}
-        ushort Header { get; }
+        int Position { get; set; }
+        ushort Header { get; set; }
         HDestination Destination { get; set; }
 
-        bool IsCorrupted { get; }
         int Length { get; }
         byte[] Body { get; }
+        bool IsCorrupted { get; }
 
         int ReadInteger();
         ushort ReadShort();
