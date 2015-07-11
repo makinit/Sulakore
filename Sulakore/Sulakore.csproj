@@ -32,9 +32,6 @@
     <DocumentationFile>bin\Release\Sulakore.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Communication\Eavesdropper.cs" />
-    <Compile Include="Communication\Event Args\EavesdropperRequestEventArgs.cs" />
-    <Compile Include="Communication\Event Args\EavesdropperResponseEventArgs.cs" />
     <Compile Include="Communication\Event Args\InterceptedEventArgs.cs" />
     <Compile Include="Communication\Event Args\Incoming Event Args\FurnitureLoadEventArgs.cs" />
     <Compile Include="Communication\Event Args\Incoming Event Args\EntityActionEventArgs.cs" />
@@ -115,39 +112,6 @@
     <Compile Include="Habbo\HEntity.cs" />
     <Compile Include="Habbo\HPoint.cs" />
     <Compile Include="Habbo\IHEntity.cs" />
-    <Compile Include="Inspector\Enums\Edition.cs" />
-    <Compile Include="Inspector\Enums\FillStyle.cs" />
-    <Compile Include="Inspector\Enums\LanguageCode.cs" />
-    <Compile Include="Inspector\Enums\Product.cs" />
-    <Compile Include="Inspector\Enums\TagType.cs" />
-    <Compile Include="Inspector\FillStyle.cs" />
-    <Compile Include="Inspector\FillStyleArray.cs" />
-    <Compile Include="Inspector\RecordHeader.cs" />
-    <Compile Include="Inspector\Rect.cs" />
-    <Compile Include="Inspector\Shapes\EndShapeRecord.cs" />
-    <Compile Include="Inspector\Shapes\IShapeRecord.cs" />
-    <Compile Include="Inspector\Shapes\Shape.cs" />
-    <Compile Include="Inspector\Shapes\StyleChangeRecord.cs" />
-    <Compile Include="Inspector\ShockwaveFlash.cs" />
-    <Compile Include="Inspector\Symbol.cs" />
-    <Compile Include="Inspector\Tags\DebugIdTag.cs" />
-    <Compile Include="Inspector\Tags\DefineBinaryDataTag.cs" />
-    <Compile Include="Inspector\Tags\DefineFont3Tag.cs" />
-    <Compile Include="Inspector\Tags\DoAbcTag.cs" />
-    <Compile Include="Inspector\Tags\EnableDebugger2Tag.cs" />
-    <Compile Include="Inspector\Tags\EndTag.cs" />
-    <Compile Include="Inspector\Tags\FileAttributesTag.cs" />
-    <Compile Include="Inspector\Tags\FrameLabelTag.cs" />
-    <Compile Include="Inspector\Tags\IFlashTag.cs" />
-    <Compile Include="Inspector\Tags\MetadataTag.cs" />
-    <Compile Include="Inspector\Tags\ProductInfoTag.cs" />
-    <Compile Include="Inspector\Tags\ScriptLimitsTag.cs" />
-    <Compile Include="Inspector\Tags\SetBackgroundColorTag.cs" />
-    <Compile Include="Inspector\Tags\ShowFrameTag.cs" />
-    <Compile Include="Inspector\Tags\SymbolClassTag.cs" />
-    <Compile Include="Inspector\Tags\UnsupportedTag.cs" />
-    <Compile Include="Internals\CertificateManager.cs" />
-    <Compile Include="Internals\NativeMethods.cs" />
     <Compile Include="Protocol\Encoders\BigEndian.cs" />
     <Compile Include="Protocol\Encryption\BigInteger.cs" />
     <Compile Include="Protocol\Encryption\Enums\PkcsPadding.cs" />
