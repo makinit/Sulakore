@@ -40,6 +40,7 @@ namespace Sulakore.Protocol
         {
             int index = Position;
             int value = ReadInteger(ref index);
+
             Position = index;
             return value;
         }
@@ -53,6 +54,7 @@ namespace Sulakore.Protocol
         {
             int index = Position;
             ushort value = ReadShort(ref index);
+
             Position = index;
             return value;
         }
@@ -66,6 +68,7 @@ namespace Sulakore.Protocol
         {
             int index = Position;
             bool value = ReadBoolean(ref index);
+
             Position = index;
             return value;
         }
@@ -79,7 +82,8 @@ namespace Sulakore.Protocol
         {
             int index = Position;
             string value = ReadString(ref index);
-            Position = index + Encoding.UTF8.GetByteCount(value);
+
+            Position = index;
             return value;
         }
         public virtual string ReadString(int index)
@@ -92,6 +96,7 @@ namespace Sulakore.Protocol
         {
             int index = Position;
             byte[] value = ReadBytes(length, ref index);
+
             Position = index;
             return value;
         }
