@@ -29,8 +29,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-using Sulakore.Habbo.Headers;
 using Sulakore.Protocol;
+using Sulakore.Habbo.Headers;
 using Sulakore.Protocol.Encoders;
 
 namespace Sulakore.Communication
