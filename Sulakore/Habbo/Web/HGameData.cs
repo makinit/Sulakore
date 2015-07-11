@@ -150,13 +150,16 @@ namespace Sulakore.Habbo.Web
             if (string.IsNullOrWhiteSpace(possibleFlashClientUrl))
                 return string.Empty;
 
+            char flashUrlStartChar =
+                possibleFlashClientUrl[0];
+
             bool isVariable =
-                (possibleFlashClientUrl[0] != '"');
+                (flashUrlStartChar != '"' && flashUrlStartChar != '\'');
 
             if (!isVariable)
             {
-                possibleFlashClientUrl =
-                    possibleFlashClientUrl.Replace("\"", string.Empty);
+                possibleFlashClientUrl = possibleFlashClientUrl.Replace(
+                    flashUrlStartChar.ToString(), string.Empty);
             }
             else
             {
