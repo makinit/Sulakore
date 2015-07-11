@@ -180,9 +180,9 @@ namespace Sulakore.Protocol
             if (index + 1 > Body.Length)
                 throw new Exception("Not enough data at the current position to read a boolean.");
 
-            bool value = Body[index++] == 1;
-            AddToRead(value);
+            bool value = (Body[index++] == 1);
 
+            AddToRead(value);
             return value;
         }
         public override string ReadString(ref int index)
@@ -192,8 +192,8 @@ namespace Sulakore.Protocol
             if (index + length > Body.Length)
                 throw new Exception("Not enough data at the current position to begin reading a string.");
 
-            string value = Encoding.UTF8.GetString(
-                Body, index, length);
+            byte[] stringData = ReadBytes(length, ref index);
+            string value = Encoding.UTF8.GetString(stringData);
 
             AddToRead(value);
             return value;
