@@ -1,5 +1,4 @@
-﻿using System;
-using System.Timers;
+﻿using System.Timers;
 using System.Drawing;
 using System.Windows.Forms;
 using System.ComponentModel;
@@ -10,6 +9,8 @@ namespace Sulakore.Components
     public class SKoreLabel : Label
     {
         private readonly System.Timers.Timer _animateTimer;
+        private readonly SetDotAnimationCallback _setDotAnimation;
+        private delegate void SetDotAnimationCallback(string prefix);
 
         private int _borderWidth = 2;
         [DefaultValue(2)]
@@ -54,6 +55,7 @@ namespace Sulakore.Components
             SetStyle((ControlStyles)2050, true);
             DoubleBuffered = true;
 
+            _setDotAnimation = new SetDotAnimationCallback(SetDotAnimation);
             _animateTimer = new System.Timers.Timer(_animationInterval);
             _animateTimer.SynchronizingObject = this;
             _animateTimer.Elapsed += DoAnimation;
@@ -64,12 +66,18 @@ namespace Sulakore.Components
             _animateTimer.Stop();
             Text = text;
         }
-        public void StartDotAnimation(string prefix)
+        public void SetDotAnimation(string prefix)
         {
-            StopDotAnimation(string.Empty);
-
-            Text = (prefix + ".");
-            _animateTimer.Start();
+            if (InvokeRequired)
+            {
+                BeginInvoke(_setDotAnimation, prefix);
+            }
+            else
+            {
+                StopDotAnimation(string.Empty);
+                Text = (prefix + ".");
+                _animateTimer.Start();
+            }
         }
 
         protected override void OnPaint(PaintEventArgs e)
