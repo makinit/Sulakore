@@ -29,10 +29,10 @@ using System.Text;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 using Sulakore.Protocol;
 using Sulakore.Communication;
-using System.Collections.Generic;
 
 namespace Sulakore.Habbo.Web
 {
@@ -144,10 +144,7 @@ namespace Sulakore.Habbo.Web
 
                     TotalIncoming = 0;
                 }
-                finally
-                {
-                    Monitor.Exit(_disconnectLock);
-                }
+                finally { Monitor.Exit(_disconnectLock); }
             }
         }
         public async Task ConnectAsync()
@@ -175,10 +172,15 @@ namespace Sulakore.Habbo.Web
                 loginRequest.Method = "POST";
                 loginRequest.Proxy = null;
 
-                using (Stream requestStream = await loginRequest.GetRequestStreamAsync().ConfigureAwait(false))
-                    await requestStream.WriteAsync(postData, 0, postData.Length).ConfigureAwait(false);
+                using (Stream requestStream = await loginRequest.GetRequestStreamAsync()
+                    .ConfigureAwait(false))
+                {
+                    await requestStream.WriteAsync(postData,
+                        0, postData.Length).ConfigureAwait(false);
+                }
 
-                using (WebResponse loginResponse = await loginRequest.GetResponseAsync().ConfigureAwait(false))
+                using (WebResponse loginResponse = await loginRequest
+                    .GetResponseAsync().ConfigureAwait(false))
                 using (Stream loginStream = loginResponse.GetResponseStream())
                 using (var loginReader = new StreamReader(loginStream))
                 {
@@ -199,7 +201,6 @@ namespace Sulakore.Habbo.Web
                 }
             }
             catch { IsAuthenticated = false; }
-
             return IsAuthenticated;
         }
 
@@ -217,7 +218,8 @@ namespace Sulakore.Habbo.Web
             byte[] packet = await Remote.ReceiveWireMessageAsync()
                 .ConfigureAwait(false);
 
-            HandleIncoming(packet, ++TotalIncoming);
+            if (packet == null) Disconnect();
+            else HandleIncoming(packet, ++TotalIncoming);
         }
         private async Task ExtractGameDataAsync()
         {
@@ -228,12 +230,16 @@ namespace Sulakore.Habbo.Web
             clientUrlRequest.Method = "GET";
             clientUrlRequest.Proxy = null;
 
-            using (WebResponse clientUrlResponse = await clientUrlRequest.GetResponseAsync().ConfigureAwait(false))
+            using (WebResponse clientUrlResponse = await clientUrlRequest
+                .GetResponseAsync().ConfigureAwait(false))
             using (Stream clientUrlStream = clientUrlResponse.GetResponseStream())
             using (var clientUrlReader = new StreamReader(clientUrlStream))
             {
-                string clientUrl = await clientUrlReader.ReadToEndAsync();
-                clientUrl = clientUrl.GetChild("{\"clienturl\":\"", '"');
+                string clientUrl = await clientUrlReader
+                    .ReadToEndAsync().ConfigureAwait(false);
+
+                clientUrl = clientUrl
+                    .GetChild("{\"clienturl\":\"", '"');
 
                 using (var client = new WebClient())
                 {
@@ -242,7 +248,9 @@ namespace Sulakore.Habbo.Web
                         clientUrlRequest.Headers["Cookie"];
 
                     SsoTicket = clientUrl.Split('/').Last();
-                    string clientBody = await client.DownloadStringTaskAsync(clientUrl);
+                    string clientBody = await client.DownloadStringTaskAsync(
+                        clientUrl).ConfigureAwait(false);
+
                     GameData = new HGameData(clientBody);
                 }
             }
@@ -301,18 +309,16 @@ namespace Sulakore.Habbo.Web
         }
         protected virtual void Dispose(bool disposing)
         {
-            if (!IsDisposed)
+            if (IsDisposed) return;
+            if (disposing)
             {
-                if (disposing)
-                {
-                    Triggers.Dispose();
-                    SKore.Unsubscribe(ref Connected);
-                    SKore.Unsubscribe(ref Disconnected);
-                    SKore.Unsubscribe(ref DataIncoming);
-                    Disconnect();
-                }
-                IsDisposed = true;
+                Triggers.Dispose();
+                SKore.Unsubscribe(ref Connected);
+                SKore.Unsubscribe(ref Disconnected);
+                SKore.Unsubscribe(ref DataIncoming);
+                Disconnect();
             }
+            IsDisposed = true;
         }
     }
 }
