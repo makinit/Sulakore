@@ -219,7 +219,8 @@ namespace Sulakore.Protocol.Encryption
         }
         public static string BytesToHex(byte[] data)
         {
-            return BitConverter.ToString(data).Replace("-", string.Empty);
+            return BitConverter.ToString(data)
+                .Replace("-", string.Empty);
         }
         public static string RandomHex(int length = 16)
         {
