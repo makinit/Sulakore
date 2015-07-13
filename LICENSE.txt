@@ -1,3 +1,7 @@
+GitHub(Source): https://GitHub.com/ArachisH/Sulakore
+Sulakore.dll - .NET library for creating Habbo Hotel related desktop applications.
+Copyright (C) 2015 ArachisH
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 2, June 1991
 
