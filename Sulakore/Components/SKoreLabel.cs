@@ -66,6 +66,11 @@ namespace Sulakore.Components
             _animateTimer.Stop();
             Text = text;
         }
+        public void StopDotAnimation(string format, params object[] args)
+        {
+            StopDotAnimation(string.Format(format, args));
+        }
+
         public void SetDotAnimation(string prefix)
         {
             if (InvokeRequired)
@@ -78,6 +83,10 @@ namespace Sulakore.Components
                 Text = (prefix + ".");
                 _animateTimer.Start();
             }
+        }
+        public void SetDotAnimation(string format, params object[] args)
+        {
+            SetDotAnimation(string.Format(format, args));
         }
 
         protected override void OnPaint(PaintEventArgs e)
