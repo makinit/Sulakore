@@ -206,13 +206,14 @@ namespace Sulakore.Communication
             GameHostName = host;
 
             RestoreHosts();
-            while (true)
+            while (!IsConnected)
             {
                 File.AppendAllText(_hostsFile, string.Format("127.0.0.1\t\t{0}\t\t#Sulakore", host));
                 Local = await HNode.InterceptAsync(port).ConfigureAwait(true);
 
                 RestoreHosts();
-                Remote = await HNode.ConnectAsync(host, port).ConfigureAwait(false);
+                Remote = await HNode.ConnectAsync(host, port)
+                    .ConfigureAwait(false);
 
                 byte[] buffer = new byte[6];
                 int length = await Local.ReceiveAsync(buffer, 0, buffer.Length)
@@ -292,8 +293,11 @@ namespace Sulakore.Communication
 
         private async Task ReadOutgoingAsync()
         {
-            byte[] packet = await Local.ReceiveWireMessageAsync().ConfigureAwait(false);
-            HandleOutgoing(packet, ++TotalOutgoing);
+            byte[] packet = await Local.ReceiveWireMessageAsync()
+                .ConfigureAwait(false);
+
+            if (packet == null) Disconnect();
+            else HandleOutgoing(packet, ++TotalOutgoing);
         }
         private void HandleOutgoing(byte[] data, int count)
         {
@@ -318,8 +322,11 @@ namespace Sulakore.Communication
 
         private async Task ReadIncomingAsync()
         {
-            byte[] packet = await Remote.ReceiveWireMessageAsync().ConfigureAwait(false);
-            HandleIncoming(packet, ++TotalIncoming);
+            byte[] packet = await Remote.ReceiveWireMessageAsync()
+                .ConfigureAwait(false);
+
+            if (packet == null) Disconnect();
+            else HandleIncoming(packet, ++TotalIncoming);
         }
         private void HandleIncoming(byte[] data, int count)
         {
@@ -367,18 +374,16 @@ namespace Sulakore.Communication
         /// <param name="disposing">The value that determines whether managed resources should be disposed.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (!IsDisposed)
+            if (IsDisposed) return;
+            if (disposing)
             {
-                if (disposing)
-                {
-                    SKore.Unsubscribe(ref Connected);
-                    SKore.Unsubscribe(ref Disconnected);
-                    SKore.Unsubscribe(ref DataIncoming);
-                    SKore.Unsubscribe(ref DataOutgoing);
-                    Disconnect();
-                }
-                IsDisposed = true;
+                SKore.Unsubscribe(ref Connected);
+                SKore.Unsubscribe(ref Disconnected);
+                SKore.Unsubscribe(ref DataIncoming);
+                SKore.Unsubscribe(ref DataOutgoing);
+                Disconnect();
             }
+            IsDisposed = true;
         }
     }
 }
