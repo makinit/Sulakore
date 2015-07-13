@@ -23,7 +23,6 @@
 */
 
 using System;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -39,10 +38,6 @@ namespace Sulakore.Communication
     public class HNode : IDisposable
     {
         /// <summary>
-        /// Gets the underlying <see cref="Socket"/>.
-        /// </summary>
-        public Socket Client { get; private set; }
-        /// <summary>
         /// Gets or sets the <see cref="Rc4"/> for encrypting the data being sent.
         /// </summary>
         public Rc4 Encrypter { get; set; }
@@ -50,6 +45,17 @@ namespace Sulakore.Communication
         /// Gets or sets the <see cref="Rc4"/> for decrypting the data being received.
         /// </summary>
         public Rc4 Decrypter { get; set; }
+        /// <summary>
+        /// Gets or sets the <see cref="HKeyExchange"/> used for handling RSA encryption/decryption when exchanging the Diffie–Hellman keys.
+        /// </summary>
+        public HKeyExchange Exchange { get; set; }
+        /// <summary>
+        /// Gets the underlying <see cref="Socket"/>.
+        /// </summary>
+        public Socket Client { get; private set; }
+        /// <summary>
+        /// Gets the <see cref="NetworkStream"/> used to send and receive data.
+        /// </summary>
         public NetworkStream SocketStream { get; private set; }
         /// <summary>
         /// Gets or sets the value that determines whether the <see cref="HNode"/> has already been disposed.
@@ -95,7 +101,10 @@ namespace Sulakore.Communication
                 IAsyncResult result = Client.BeginSend(buffer, offset,
                     size, SocketFlags.None, null, null);
 
-                return await Task.Factory.FromAsync<int>(result, Client.EndSend);
+                int length = await Task.Factory.FromAsync<int>(
+                    result, Client.EndSend).ConfigureAwait(false);
+
+                return length;
             }
             catch (ObjectDisposedException) { return 0; }
         }
@@ -107,22 +116,27 @@ namespace Sulakore.Communication
         public async Task<byte[]> ReceiveWireMessageAsync()
         {
             byte[] lengthBlock = new byte[4];
-            await ReceiveAsync(lengthBlock, 0, 4).ConfigureAwait(false);
+            int length = await ReceiveAsync(lengthBlock, 0, 4)
+                .ConfigureAwait(false);
+
+            if (length == 0)
+                return null;
 
             if (Decrypter != null)
                 Decrypter.Parse(lengthBlock);
 
-            int bodyLength = BigEndian.ToSI32(lengthBlock);
-
             int bytesRead = 0;
             int totalBytesRead = 0;
-            byte[] body = new byte[bodyLength];
+            byte[] body = new byte[BigEndian.ToSI32(lengthBlock)];
             while (totalBytesRead != body.Length)
             {
-                byte[] block = new byte[bodyLength - totalBytesRead];
+                byte[] block = new byte[body.Length - totalBytesRead];
 
                 bytesRead = await ReceiveAsync(block, 0, block.Length)
                     .ConfigureAwait(false);
+
+                if (bytesRead == 0)
+                    return null;
 
                 Buffer.BlockCopy(block, 0, body, totalBytesRead, bytesRead);
                 totalBytesRead += bytesRead;
@@ -151,7 +165,10 @@ namespace Sulakore.Communication
                 IAsyncResult result = Client.BeginReceive(buffer, offset,
                      size, SocketFlags.None, null, null);
 
-                return await Task.Factory.FromAsync<int>(result, Client.EndReceive);
+                int length = await Task.Factory.FromAsync<int>(
+                    result, Client.EndReceive).ConfigureAwait(false);
+
+                return length;
             }
             catch (ObjectDisposedException) { return 0; }
         }
@@ -166,10 +183,11 @@ namespace Sulakore.Communication
             var listener = new TcpListener(IPAddress.Loopback, port);
             listener.Start();
 
-            var node = new HNode(await listener.AcceptSocketAsync());
-            listener.Stop();
+            Socket client = await listener.AcceptSocketAsync()
+                .ConfigureAwait(false);
 
-            return node;
+            listener.Stop();
+            return new HNode(client);
         }
         /// <summary>
         /// Returns a <see cref="HNode"/> connected with the specified host/port in an asynchronous operation.
@@ -182,8 +200,11 @@ namespace Sulakore.Communication
             var socket = new Socket(AddressFamily.InterNetwork,
                 SocketType.Stream, ProtocolType.Tcp);
 
-            IAsyncResult result = socket.BeginConnect(host, port, null, null);
-            await Task.Factory.FromAsync(result, socket.EndConnect);
+            IAsyncResult result = socket
+                .BeginConnect(host, port, null, null);
+
+            await Task.Factory.FromAsync(result,
+                socket.EndConnect).ConfigureAwait(false);
 
             return new HNode(socket);
         }
@@ -204,6 +225,7 @@ namespace Sulakore.Communication
             if (IsDisposed) return;
             if (disposing)
             {
+                Exchange.Dispose();
                 SocketStream.Dispose();
 
                 Client.Shutdown(SocketShutdown.Both);
