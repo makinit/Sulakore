@@ -200,13 +200,13 @@ namespace Sulakore.Communication
         /// <param name="host">The host to establish a connection with.</param>
         /// <param name="port">The port to intercept the local connection attempt.</param>
         /// <returns></returns>
-        public async Task ConnectAsync(string host, int port)
+        public async Task<bool> ConnectAsync(string host, int port)
         {
             GameHostPort = port;
             GameHostName = host;
 
             RestoreHosts();
-            while (!IsConnected)
+            while (true)
             {
                 File.AppendAllText(_hostsFile, string.Format("127.0.0.1\t\t{0}\t\t#Sulakore", host));
                 Local = await HNode.InterceptAsync(port).ConfigureAwait(true);
@@ -219,6 +219,7 @@ namespace Sulakore.Communication
                 int length = await Local.ReceiveAsync(buffer, 0, buffer.Length)
                     .ConfigureAwait(false);
 
+                if (length == 0) return false;
                 if (BigEndian.ToUI16(buffer, 4) == Outgoing.CLIENT_CONNECT)
                 {
                     IsConnected = true;
@@ -227,12 +228,18 @@ namespace Sulakore.Communication
                     byte[] packet = new byte[BigEndian.ToSI32(buffer) + 4];
                     Buffer.BlockCopy(buffer, 0, packet, 0, 6);
 
-                    await Local.ReceiveAsync(packet, 6, packet.Length - 6)
+                    length = await Local.ReceiveAsync(packet, 6, packet.Length - 6)
                         .ConfigureAwait(false);
+
+                    if (length == 0)
+                    {
+                        Disconnect();
+                        return false;
+                    }
 
                     HandleOutgoing(packet, ++TotalOutgoing);
                     ReadIncomingAsync();
-                    break;
+                    return true;
                 }
 
                 byte[] newBuffer = new byte[1000];
@@ -240,12 +247,14 @@ namespace Sulakore.Communication
                 length = await Local.ReceiveAsync(newBuffer, 6, newBuffer.Length - 6)
                     .ConfigureAwait(false);
 
+                if (length == 0) return false;
                 await Remote.SendAsync(newBuffer, 0, length + 6)
                     .ConfigureAwait(false);
 
                 int inLength = await Remote.ReceiveAsync(newBuffer, 0, newBuffer.Length)
                     .ConfigureAwait(false);
 
+                if (inLength == 0) return false;
                 await Local.SendAsync(newBuffer, 0, inLength)
                     .ConfigureAwait(false);
             }
