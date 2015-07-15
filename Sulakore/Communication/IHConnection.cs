@@ -11,6 +11,10 @@ namespace Sulakore.Communication
         event EventHandler<InterceptedEventArgs> DataOutgoing;
         event EventHandler<InterceptedEventArgs> DataIncoming;
 
+        int Port { get; }
+        string Host { get; }
+        string[] Addresses { get; }
+
         IList<ushort> OutgoingBlocked { get; }
         IList<ushort> IncomingBlocked { get; }
         IDictionary<ushort, byte[]> OutgoingReplaced { get; }
@@ -18,9 +22,6 @@ namespace Sulakore.Communication
 
         int TotalOutgoing { get; }
         int TotalIncoming { get; }
-
-        int GameHostPort { get; }
-        string GameHostName { get; }
 
         Task<int> SendToServerAsync(byte[] data);
         Task<int> SendToServerAsync(ushort header, params object[] chunks);
