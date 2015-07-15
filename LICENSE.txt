@@ -1,3 +1,6 @@
+BigInteger.cs Class Version 1.03
+Copyright (C) 2002 Chew Keong TAN (http://www.codeproject.com/Articles/2728/C-BigInteger-Class)
+
 GitHub(Source): https://GitHub.com/ArachisH/Sulakore
 Sulakore.dll - .NET library for creating Habbo Hotel related desktop applications.
 Copyright (C) 2015 ArachisH
