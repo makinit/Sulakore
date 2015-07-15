@@ -25,7 +25,7 @@ namespace Sulakore.Extensions
             if (handler != null) handler(this, e);
         }
 
-        public HHotel Hotel { get; private set; }
+        public HHotel Hotel { get; set; }
         public HConnection Connection { get; private set; }
 
         private readonly List<ExtensionForm> _extensions;
@@ -41,7 +41,6 @@ namespace Sulakore.Extensions
         public Contractor(HConnection connection)
         {
             Connection = connection;
-            Hotel = SKore.ToHotel(Connection.GameHostName);
 
             _extensions = new List<ExtensionForm>();
             _extensionByHash = new Dictionary<string, ExtensionForm>();
@@ -294,6 +293,9 @@ namespace Sulakore.Extensions
 
             if (dependency == null)
             {
+                if (args.RequestingAssembly == null)
+                    return null;
+
                 string initialExtensionPath =
                     _initialExtensionPaths[args.RequestingAssembly];
 
@@ -302,7 +304,8 @@ namespace Sulakore.Extensions
                 {
                     // TODO: Create event handler to notify that a dependency of an extension was not found, possibly even 'ask' for one?
                     throw new Exception(
-                        "Failed to resolve dependency for the assembly: " + args.RequestingAssembly.FullName);
+                        "Failed to resolve dependency for the assembly: " +
+                        args.RequestingAssembly.FullName);
                 }
 
                 File.Copy(dependency.FullName,
