@@ -23,6 +23,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 
 namespace Sulakore.Protocol.Encryption
 {
@@ -32,8 +33,12 @@ namespace Sulakore.Protocol.Encryption
         private readonly int[] _table;
         private readonly object _parseLock;
 
+        public IReadOnlyList<byte> Key { get; private set; }
+
         public Rc4(byte[] key)
         {
+            Key = new List<byte>(key);
+
             _parseLock = new object();
             _table = new int[256];
 
@@ -46,7 +51,7 @@ namespace Sulakore.Protocol.Encryption
 
         public void Parse(byte[] data)
         {
-            lock(_parseLock)
+            lock (_parseLock)
             {
                 for (int k = 0; k < data.Length; k++)
                 {
