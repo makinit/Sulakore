@@ -9,8 +9,9 @@ namespace Sulakore.Components
     public class SKoreLabel : Label
     {
         private readonly System.Timers.Timer _animateTimer;
-        private readonly SetDotAnimationCallback _setDotAnimation;
-        private delegate void SetDotAnimationCallback(string prefix);
+
+        private readonly SetTextCallback _setText;
+        private delegate void SetTextCallback(string text);
 
         private int _borderWidth = 2;
         [DefaultValue(2)]
@@ -55,7 +56,7 @@ namespace Sulakore.Components
             SetStyle((ControlStyles)2050, true);
             DoubleBuffered = true;
 
-            _setDotAnimation = new SetDotAnimationCallback(SetDotAnimation);
+            _setText = new SetTextCallback(SetText);
             _animateTimer = new System.Timers.Timer(_animationInterval);
             _animateTimer.SynchronizingObject = this;
             _animateTimer.Elapsed += DoAnimation;
@@ -64,7 +65,10 @@ namespace Sulakore.Components
         public void StopDotAnimation(string text)
         {
             _animateTimer.Stop();
-            Text = text;
+
+            if (InvokeRequired)
+                BeginInvoke(_setText, text);
+            else SetText(text);
         }
         public void StopDotAnimation(string format, params object[] args)
         {
@@ -73,22 +77,24 @@ namespace Sulakore.Components
 
         public void SetDotAnimation(string prefix)
         {
+            prefix += ".";
+            StopDotAnimation(string.Empty);
+
             if (InvokeRequired)
-            {
-                BeginInvoke(_setDotAnimation, prefix);
-            }
-            else
-            {
-                StopDotAnimation(string.Empty);
-                Text = (prefix + ".");
-                _animateTimer.Start();
-            }
+                BeginInvoke(_setText, prefix);
+            else SetText(prefix);
+
+            _animateTimer.Start();
         }
         public void SetDotAnimation(string format, params object[] args)
         {
             SetDotAnimation(string.Format(format, args));
         }
 
+        protected void SetText(string text)
+        {
+            Text = text;
+        }
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.Clear(Color.White);
