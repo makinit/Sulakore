@@ -174,22 +174,6 @@ namespace Sulakore.Communication
         }
 
         /// <summary>
-        /// Returns a <see cref="HNode"/> that was intercepted on the specified port in an asynchronous operation.
-        /// </summary>
-        /// <param name="port">The port to listen to for local connection attempts.</param>
-        /// <returns></returns>
-        public static async Task<HNode> InterceptAsync(int port)
-        {
-            var listener = new TcpListener(IPAddress.Loopback, port);
-            listener.Start();
-
-            Socket client = await listener.AcceptSocketAsync()
-                .ConfigureAwait(false);
-
-            listener.Stop();
-            return new HNode(client);
-        }
-        /// <summary>
         /// Returns a <see cref="HNode"/> connected with the specified host/port in an asynchronous operation.
         /// </summary>
         /// <param name="host">The host to establish the connection with.</param>
@@ -200,8 +184,8 @@ namespace Sulakore.Communication
             var socket = new Socket(AddressFamily.InterNetwork,
                 SocketType.Stream, ProtocolType.Tcp);
 
-            IAsyncResult result = socket
-                .BeginConnect(host, port, null, null);
+            IAsyncResult result = socket.BeginConnect(
+                host, port, null, null);
 
             await Task.Factory.FromAsync(result,
                 socket.EndConnect).ConfigureAwait(false);
