@@ -24,8 +24,11 @@
 
 using System;
 using System.IO;
+using System.Net;
 using System.Linq;
+using System.Text;
 using System.Threading;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -40,6 +43,7 @@ namespace Sulakore.Communication
     /// </summary>
     public class HConnection : IHConnection, IDisposable
     {
+        private TcpListener _listener;
         private readonly object _disconnectLock;
         private static readonly string _hostsFile;
 
@@ -99,6 +103,19 @@ namespace Sulakore.Communication
         }
 
         /// <summary>
+        /// Gets the port of the remote endpoint.
+        /// </summary>
+        public int Port { get; private set; }
+        /// <summary>
+        /// Gets the host name of the remote endpoint.
+        /// </summary>
+        public string Host { get; private set; }
+        /// <summary>
+        /// Gets an array of strings containing the Internet Protocol(IP) addresses resolved from the Host.
+        /// </summary>
+        public string[] Addresses { get; private set; }
+
+        /// <summary>
         /// Gets the <see cref="HNode"/> representing the local connection.
         /// </summary>
         public HNode Local { get; private set; }
@@ -106,6 +123,7 @@ namespace Sulakore.Communication
         /// Gets the <see cref="HNode"/> representing the remote connection.
         /// </summary>
         public HNode Remote { get; private set; }
+
         /// <summary>
         /// Gets a value that determines whether the <see cref="HConnection"/> has been disposed.
         /// </summary>
@@ -130,6 +148,7 @@ namespace Sulakore.Communication
         /// Gets the <see cref="IDictionary{TKey, TValue}"/> that contains the replacement data for an incoming packet determined by the header.
         /// </summary>
         public IDictionary<ushort, byte[]> IncomingReplaced { get; private set; }
+
         /// <summary>
         /// Gets the total amount of packets the remote <see cref="HNode"/> has been sent from local.
         /// </summary>
@@ -138,14 +157,6 @@ namespace Sulakore.Communication
         /// Gets the total amount of packets the local <see cref="HNode"/> received from remote.
         /// </summary>
         public int TotalIncoming { get; private set; }
-        /// <summary>
-        /// Gets the port of the remote endpoint.
-        /// </summary>
-        public int GameHostPort { get; private set; }
-        /// <summary>
-        /// Gets the host name of the remote endpoint.
-        /// </summary>
-        public string GameHostName { get; private set; }
 
         static HConnection()
         {
@@ -175,16 +186,25 @@ namespace Sulakore.Communication
         /// </summary>
         public void Disconnect()
         {
-            if (IsConnected && Monitor.TryEnter(_disconnectLock))
+            if (Monitor.TryEnter(_disconnectLock))
             {
                 try
                 {
-                    Local.Dispose();
-                    Remote.Dispose();
+                    if (_listener != null)
+                        _listener.Stop();
 
-                    IsConnected = false;
-                    OnDisconnected(EventArgs.Empty);
+                    if (Local != null)
+                        Local.Dispose();
+
+                    if (Remote != null)
+                        Remote.Dispose();
+
                     TotalIncoming = TotalOutgoing = 0;
+                    if (IsConnected)
+                    {
+                        IsConnected = false;
+                        OnDisconnected(EventArgs.Empty);
+                    }
                 }
                 finally
                 {
@@ -200,64 +220,27 @@ namespace Sulakore.Communication
         /// <param name="host">The host to establish a connection with.</param>
         /// <param name="port">The port to intercept the local connection attempt.</param>
         /// <returns></returns>
-        public async Task<bool> ConnectAsync(string host, int port)
+        public async Task ConnectAsync(string host, int port)
         {
-            GameHostPort = port;
-            GameHostName = host;
+            Port = port;
+            Host = host;
+            Disconnect();
 
-            RestoreHosts();
-            while (true)
+            var hostsFileBuilder = new StringBuilder(string.Format(
+                "127.0.0.1\t\t{0}\t\t#Sulakore\r\n", host));
+
+            Addresses = (await Dns.GetHostAddressesAsync(host)
+                .ConfigureAwait(false))
+                .Select(ip => ip.ToString()).ToArray();
+
+            foreach (string address in Addresses)
             {
-                File.AppendAllText(_hostsFile, string.Format("127.0.0.1\t\t{0}\t\t#Sulakore", host));
-                Local = await HNode.InterceptAsync(port).ConfigureAwait(true);
-
-                RestoreHosts();
-                Remote = await HNode.ConnectAsync(host, port)
-                    .ConfigureAwait(false);
-
-                byte[] buffer = new byte[6];
-                int length = await Local.ReceiveAsync(buffer, 0, buffer.Length)
-                    .ConfigureAwait(false);
-
-                if (length == 0) return false;
-                if (BigEndian.ToUI16(buffer, 4) == Outgoing.CLIENT_CONNECT)
-                {
-                    IsConnected = true;
-                    OnConnected(EventArgs.Empty);
-
-                    byte[] packet = new byte[BigEndian.ToSI32(buffer) + 4];
-                    Buffer.BlockCopy(buffer, 0, packet, 0, 6);
-
-                    length = await Local.ReceiveAsync(packet, 6, packet.Length - 6)
-                        .ConfigureAwait(false);
-
-                    if (length == 0)
-                    {
-                        Disconnect();
-                        return false;
-                    }
-
-                    HandleOutgoing(packet, ++TotalOutgoing);
-                    ReadIncomingAsync();
-                    return true;
-                }
-
-                byte[] newBuffer = new byte[1000];
-                Buffer.BlockCopy(buffer, 0, newBuffer, 0, 6);
-                length = await Local.ReceiveAsync(newBuffer, 6, newBuffer.Length - 6)
-                    .ConfigureAwait(false);
-
-                if (length == 0) return false;
-                await Remote.SendAsync(newBuffer, 0, length + 6)
-                    .ConfigureAwait(false);
-
-                int inLength = await Remote.ReceiveAsync(newBuffer, 0, newBuffer.Length)
-                    .ConfigureAwait(false);
-
-                if (inLength == 0) return false;
-                await Local.SendAsync(newBuffer, 0, inLength)
-                    .ConfigureAwait(false);
+                hostsFileBuilder.AppendLine(string.Format(
+                    "127.0.0.1\t\t{0}\t\t#Sulakore", address));
             }
+
+            File.AppendAllText(_hostsFile, hostsFileBuilder.ToString());
+            await InterceptClientAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -298,6 +281,72 @@ namespace Sulakore.Communication
         public Task<int> SendToClientAsync(ushort header, params object[] chunks)
         {
             return Local.SendAsync(HMessage.Construct(header, chunks));
+        }
+
+        private async Task InterceptClientAsync()
+        {
+            _listener = new TcpListener(IPAddress.Loopback, Port);
+            _listener.Start();
+
+            try
+            {
+                while (!IsConnected)
+                {
+                    var localSocket = await _listener.AcceptSocketAsync()
+                        .ConfigureAwait(false);
+
+                    Local = new HNode(localSocket);
+                    Remote = await HNode.ConnectAsync(Addresses[0], Port)
+                        .ConfigureAwait(false);
+
+                    byte[] outBuffer = new byte[6];
+                    int length = await Local.ReceiveAsync(outBuffer,
+                        0, outBuffer.Length).ConfigureAwait(false);
+
+                    if (length == 0) return;
+                    if (BigEndian.ToUI16(outBuffer, 4) == Outgoing.CLIENT_CONNECT)
+                    {
+                        byte[] packet = new byte[BigEndian.ToSI32(outBuffer) + 4];
+                        Buffer.BlockCopy(outBuffer, 0, packet, 0, 6);
+
+                        length = await Local.ReceiveAsync(packet,
+                            6, packet.Length - 6).ConfigureAwait(false);
+
+                        if (length == 0) return;
+
+                        IsConnected = true;
+                        OnConnected(EventArgs.Empty);
+
+                        HandleOutgoing(packet, ++TotalOutgoing);
+                        ReadIncomingAsync();
+                    }
+                    else
+                    {
+                        byte[] newOutBuffer = new byte[1000];
+                        Buffer.BlockCopy(outBuffer, 0, newOutBuffer, 0, 6);
+
+                        length = await Local.ReceiveAsync(newOutBuffer, 6, newOutBuffer.Length - 6)
+                            .ConfigureAwait(false);
+
+                        if (length == 0) return;
+                        await Remote.SendAsync(newOutBuffer, 0, length + 6)
+                            .ConfigureAwait(false);
+
+                        length = await Remote.ReceiveAsync(newOutBuffer, 0, newOutBuffer.Length)
+                            .ConfigureAwait(false);
+
+                        if (length == 0) return;
+                        await Local.SendAsync(newOutBuffer, 0, length)
+                            .ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (ObjectDisposedException) { /* Listener stopped. */ }
+            finally
+            {
+                _listener.Stop();
+                _listener = null;
+            }
         }
 
         private async Task ReadOutgoingAsync()
@@ -363,9 +412,9 @@ namespace Sulakore.Communication
         /// </summary>
         public static void RestoreHosts()
         {
-            string[] lines = File.ReadAllLines(_hostsFile)
+            IEnumerable<string> lines = File.ReadAllLines(_hostsFile)
                 .Where(line => !line.EndsWith("#Sulakore") &&
-                !string.IsNullOrWhiteSpace(line)).ToArray();
+                !string.IsNullOrWhiteSpace(line));
 
             File.WriteAllLines(_hostsFile, lines);
         }
