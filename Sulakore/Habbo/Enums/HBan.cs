@@ -30,11 +30,11 @@ namespace Sulakore.Habbo
     public enum HBan
     {
         /// <summary>
-        /// The original value for the packet is RWUAM_BAN_USER_DAY.
+        /// The original value for the packet is RWUAM_BAN_USER_HOUR.
         /// </summary>
         Hour = 0,
         /// <summary>
-        /// The original value for the packet is RWUAM_BAN_USER_HOUR.
+        /// The original value for the packet is RWUAM_BAN_USER_DAY.
         /// </summary>
         Day = 1,
         /// <summary>
