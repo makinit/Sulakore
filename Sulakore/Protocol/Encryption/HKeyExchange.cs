@@ -249,7 +249,7 @@ namespace Sulakore.Protocol.Encryption
         }
         protected virtual void Dispose(bool disposing)
         {
-            if (!IsDisposed) return;
+            if (IsDisposed) return;
             if (disposing)
             {
                 if (Rsa != null)
