@@ -33,51 +33,53 @@ namespace Sulakore.Protocol.Encryption
         /// <summary>
         /// Gets the block size of the <see cref="RsaKey"/>.
         /// </summary>
-        public int BlockSize { get; private set; }
+        public int BlockSize { get; }
         /// <summary>
         /// Public Exponent
         /// </summary>
-        public BigInteger E { get; private set; }
+        public BigInteger E { get; }
         /// <summary>
         /// Public Modulus
         /// </summary>
-        public BigInteger N { get; private set; }
+        public BigInteger N { get; }
         /// <summary>
         /// Private Exponent
         /// </summary>
-        public BigInteger D { get; private set; }
+        public BigInteger D { get; }
         /// <summary>
         /// Secret Prime Factor (P * Q = N)
         /// </summary>
-        public BigInteger P { get; private set; }
+        public BigInteger P { get; }
         /// <summary>
         /// Secret Prime Factor (P * Q = N)
         /// </summary>
-        public BigInteger Q { get; private set; }
+        public BigInteger Q { get; }
         /// <summary>
         /// D Mod (P - 1)
         /// </summary>
-        public BigInteger Dmp1 { get; private set; }
+        public BigInteger Dmp1 { get; }
         /// <summary>
         /// D Mod (Q - 1)
         /// </summary>
-        public BigInteger Dmq1 { get; private set; }
+        public BigInteger Dmq1 { get; }
         /// <summary>
         /// (Inverse)Q Mod P
         /// </summary>
-        public BigInteger Iqmp { get; private set; }
+        public BigInteger Iqmp { get; }
         /// <summary>
         /// Gets a value that determines whether the <see cref="RsaKey"/> can encrypt data.
         /// </summary>
-        public bool CanEncrypt { get; private set; }
+        public bool CanEncrypt { get; }
         /// <summary>
         /// Gets a value that determines whether the <see cref="RsaKey"/> can decrypt data.
         /// </summary>
-        public bool CanDecrypt { get; private set; }
+        public bool CanDecrypt { get; }
         /// <summary>
         /// Gets a value that determines whether the <see cref="RsaKey"/> has already been disposed.
         /// </summary>
         public bool IsDisposed { get; private set; }
+
+        public PkcsPadding Padding { get; set; }
 
         static RsaKey()
         {
@@ -109,31 +111,35 @@ namespace Sulakore.Protocol.Encryption
 
         public void Sign(ref byte[] data)
         {
-            Encrypt(DoPrivate, ref data, PkcsPadding.MaxByte);
+            Encrypt(DoPrivate, ref data);
         }
         public void Verify(ref byte[] data)
         {
-            Decrypt(DoPublic, ref data, PkcsPadding.MaxByte);
+            Decrypt(DoPublic, ref data);
         }
 
         public void Decrypt(ref byte[] data)
         {
-            Decrypt(DoPrivate, ref data, PkcsPadding.RandomByte);
+            Decrypt(DoPrivate, ref data);
         }
-        private void Decrypt(Func<BigInteger, BigInteger> doFunc,
-            ref byte[] data, PkcsPadding type)
+        private void Decrypt(Func<BigInteger, BigInteger> doFunc, ref byte[] data)
         {
-            data = Pkcs1Unpad(doFunc(new BigInteger(data)).ToBytes(), BlockSize, type);
+            var encryptedN = new BigInteger(data);
+            byte[] padded = doFunc(encryptedN).ToBytes();
+
+            data = PKCS1Unpad(padded, BlockSize);
         }
 
         public void Encrypt(ref byte[] data)
         {
-            Encrypt(DoPublic, ref data, PkcsPadding.RandomByte);
+            Encrypt(DoPublic, ref data);
         }
-        private void Encrypt(Func<BigInteger, BigInteger> doFunc,
-            ref byte[] data, PkcsPadding type)
+        private void Encrypt(Func<BigInteger, BigInteger> doFunc, ref byte[] data)
         {
-            data = doFunc(new BigInteger(Pkcs1Pad(data, BlockSize, type))).ToBytes();
+            byte[] padded = PKCS1Pad(data, BlockSize);
+            var paddedN = new BigInteger(padded);
+
+            data = doFunc(paddedN).ToBytes();
         }
 
         private BigInteger DoPrivate(BigInteger x)
@@ -147,48 +153,42 @@ namespace Sulakore.Protocol.Encryption
             while (xp < xq) xp = xp + P;
             return ((((xp - xq) * (Iqmp)) % P) * Q) + xq;
         }
-        private BigInteger DoPublic(BigInteger x)
-        {
-            return x.ModPow(E, N);
-        }
+        private BigInteger DoPublic(BigInteger x) => x.ModPow(E, N);
 
-        private byte[] Pkcs1Pad(byte[] data, int length, PkcsPadding padding)
+        private byte[] PKCS1Pad(byte[] data, int length)
         {
             var buffer = new byte[length];
+            Buffer.BlockCopy(data, 0, buffer,
+                buffer.Length - data.Length, data.Length);
+            
+            buffer[1] = (byte)(Padding + 1);
+            bool isRandom = (Padding == PkcsPadding.RandomByte);
 
-            for (int i = data.Length - 1; (i >= 0 && length > 11); )
-                buffer[--length] = data[i--];
-
-            buffer[--length] = 0;
-            while (length > 2)
+            for (int i = 2; i < buffer.Length; i++)
             {
-                byte x = (padding == PkcsPadding.RandomByte) ?
-                    (byte)_byteGen.Next(1, 256) : byte.MaxValue;
-
-                buffer[--length] = x;
+                if (buffer[i] == data[0])
+                {
+                    buffer[i - 1] = 0;
+                    break;
+                }
+                else
+                {
+                    buffer[i] = isRandom ?
+                        (byte)_byteGen.Next(1, 256) : byte.MaxValue;
+                }
             }
-            buffer[--length] = (byte)(padding + 1);
-            buffer[--length] = 0;
+
             return buffer;
         }
-        private byte[] Pkcs1Unpad(byte[] data, int length, PkcsPadding padding)
+        private byte[] PKCS1Unpad(byte[] data, int length)
         {
-            int offset = 0;
-            while (offset < data.Length && data[offset] == 0) ++offset;
+            Padding = (PkcsPadding)(data[0] - 1);
 
-            if (data.Length - offset != length - 1 || data[offset] != ((byte)padding + 1))
-                throw new Exception(string.Format("Offset: {0}\n\nExpected: {1}\n\nReceived: {2}", offset, padding + 1, data[offset]));
+            int position = 0;
+            while (data[position++] != 0) ;
 
-            ++offset;
-            while (data[offset] != 0)
-            {
-                if (++offset >= data.Length)
-                    throw new Exception(string.Format("Offset: {0}\n\n{1} != 0", offset, data[offset] - 1));
-            }
-
-            var buffer = new byte[(data.Length - offset) - 1];
-            for (int j = 0; ++offset < data.Length; j++)
-                buffer[j] = data[offset];
+            var buffer = new byte[data.Length - position];
+            Buffer.BlockCopy(data, position, buffer, 0, buffer.Length);
 
             return buffer;
         }
@@ -198,12 +198,6 @@ namespace Sulakore.Protocol.Encryption
             return new RsaKey(new BigInteger(
                 e.ToString(), 16), new BigInteger(n, 16));
         }
-        public static RsaKey ParsePrivateKey(int e, string n, string d)
-        {
-            return new RsaKey(new BigInteger(e.ToString(), 16),
-                new BigInteger(n, 16), new BigInteger(d, 16));
-        }
-
         public static RsaKey Create(int exponent, int bitSize)
         {
             BigInteger p, q, e = new BigInteger(exponent.ToString(), 16);
@@ -233,6 +227,11 @@ namespace Sulakore.Protocol.Encryption
             BigInteger dmq1 = d % q1;
             BigInteger iqmp = q.ModInverse(p);
             return new RsaKey(e, n, d, p, q, dmp1, dmq1, iqmp);
+        }
+        public static RsaKey ParsePrivateKey(int e, string n, string d)
+        {
+            return new RsaKey(new BigInteger(e.ToString(), 16),
+                new BigInteger(n, 16), new BigInteger(d, 16));
         }
 
         public void Dispose()
