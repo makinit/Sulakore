@@ -67,7 +67,7 @@ namespace Sulakore.Protocol
         /// <summary>
         /// Gets a value that determines whether the <see cref="HMessage"/> is readable/writable.
         /// </summary>
-        public override bool IsCorrupted { get; protected set; }
+        public override bool IsCorrupted { get; }
         /// <summary>
         /// Gets the length of the <see cref="HMessage"/>.
         /// </summary>
@@ -81,19 +81,13 @@ namespace Sulakore.Protocol
         /// <summary>
         /// Gets a <see cref="IReadOnlyList{T}"/> of type <see cref="object"/> containing read values from the <see cref="HMessage"/>.
         /// </summary>
-        public IReadOnlyList<object> ValuesRead
-        {
-            get { return _read; }
-        }
+        public IReadOnlyList<object> ValuesRead => _read;
 
         private readonly List<object> _written;
         /// <summary>
         /// Gets a <see cref="IReadOnlyList{T}"/> of type <see cref="object"/> containing the written values of the <see cref="HMessage"/>.
         /// </summary>
-        public IReadOnlyList<object> ValuesWritten
-        {
-            get { return _written; }
-        }
+        public IReadOnlyList<object> ValuesWritten => _written;
 
         private HMessage()
         {
@@ -101,7 +95,6 @@ namespace Sulakore.Protocol
             _read = new List<object>();
             _written = new List<object>();
         }
-
         public HMessage(byte[] data)
             : this(data, HDestination.Client)
         { }
@@ -114,12 +107,6 @@ namespace Sulakore.Protocol
         public HMessage(byte[] data, HDestination destination)
             : this()
         {
-            if (data == null)
-                throw new NullReferenceException("data");
-
-            if (data.Length < 6)
-                throw new Exception("Insufficient data, minimum length is '6'(Six). [Length{4}][Header{2}]");
-
             Destination = destination;
             IsCorrupted = (BigEndian.ToSI32(data) != data.Length - 4);
 
@@ -156,7 +143,7 @@ namespace Sulakore.Protocol
         public override int ReadInteger(ref int index)
         {
             if (index + 4 > Body.Length)
-                throw new Exception("Not enough data at the current position to read an integer.");
+                throw new Exception($"Not enough data at position:{index} to read 4 bytes(32-Bit Integer).");
 
             int value = BigEndian.ToSI32(Body, index);
             index += 4;
@@ -167,7 +154,7 @@ namespace Sulakore.Protocol
         public override ushort ReadShort(ref int index)
         {
             if (index + 2 > Body.Length)
-                throw new Exception("Not enough data at the current position to read a short.");
+                throw new Exception($"Not enough data at position:{index} to read 2 bytes(16-Bit Unsigned Integer).");
 
             ushort value = BigEndian.ToUI16(Body, index);
             index += 2;
@@ -178,7 +165,7 @@ namespace Sulakore.Protocol
         public override bool ReadBoolean(ref int index)
         {
             if (index + 1 > Body.Length)
-                throw new Exception("Not enough data at the current position to read a boolean.");
+                throw new Exception($"Not enough data at position:{index} to read a byte(Boolean - True|False).");
 
             bool value = (Body[index++] == 1);
 
@@ -190,7 +177,7 @@ namespace Sulakore.Protocol
             ushort length = ReadShort(ref index);
 
             if (index + length > Body.Length)
-                throw new Exception("Not enough data at the current position to begin reading a string.");
+                throw new Exception($"Not enough data at position:{index} to read a UTF-8 encoded string with the length of {length} bytes.");
 
             byte[] stringData = ReadBytes(length, ref index);
             string value = Encoding.UTF8.GetString(stringData);
@@ -201,7 +188,7 @@ namespace Sulakore.Protocol
         public override byte[] ReadBytes(int length, ref int index)
         {
             if (length + index > Body.Length)
-                throw new Exception("Not enough data at the current position to read a block of bytes.");
+                throw new Exception($"Not enough data at position:{index} to read {length} bytes.");
 
             byte[] value = new byte[length];
             Buffer.BlockCopy(Body, index, value, 0, length);
@@ -222,11 +209,11 @@ namespace Sulakore.Protocol
                 case TypeCode.UInt16: valueSize = 2; break;
                 case TypeCode.Boolean: valueSize = 1; break;
                 case TypeCode.String:
-                {
-                    int stringLength = BigEndian.ToUI16(Body, index);
-                    valueSize = (2 + stringLength);
-                    break;
-                }
+                    {
+                        int stringLength = BigEndian.ToUI16(Body, index);
+                        valueSize = (2 + stringLength);
+                        break;
+                    }
             }
 
             _body.RemoveRange(index, valueSize);
@@ -243,14 +230,14 @@ namespace Sulakore.Protocol
                 case TypeCode.UInt16: bytesNeeded = 2; break;
                 case TypeCode.Boolean: bytesNeeded = 1; break;
                 case TypeCode.String:
-                {
-                    if (bytesLeft > 2)
                     {
-                        int stringLength = BigEndian.ToUI16(Body, index);
-                        bytesNeeded = (2 + stringLength);
+                        if (bytesLeft > 2)
+                        {
+                            int stringLength = BigEndian.ToUI16(Body, index);
+                            bytesNeeded = (2 + stringLength);
+                        }
+                        break;
                     }
-                    break;
-                }
             }
             return bytesLeft >= bytesNeeded && bytesNeeded != -1;
         }
@@ -262,11 +249,11 @@ namespace Sulakore.Protocol
                 case TypeCode.UInt16: _body.RemoveRange(index, 2); break;
                 case TypeCode.Boolean: _body.RemoveAt(index); break;
                 case TypeCode.String:
-                {
-                    int stringLength = BigEndian.ToUI16(Body, index);
-                    _body.RemoveRange(index, 2 + stringLength);
-                    break;
-                }
+                    {
+                        int stringLength = BigEndian.ToUI16(Body, index);
+                        _body.RemoveRange(index, 2 + stringLength);
+                        break;
+                    }
             }
 
             _body.InsertRange(index, Encode(chunk));
@@ -375,59 +362,66 @@ namespace Sulakore.Protocol
             for (int i = 0; i <= 13; i++)
                 packet = packet.Replace("[" + i + "]", ((char)i).ToString());
 
-            int endIndex;
-            byte[] chunk = null;
-            string value, replaceBy, chunkFormat;
-            bool writeLength = false, expectClose = false;
-            for (int i = 0; i < packet.Length; i++)
+            string byteValue = string.Empty;
+            while (!string.IsNullOrWhiteSpace(
+                byteValue = packet.GetChild("{b:", '}').ToLower()))
             {
-                char pByte = packet[i];
-                if (!expectClose && pByte != '{') continue;
-                else if (pByte == '{') expectClose = true;
-                else if (expectClose && pByte != '}')
+                char byteChar = byteValue[0];
+                byte value = (byte)(byteChar == 't' || byteChar == '1' ? 1 : 0);
+                if (byteValue[0] != 'f' && value != 1 &&
+                    !byte.TryParse(byteValue, out value))
                 {
-                    expectClose = false;
-                    endIndex = packet.Substring(i).IndexOf('}') + i;
-                    if (endIndex == -1 || endIndex == 0 || i + 2 > packet.Length) continue;
-
-                    if (pByte == 'l')
-                    {
-                        writeLength = true;
-                        packet = packet.Remove(i - 1, 3);
-                        i = -1;
-                        continue;
-                    }
-
-                    int vLength = endIndex - i - 2;
-                    if (vLength < 1) continue;
-
-                    value = packet.Substring(i + 2, vLength);
-                    chunkFormat = string.Format("{{{0}:{1}}}", pByte, value);
-
-                    switch (pByte)
-                    {
-                        case 's': chunk = Encode(value); break;
-                        case 'i': chunk = Encode(int.Parse(value)); break;
-                        case 'b':
-                        {
-                            chunk = value.Length < 4
-                                ? Encode(byte.Parse(value)) : Encode(bool.Parse(value));
-                            break;
-                        }
-                        case 'u': chunk = Encode(ushort.Parse(value)); break;
-                    }
-
-                    replaceBy = Encoding.Default.GetString(chunk);
-                    packet = packet.Replace(chunkFormat, replaceBy);
-
-                    int nextParam = packet.Substring(i).IndexOf('{');
-                    if (nextParam == -1) break;
-                    else i = nextParam + (i - 1);
+                    break;
                 }
+
+                string byteParam = $"{{b:{byteValue}}}";
+                packet = packet.Replace(byteParam, ((char)value).ToString());
             }
 
-            if (writeLength)
-                packet = Encoding.Default.GetString(Encode(packet.Length)) + packet;
+            string ushortValue = string.Empty;
+            while (!string.IsNullOrWhiteSpace(
+                ushortValue = packet.GetChild("{u:", '}')))
+            {
+                ushort value = 0;
+                if (!ushort.TryParse(ushortValue, out value)) break;
+
+                byte[] ushortData = Encode(value);
+                string ushortParam = $"{{u:{ushortValue}}}";
+
+                packet = packet.Replace(ushortParam,
+                    Encoding.Default.GetString(ushortData));
+            }
+
+            string intValue = string.Empty;
+            while (!string.IsNullOrWhiteSpace(
+                intValue = packet.GetChild("{i:", '}')))
+            {
+                int value = 0;
+                if (!int.TryParse(intValue, out value)) break;
+
+                byte[] intData = Encode(value);
+                string intParam = $"{{i:{intValue}}}";
+
+                packet = packet.Replace(intParam,
+                    Encoding.Default.GetString(intData));
+            }
+
+            string stringValue = string.Empty;
+            while (!string.IsNullOrWhiteSpace(
+                stringValue = packet.GetChild("{s:", '}')))
+            {
+                byte[] stringData = Encode(stringValue);
+                string stringParam = $"{{s:{stringValue}}}";
+
+                packet = packet.Replace(stringParam,
+                    Encoding.Default.GetString(stringData));
+            }
+
+            if (packet.StartsWith("{l}"))
+            {
+                byte[] lengthData = Encode(packet.Length - 3);
+                packet = Encoding.Default.GetString(lengthData) + packet.Substring(3);
+            }
 
             return Encoding.Default.GetBytes(packet);
         }
@@ -442,9 +436,6 @@ namespace Sulakore.Protocol
         }
         public static byte[] Encode(params object[] chunks)
         {
-            if (chunks == null)
-                throw new NullReferenceException("chunks");
-
             if (chunks.Length < 1)
                 return new byte[0];
 
@@ -464,21 +455,25 @@ namespace Sulakore.Protocol
 
                     default:
                     case TypeCode.String:
-                    {
-                        byte[] data = chunk as byte[];
-                        if (data == null)
                         {
-                            string value = chunk.ToString();
-                            value = value.Replace("\\r", "\r");
-                            value = value.Replace("\\n", "\n");
+                            byte[] data = chunk as byte[];
+                            if (data == null)
+                            {
+                                string value = chunk.ToString()
+                                    .Replace("\\a", "\a").Replace("\\b", "\b")
+                                    .Replace("\\f", "\f").Replace("\\n", "\n")
+                                    .Replace("\\r", "\r").Replace("\\t", "\t")
+                                    .Replace("\\v", "\v").Replace("\\0", "\0");
 
-                            data = new byte[2 + Encoding.UTF8.GetByteCount(value)];
-                            Buffer.BlockCopy(BigEndian.FromUI16((ushort)(data.Length - 2)), 0, data, 0, 2);
-                            Buffer.BlockCopy(Encoding.UTF8.GetBytes(value), 0, data, 2, data.Length - 2);
+                                byte[] stringData = Encoding.UTF8.GetBytes(value);
+
+                                data = new byte[2 + Encoding.UTF8.GetByteCount(value)];
+                                Buffer.BlockCopy(BigEndian.FromUI16((ushort)(data.Length - 2)), 0, data, 0, 2);
+                                Buffer.BlockCopy(Encoding.UTF8.GetBytes(value), 0, data, 2, data.Length - 2);
+                            }
+                            buffer.AddRange(data);
+                            break;
                         }
-                        buffer.AddRange(data);
-                        break;
-                    }
                 }
             }
             return buffer.ToArray();
