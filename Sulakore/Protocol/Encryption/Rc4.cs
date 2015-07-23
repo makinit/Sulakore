@@ -33,7 +33,7 @@ namespace Sulakore.Protocol.Encryption
         private readonly int[] _table;
         private readonly object _parseLock;
 
-        public IReadOnlyList<byte> Key { get; private set; }
+        public IReadOnlyList<byte> Key { get; }
 
         public Rc4(byte[] key)
         {
