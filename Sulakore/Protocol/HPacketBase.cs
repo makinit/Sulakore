@@ -22,8 +22,6 @@
     See License.txt in the project root for license information.
 */
 
-using System.Text;
-
 namespace Sulakore.Protocol
 {
     public abstract class HPacketBase : IHPacket
@@ -32,9 +30,9 @@ namespace Sulakore.Protocol
         public abstract ushort Header { get; set; }
         public abstract HDestination Destination { get; set; }
 
+        public abstract bool IsCorrupted { get; }
         public abstract int Length { get; protected set; }
         public abstract byte[] Body { get; protected set; }
-        public abstract bool IsCorrupted { get; protected set; }
 
         public virtual int ReadInteger()
         {
