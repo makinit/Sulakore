@@ -37,14 +37,14 @@ namespace Sulakore.Protocol.Encryption
         private readonly int _bitSize;
         private static readonly Random _byteGen;
 
-        public RsaKey Rsa { get; private set; }
+        public RsaKey Rsa { get; }
         public BigInteger DhPrime { get; private set; }
         public BigInteger DhPublic { get; private set; }
         public BigInteger DhPrivate { get; private set; }
         public BigInteger DhGenerator { get; private set; }
 
         public bool IsDisposed { get; private set; }
-        public bool IsInitiator { get; private set; }
+        public bool IsInitiator { get; }
         public bool IsBannerHandshake { get; private set; }
 
         static HKeyExchange()
@@ -176,9 +176,8 @@ namespace Sulakore.Protocol.Encryption
 
             if (DhGenerator >= DhPrime)
             {
-                throw new Exception(string.Format(
-                    "Generator cannot be >= Prime!\nPrime: {0}\nGenerator: {1}",
-                    DhPrime, DhGenerator));
+                throw new Exception(
+                    $"Generator cannot be >= Prime!\nPrime: {DhPrime}\nGenerator: {DhGenerator}");
             }
 
             DhPrivate = new BigInteger(RandomHex(30), _bitSize);
@@ -252,20 +251,11 @@ namespace Sulakore.Protocol.Encryption
             if (IsDisposed) return;
             if (disposing)
             {
-                if (Rsa != null)
-                    Rsa.Dispose();
-
-                if (DhPrime != null)
-                    DhPrime.Dispose();
-
-                if (DhGenerator != null)
-                    DhGenerator.Dispose();
-
-                if (DhPublic != null)
-                    DhPublic.Dispose();
-
-                if (DhPrivate != null)
-                    DhPrivate.Dispose();
+                Rsa?.Dispose();
+                DhPrime?.Dispose();
+                DhGenerator?.Dispose();
+                DhPublic?.Dispose();
+                DhPrivate?.Dispose();
             }
             IsDisposed = true;
         }
