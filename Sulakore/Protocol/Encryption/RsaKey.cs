@@ -160,7 +160,7 @@ namespace Sulakore.Protocol.Encryption
             var buffer = new byte[length];
             Buffer.BlockCopy(data, 0, buffer,
                 buffer.Length - data.Length, data.Length);
-            
+
             buffer[1] = (byte)(Padding + 1);
             bool isRandom = (Padding == PkcsPadding.RandomByte);
 
@@ -243,29 +243,15 @@ namespace Sulakore.Protocol.Encryption
             if (IsDisposed) return;
             if (disposing)
             {
-                if (E != null)
-                    E.Dispose();
-
-                if (N != null)
-                    N.Dispose();
-
-                if (D != null)
-                    D.Dispose();
-
-                if (P != null)
-                    P.Dispose();
-
-                if (Q != null)
-                    Q.Dispose();
-
-                if (Dmp1 != null)
-                    Dmp1.Dispose();
-
-                if (Iqmp != null)
-                    Iqmp.Dispose();
+                E?.Dispose();
+                N?.Dispose();
+                D?.Dispose();
+                P?.Dispose();
+                Q?.Dispose();
+                Dmp1?.Dispose();
+                Iqmp?.Dispose();
             }
             IsDisposed = true;
-
         }
     }
 }
