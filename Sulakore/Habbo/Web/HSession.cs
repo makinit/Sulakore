@@ -51,8 +51,7 @@ namespace Sulakore.Habbo.Web
         /// <param name="e">An <see cref="EventArgs"/> that contains the event data.</param>
         protected virtual void OnConnected(EventArgs e)
         {
-            EventHandler<EventArgs> handler = Connected;
-            if (handler != null) handler(this, e);
+            Connected?.Invoke(this, e);
         }
         /// <summary>
         /// Occurs when either client/server have been disconnected, or when <see cref="Disconnect"/> has been called if the <see cref="HConnection"/> is currently connected.
@@ -64,8 +63,7 @@ namespace Sulakore.Habbo.Web
         /// <param name="e">An <see cref="EventArgs"/> that contains the event data.</param>
         protected virtual void OnDisconnected(EventArgs e)
         {
-            EventHandler<EventArgs> handler = Disconnected;
-            if (handler != null) handler(this, e);
+            Disconnected?.Invoke(this, e);
         }
         /// <summary>
         /// Occurs when incoming data from the server has been intercepted.
@@ -78,8 +76,7 @@ namespace Sulakore.Habbo.Web
         /// <returns></returns>
         protected virtual void OnDataIncoming(InterceptedEventArgs e)
         {
-            EventHandler<InterceptedEventArgs> handler = DataIncoming;
-            if (handler != null) handler(this, e);
+            DataIncoming?.Invoke(this, e);
         }
 
         public HHotel Hotel { get; }

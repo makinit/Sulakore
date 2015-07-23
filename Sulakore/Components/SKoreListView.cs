@@ -35,15 +35,13 @@ namespace Sulakore.Components
         public event EventHandler<ListViewItemSelectionChangedEventArgs> ItemSelected;
         protected virtual void OnItemSelected(ListViewItemSelectionChangedEventArgs e)
         {
-            EventHandler<ListViewItemSelectionChangedEventArgs> handler = ItemSelected;
-            if (handler != null) handler(this, e);
+            ItemSelected?.Invoke(this, e);
         }
 
         public event EventHandler ItemsDeselected;
         protected virtual void OnItemsDeselected(EventArgs e)
         {
-            EventHandler handler = ItemsDeselected;
-            if (handler != null) handler(this, e);
+            ItemsDeselected?.Invoke(this, e);
         }
 
         [DefaultValue(true)]

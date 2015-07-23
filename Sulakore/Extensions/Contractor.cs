@@ -45,8 +45,7 @@ namespace Sulakore.Extensions
         public event EventHandler<ExtensionActionEventArgs> ExtensionAction;
         protected virtual void OnExtensionAction(ExtensionActionEventArgs e)
         {
-            EventHandler<ExtensionActionEventArgs> handler = ExtensionAction;
-            if (handler != null) handler(this, e);
+            ExtensionAction?.Invoke(this, e);
         }
 
         public HHotel Hotel { get; set; }
@@ -80,10 +79,8 @@ namespace Sulakore.Extensions
             ExtensionForm[] extensions = _extensions.ToArray();
             foreach (ExtensionForm extension in extensions)
             {
-                if (!extension.IsRunning) continue;
-
-                if (extension.Triggers != null)
-                    extension.Triggers.HandleIncoming(e);
+                if (extension.IsRunning)
+                    extension.Triggers?.HandleIncoming(e);
             }
         }
         public void HandleOutgoing(InterceptedEventArgs e)
@@ -93,10 +90,8 @@ namespace Sulakore.Extensions
             ExtensionForm[] extensions = _extensions.ToArray();
             foreach (ExtensionForm extension in extensions)
             {
-                if (!extension.IsRunning) continue;
-
-                if (extension.Triggers != null)
-                    extension.Triggers.HandleOutgoing(e);
+                if (extension.IsRunning)
+                    extension.Triggers?.HandleOutgoing(e);
             }
         }
 

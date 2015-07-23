@@ -57,8 +57,7 @@ namespace Sulakore.Communication
         /// <param name="e">An <see cref="EventArgs"/> that contains the event data.</param>
         protected virtual void OnConnected(EventArgs e)
         {
-            EventHandler<EventArgs> handler = Connected;
-            if (handler != null) handler(this, e);
+            Connected?.Invoke(this, e);
         }
         /// <summary>
         /// Occurs when either client/server have been disconnected, or when <see cref="Disconnect"/> has been called if <see cref="IsConnected"/> is true.
@@ -70,8 +69,7 @@ namespace Sulakore.Communication
         /// <param name="e">An <see cref="EventArgs"/> that contains the event data.</param>
         protected virtual void OnDisconnected(EventArgs e)
         {
-            EventHandler<EventArgs> handler = Disconnected;
-            if (handler != null) handler(this, e);
+            Disconnected?.Invoke(this, e);
         }
         /// <summary>
         /// Occurs when outgoing data from the local <see cref="HNode"/> has been intercepted.
@@ -84,8 +82,7 @@ namespace Sulakore.Communication
         /// <returns></returns>
         protected virtual void OnDataOutgoing(InterceptedEventArgs e)
         {
-            EventHandler<InterceptedEventArgs> handler = DataOutgoing;
-            if (handler != null) handler(this, e);
+            DataOutgoing?.Invoke(this, e);
         }
         /// <summary>
         /// Occurs when incoming data from the remote <see cref="HNode"/> has been intercepted.
@@ -98,8 +95,7 @@ namespace Sulakore.Communication
         /// <returns></returns>
         protected virtual void OnDataIncoming(InterceptedEventArgs e)
         {
-            EventHandler<InterceptedEventArgs> handler = DataIncoming;
-            if (handler != null) handler(this, e);
+            DataIncoming?.Invoke(this, e);
         }
 
         /// <summary>
@@ -190,14 +186,10 @@ namespace Sulakore.Communication
             {
                 try
                 {
-                    if (_listener != null)
-                        _listener.Stop();
+                    _listener?.Stop();
 
-                    if (Local != null)
-                        Local.Dispose();
-
-                    if (Remote != null)
-                        Remote.Dispose();
+                    Local?.Dispose();
+                    Remote?.Dispose();
 
                     TotalIncoming = TotalOutgoing = 0;
                     if (IsConnected)
@@ -223,24 +215,18 @@ namespace Sulakore.Communication
         public async Task ConnectAsync(string host, int port)
         {
             Port = port;
-            Host = host;
+            Host = host.Split(':')[0];
             Disconnect();
 
-            var hostsFileBuilder = new StringBuilder(string.Format(
-                "127.0.0.1\t\t{0}\t\t#Sulakore\r\n", host));
+            var hosts = (await Dns.GetHostAddressesAsync(Host).ConfigureAwait(false))
+                .Select(ip => ip.ToString()).ToList();
 
-            Addresses = (await Dns.GetHostAddressesAsync(host)
-                .ConfigureAwait(false))
-                .Select(ip => ip.ToString()).ToArray();
+            hosts.Add(Host);
+            Addresses = hosts.ToArray();
+            WriteHosts(Addresses);
 
-            foreach (string address in Addresses)
-            {
-                hostsFileBuilder.AppendLine(string.Format(
-                    "127.0.0.1\t\t{0}\t\t#Sulakore", address));
-            }
-
-            File.AppendAllText(_hostsFile, hostsFileBuilder.ToString());
-            await InterceptClientAsync().ConfigureAwait(false);
+            await InterceptClientAsync()
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -421,6 +407,16 @@ namespace Sulakore.Communication
                 !string.IsNullOrWhiteSpace(line));
 
             File.WriteAllLines(_hostsFile, lines);
+        }
+        public static void WriteHosts(params string[] hosts)
+        {
+            var hostsFileBuilder = new StringBuilder();
+            foreach (string host in hosts)
+            {
+                string mapping = $"127.0.0.1\t\t{host}\t\t#Sulakore";
+                hostsFileBuilder.AppendLine(mapping);
+            }
+            File.AppendAllText(_hostsFile, hostsFileBuilder.ToString());
         }
 
         /// <summary>

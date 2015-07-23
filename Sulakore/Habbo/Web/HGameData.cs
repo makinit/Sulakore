@@ -28,12 +28,15 @@ namespace Sulakore.Habbo.Web
 {
     public class HGameData
     {
-        public int Port { get; }
-        public string Host { get; }
+        public int Port { get; set; }
+        public string Host { get; set; }
+
         public string Texts { get; }
         public int AccountId { get; }
+        public string UserName { get; }
         public string UniqueId { get; }
         public string Variables { get; }
+        public string BannerUrl { get; }
         public string OverrideTexts { get; }
         public string ClientStarting { get; }
         public string FlashClientUrl { get; }
@@ -78,21 +81,33 @@ namespace Sulakore.Habbo.Web
                 while (flashVars.Contains("\":"))
                 {
                     string varName = flashVars.GetChild("\"", '\"');
-                    string flashArgParent = string.Format("\"{0}\":", varName);
+                    string flashArgParent = $"\"{varName}\":";
 
                     string flashArgChild = flashVars.GetChild(flashArgParent);
                     bool isVariable = (flashArgChild[0] != '"');
+                    bool isEmpty = (flashArgChild[1] == '"');
 
-                    string varValue = isVariable ?
+                    string varValue = isEmpty ? string.Empty : isVariable ?
                         flashArgChild.GetParent(",") : flashArgChild.GetChild("\"", '"');
 
                     string flashArg = string.Format("\"{0}\":{2}{1}{2}",
                         varName, varValue, !isVariable ? "\"" : string.Empty);
 
-                    tempFlashVars += string.Format("{0}:{1}\r", varName, varValue);
+                    if (!isEmpty)
+                        tempFlashVars += $"{varName}:{varValue}\r";
+
                     flashVars = flashVars.Replace(flashArg, string.Empty);
                 }
                 flashVars = tempFlashVars;
+            }
+
+            if (formattedGameData.Contains("var habboName = "))
+            {
+                string possibleUserName = formattedGameData
+                    .GetChild("var habboName = \"", '"');
+
+                if (!string.IsNullOrWhiteSpace(possibleUserName))
+                    UserName = possibleUserName;
             }
 
             string[] flashVarArgs = flashVars.Split(new[] { '\r' },
@@ -109,6 +124,7 @@ namespace Sulakore.Habbo.Web
                     case "external.texts.txt": Texts = varValue; break;
                     case "connection.info.host": Host = varValue; break;
                     case "client.starting": ClientStarting = varValue; break;
+                    case "hotelview.banner.url": BannerUrl = varValue; break;
                     case "account_id": AccountId = int.Parse(varValue); break;
                     case "external.variables.txt": Variables = varValue; break;
                     case "furnidata.load.url": FurniDataLoadUrl = varValue; break;

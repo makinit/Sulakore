@@ -477,19 +477,15 @@ namespace Sulakore.Communication
         protected virtual void OnGameEvent<TEventArgs>(EventHandler<TEventArgs> gameEvent,
             TEventArgs gameArguments, InterceptedEventArgs toUpdate) where TEventArgs : InterceptedEventArgs
         {
-            EventHandler<TEventArgs> handler = gameEvent;
-            if (handler != null)
+            try { gameEvent?.Invoke(this, gameArguments); }
+            catch
             {
-                try { handler(this, gameArguments); }
-                catch
-                {
-                    // TODO: Notify subscriber(s) that an exception has been thrown?
-                }
-                finally
-                {
-                    toUpdate.IsBlocked = gameArguments.IsBlocked;
-                    toUpdate.WasContinued = gameArguments.WasContinued;
-                }
+                // TODO: Notify subscriber(s) that an exception has been thrown?
+            }
+            finally
+            {
+                toUpdate.IsBlocked = gameArguments.IsBlocked;
+                toUpdate.WasContinued = gameArguments.WasContinued;
             }
         }
 

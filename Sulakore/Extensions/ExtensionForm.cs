@@ -96,9 +96,7 @@ namespace Sulakore.Extensions
             if (!IsDisposed && disposing)
             {
                 IsRunning = false;
-
-                if (Triggers != null)
-                    Triggers.Dispose();
+                Triggers?.Dispose();
             }
             base.Dispose(disposing);
         }

@@ -43,12 +43,8 @@ namespace Sulakore.Components
         public event EventHandler<ScheduleTickEventArgs> ScheduleTick;
         protected virtual void OnScheduleTick(ScheduleTickEventArgs e)
         {
-            EventHandler<ScheduleTickEventArgs> handler = ScheduleTick;
-            if (handler != null)
-            {
-                try { handler(this, e); }
-                catch { e.Cancel = true; }
-            }
+            try { ScheduleTick?.Invoke(this, e); }
+            catch { e.Cancel = true; }
         }
 
         [DefaultValue(true)]

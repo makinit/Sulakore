@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 
 using Sulakore.Protocol.Encoders;
 using Sulakore.Protocol.Encryption;
+using System.Net;
 
 namespace Sulakore.Communication
 {
@@ -36,6 +37,12 @@ namespace Sulakore.Communication
     /// </summary>
     public class HNode : IDisposable
     {
+        private int _total;
+
+        /// <summary>
+        /// Gets the underlying <see cref="Socket"/>.
+        /// </summary>
+        public Socket Client { get; }
         /// <summary>
         /// Gets or sets the <see cref="Rc4"/> for encrypting the data being sent.
         /// </summary>
@@ -49,10 +56,6 @@ namespace Sulakore.Communication
         /// </summary>
         public HKeyExchange Exchange { get; set; }
         /// <summary>
-        /// Gets the underlying <see cref="Socket"/>.
-        /// </summary>
-        public Socket Client { get; }
-        /// <summary>
         /// Gets the <see cref="NetworkStream"/> used to send and receive data.
         /// </summary>
         public NetworkStream SocketStream { get; }
@@ -60,6 +63,10 @@ namespace Sulakore.Communication
         /// Gets or sets the value that determines whether the <see cref="HNode"/> has already been disposed.
         /// </summary>
         public bool IsDisposed { get; private set; }
+        /// <summary>
+        /// Gets a value that determines whether receiving data needs to be decrypted.
+        /// </summary>
+        public bool IsDecryptionRequired { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HNode"/> class.
@@ -68,7 +75,7 @@ namespace Sulakore.Communication
         public HNode(Socket client)
         {
             if (client == null)
-                throw new NullReferenceException("client");
+                throw new NullReferenceException(nameof(client));
 
             Client = client;
             SocketStream = new NetworkStream(Client);
@@ -81,9 +88,7 @@ namespace Sulakore.Communication
         /// <returns></returns>
         public Task<int> SendAsync(byte[] buffer)
         {
-            if (Encrypter != null)
-                buffer = Encrypter.SafeParse(buffer);
-
+            buffer = Encrypter?.SafeParse(buffer) ?? buffer;
             return SendAsync(buffer, 0, buffer.Length);
         }
         /// <summary>
@@ -100,7 +105,7 @@ namespace Sulakore.Communication
                 IAsyncResult result = Client.BeginSend(buffer, offset,
                     size, SocketFlags.None, null, null);
 
-                int length = await Task.Factory.FromAsync<int>(
+                int length = await Task.Factory.FromAsync(
                     result, Client.EndSend).ConfigureAwait(false);
 
                 return length;
@@ -118,34 +123,37 @@ namespace Sulakore.Communication
             int length = await ReceiveAsync(lengthBlock, 0, 4)
                 .ConfigureAwait(false);
 
-            byte[] original = new byte[lengthBlock.Length];
-            lengthBlock.CopyTo(original, 0);
+            if (length == 0) return null;
+            if (++_total == 3 || _total == 4)
+            {
+                length = BigEndian.ToSI32(lengthBlock);
+                await Task.Delay(250).ConfigureAwait(false);
 
-            if (length == 0)
-                return null;
+                if (Client.Available >= length && length >= 2)
+                {
+                    IsDecryptionRequired = false;
+                    Decrypter = null;
+                }
+                else IsDecryptionRequired = true;
+            }
 
-            if (Decrypter != null)
-                Decrypter.Parse(lengthBlock);
+            Decrypter?.Parse(lengthBlock);
+            length = BigEndian.ToSI32(lengthBlock);
 
             int bytesRead = 0;
             int totalBytesRead = 0;
-            byte[] body = new byte[BigEndian.ToSI32(lengthBlock)];
+            byte[] body = new byte[length];
             while (totalBytesRead != body.Length)
             {
                 byte[] block = new byte[body.Length - totalBytesRead];
-
                 bytesRead = await ReceiveAsync(block, 0, block.Length)
                     .ConfigureAwait(false);
 
-                if (bytesRead == 0)
-                    return null;
-
+                if (bytesRead == 0) return null;
                 Buffer.BlockCopy(block, 0, body, totalBytesRead, bytesRead);
                 totalBytesRead += bytesRead;
             }
-
-            if (Decrypter != null)
-                Decrypter.Parse(body);
+            Decrypter?.Parse(body);
 
             byte[] packet = new byte[4 + body.Length];
             Buffer.BlockCopy(lengthBlock, 0, packet, 0, 4);
@@ -167,7 +175,7 @@ namespace Sulakore.Communication
                 IAsyncResult result = Client.BeginReceive(buffer, offset,
                      size, SocketFlags.None, null, null);
 
-                int length = await Task.Factory.FromAsync<int>(
+                int length = await Task.Factory.FromAsync(
                     result, Client.EndReceive).ConfigureAwait(false);
 
                 return length;
@@ -211,9 +219,7 @@ namespace Sulakore.Communication
             if (IsDisposed) return;
             if (disposing)
             {
-                if (Exchange != null)
-                    Exchange.Dispose();
-
+                Exchange?.Dispose();
                 SocketStream.Dispose();
                 Client.Shutdown(SocketShutdown.Both);
                 Client.Close();
