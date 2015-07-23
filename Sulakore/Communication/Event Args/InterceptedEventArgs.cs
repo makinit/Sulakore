@@ -37,11 +37,11 @@ namespace Sulakore.Communication
         /// <summary>
         /// Gets the current count/step/order from which this data was intercepted.
         /// </summary>
-        public int Step { get; private set; }
+        public int Step { get; }
         /// <summary>
         /// Gets the originally intercepted <see cref="HMessage"/>.
         /// </summary>
-        public HMessage Packet { get; private set; }
+        public HMessage Packet { get; }
         /// <summary>
         /// Gets the replacement <see cref="HMessage"/> for the original data.
         /// </summary>
@@ -49,7 +49,7 @@ namespace Sulakore.Communication
         /// <summary>
         /// Gets a value that determines whether the <see cref="InterceptedEventArgs"/> can be turned into a non-blocking operation by calling <see cref="ContinueRead"/>.
         /// </summary>
-        public bool IsAsyncCapable { get; private set; }
+        public bool IsAsyncCapable { get; }
         /// <summary>
         /// Gets the <see cref="Func{TResult}"/> of type <see cref="Task"/> that will be invoked when <see cref="ContinueRead"/> is called.
         /// </summary>
@@ -73,30 +73,6 @@ namespace Sulakore.Communication
         /// <summary>
         /// Initializes a new instance of the <see cref="InterceptedEventArgs"/> class.
         /// </summary>
-        /// <param name="packet">The intercepted data to read/write from.</param>
-        public InterceptedEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        /// <summary>
-        /// Initializes a new instance of the <see cref="InterceptedEventArgs"/> class.
-        /// </summary>
-        /// <param name="step">The current count/step/order from which this data was intercepted.</param>
-        /// <param name="packet">The intercepted data to read/write from.</param>
-        public InterceptedEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        /// <summary>
-        /// Initializes a new instance of the <see cref="InterceptedEventArgs"/> class.
-        /// </summary>
-        /// <param name="step">The current count/step/order from which this data was intercepted.</param>
-        /// <param name="data">An array of type <see cref="byte"/> that contains the data to convert to an <see cref="HMessage"/>.</param>
-        /// <param name="destination">The destination type that will help initialize the <see cref="HMessage"/>.</param>
-        public InterceptedEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
-        /// <summary>
-        /// Initializes a new instance of the <see cref="InterceptedEventArgs"/> class.
-        /// </summary>
         /// <param name="continuation">The <see cref="Func{TResult}"/> of type <see cref="Task"/> that will be invoked when <see cref="ContinueRead"/> is called.</param>
         /// <param name="step">The current count/step/order from which this data was intercepted.</param>
         /// <param name="packet">The intercepted data to read/write from.</param>
@@ -109,16 +85,6 @@ namespace Sulakore.Communication
             Packet = packet;
             Replacement = new HMessage(packet.ToBytes(), packet.Destination);
         }
-        /// <summary>
-        /// Initializes a new instance of the <see cref="InterceptedEventArgs"/> class.
-        /// </summary>
-        /// <param name="continuation">The <see cref="Func{TResult}"/> of type <see cref="Task"/> that will be invoked when <see cref="ContinueRead"/> is called.</param>
-        /// <param name="step">The current count/step/order from which this data was intercepted.</param>
-        /// <param name="data">An array of type <see cref="byte"/> that contains the data to convert to an <see cref="HMessage"/>.</param>
-        /// <param name="destination">The destination type that will help initialize the <see cref="HMessage"/>.</param>
-        public InterceptedEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
         /// <summary>
         /// Invokes the <see cref="Func{TResult}"/> of type <see cref="Task"/> if <see cref="IsAsyncCapable"/> is true.

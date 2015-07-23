@@ -32,32 +32,18 @@ namespace Sulakore.Communication
 {
     public class HostUpdateClothesEventArgs : InterceptedEventArgs
     {
-        public HGender Gender { get; private set; }
-        public string FigureId { get; private set; }
-
-        public HostUpdateClothesEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostUpdateClothesEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostUpdateClothesEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public HGender Gender { get; }
+        public string FigureId { get; }
+        
         public HostUpdateClothesEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             Gender = SKore.ToGender(packet.ReadString());
             FigureId = packet.ReadString();
         }
-        public HostUpdateClothesEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Gender: {1}, FigureId: {2}",
-                Packet.Header, Gender, FigureId);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, " +
+            $"{nameof(Gender)}: {Gender}, {nameof(FigureId)}: {FigureId}";
     }
 }

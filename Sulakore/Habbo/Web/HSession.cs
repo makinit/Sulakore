@@ -82,11 +82,11 @@ namespace Sulakore.Habbo.Web
             if (handler != null) handler(this, e);
         }
 
-        public HHotel Hotel { get; private set; }
-        public string Email { get; private set; }
-        public string Password { get; private set; }
-        public HTriggers Triggers { get; private set; }
-        public CookieContainer Cookies { get; private set; }
+        public HHotel Hotel { get; }
+        public string Email { get; }
+        public string Password { get; }
+        public HTriggers Triggers { get; }
+        public CookieContainer Cookies { get; }
 
         public HUser User { get; private set; }
         public HNode Remote { get; private set; }
@@ -108,7 +108,9 @@ namespace Sulakore.Habbo.Web
                     return;
 
                 if (_isReading = value)
-                    ReadIncomingAsync();
+                {
+                    Task readInTask = ReadIncomingAsync();
+                }
             }
         }
 
@@ -257,13 +259,16 @@ namespace Sulakore.Habbo.Web
         }
         private void HandleIncoming(byte[] data, int count)
         {
-            var args = new InterceptedEventArgs(ReadIncomingAsync, count, data, HDestination.Client);
-            Triggers.HandleIncoming(args);
+            var args = new InterceptedEventArgs(ReadIncomingAsync,
+                count, new HMessage(data, HDestination.Client));
 
+            Triggers.HandleIncoming(args);
             OnDataIncoming(args);
 
             if (!args.WasContinued && IsReading)
-                ReadIncomingAsync();
+            {
+                Task readInTask = ReadIncomingAsync();
+            }
         }
 
         public static IList<HSession> Extract(string path, char delimiter = ':')

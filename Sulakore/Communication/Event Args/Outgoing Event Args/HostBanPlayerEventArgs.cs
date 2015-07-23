@@ -32,19 +32,10 @@ namespace Sulakore.Communication
 {
     public class HostBanPlayerEventArgs : InterceptedEventArgs
     {
-        public int Id { get; private set; }
-        public HBan Ban { get; private set; }
-        public int RoomId { get; private set; }
-
-        public HostBanPlayerEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostBanPlayerEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostBanPlayerEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public int Id { get; }
+        public HBan Ban { get; }
+        public int RoomId { get; }
+        
         public HostBanPlayerEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
@@ -52,14 +43,9 @@ namespace Sulakore.Communication
             RoomId = packet.ReadInteger();
             Ban = SKore.ToBan(packet.ReadString());
         }
-        public HostBanPlayerEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Id: {1}, RoomId: {2}, Ban: {3}",
-                Packet.Header, Id, RoomId, Ban);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Id)}: {Id}, " +
+            $"{nameof(RoomId)}: {RoomId}, {nameof(Ban)}: {Ban}";
     }
 }

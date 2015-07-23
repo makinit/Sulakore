@@ -36,38 +36,22 @@ namespace Sulakore.Communication
     {
         private readonly IReadOnlyList<HFurniture> _furnitureLoadList;
 
-        public int Count { get { return _furnitureLoadList.Count; } }
-        public HFurniture this[int index] { get { return _furnitureLoadList[index]; } }
-
-        public FurnitureLoadEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public FurnitureLoadEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public FurnitureLoadEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public int Count => _furnitureLoadList.Count;
+        public HFurniture this[int index] => _furnitureLoadList[index];
+        
         public FurnitureLoadEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             _furnitureLoadList = HFurniture.Parse(packet);
         }
-        public FurnitureLoadEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public IEnumerator<HFurniture> GetEnumerator()
-        {
-            return _furnitureLoadList.GetEnumerator();
-        }
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IEnumerable)_furnitureLoadList).GetEnumerator();
-        }
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Count: {1}", Packet.Header, Count);
-        }
+        public IEnumerator<HFurniture> GetEnumerator() =>
+            _furnitureLoadList.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+            ((IEnumerable)_furnitureLoadList).GetEnumerator();
+
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Count)}: {Count}";
     }
 }

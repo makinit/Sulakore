@@ -31,30 +31,15 @@ namespace Sulakore.Communication
 {
     public class HostKickPlayerEventArgs : InterceptedEventArgs
     {
-        public int Id { get; private set; }
-
-        public HostKickPlayerEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostKickPlayerEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostKickPlayerEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public int Id { get; }
+        
         public HostKickPlayerEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             Id = packet.ReadInteger();
         }
-        public HostKickPlayerEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Id: {1}",
-                Packet.Header, Id);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Id)}: {Id}";
     }
 }

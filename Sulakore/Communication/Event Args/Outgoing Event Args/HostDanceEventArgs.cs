@@ -32,30 +32,15 @@ namespace Sulakore.Communication
 {
     public class HostDanceEventArgs : InterceptedEventArgs
     {
-        public HDance Dance { get; private set; }
-
-        public HostDanceEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostDanceEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostDanceEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public HDance Dance { get; }
+        
         public HostDanceEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             Dance = (HDance)packet.ReadInteger();
         }
-        public HostDanceEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Dance: {1}",
-                Packet.Header, Dance);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Dance)}: {Dance}";
     }
 }

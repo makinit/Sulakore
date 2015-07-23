@@ -31,30 +31,15 @@ namespace Sulakore.Communication
 {
     public class HostUpdateMottoEventArgs : InterceptedEventArgs
     {
-        public string Motto { get; private set; }
-
-        public HostUpdateMottoEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostUpdateMottoEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostUpdateMottoEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public string Motto { get; }
+        
         public HostUpdateMottoEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             Motto = packet.ReadString();
         }
-        public HostUpdateMottoEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Motto: {1}",
-                Packet.Header, Motto);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Motto)}: {Motto}";
     }
 }

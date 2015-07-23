@@ -65,27 +65,13 @@
     <Compile Include="Communication\HTriggers.cs" />
     <Compile Include="Communication\IHConnection.cs" />
     <Compile Include="Components\Event Args\ScheduleTickEventArgs.cs" />
-    <Compile Include="Components\SKoreButton.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Components\SKoreConstructView.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Components\SKoreExtensionView.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Components\SKoreLabel.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Components\SKoreListView.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Components\SKoreScheduleView.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Components\SKoreTabControl.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Include="Components\SKoreButton.cs" />
+    <Compile Include="Components\SKoreConstructView.cs" />
+    <Compile Include="Components\SKoreExtensionView.cs" />
+    <Compile Include="Components\SKoreLabel.cs" />
+    <Compile Include="Components\SKoreListView.cs" />
+    <Compile Include="Components\SKoreScheduleView.cs" />
+    <Compile Include="Components\SKoreTabControl.cs" />
     <Compile Include="Extensions\Enums\ExtensionActionType.cs" />
     <Compile Include="Extensions\Event Args\ExtensionActionEventArgs.cs" />
     <Compile Include="Extensions\Contractor.cs" />

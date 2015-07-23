@@ -387,7 +387,7 @@ namespace Sulakore.Communication
                             _outLocked[e.Packet.Header](e);
                         else if (_outLocked.ContainsKey(previous.Header))
                         {
-                            var args = new InterceptedEventArgs(previous);
+                            var args = new InterceptedEventArgs(null, 0, previous);
                             _outLocked[previous.Header](args);
                         }
                     }
@@ -449,7 +449,7 @@ namespace Sulakore.Communication
                             _inLocked[e.Packet.Header](e);
                         else if (_inLocked.ContainsKey(previous.Header))
                         {
-                            var args = new InterceptedEventArgs(previous);
+                            var args = new InterceptedEventArgs(null, 0, previous);
                             _inLocked[previous.Header](args);
                         }
                     }

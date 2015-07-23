@@ -32,21 +32,12 @@ namespace Sulakore.Communication
 {
     public class FurnitureMoveEventArgs : InterceptedEventArgs
     {
-        public int Id { get; private set; }
-        public int TypeId { get; private set; }
-        public int OwnerId { get; private set; }
-        public HPoint Tile { get; private set; }
-        public HDirection Direction { get; private set; }
-
-        public FurnitureMoveEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public FurnitureMoveEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public FurnitureMoveEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public int Id { get; }
+        public int TypeId { get; }
+        public int OwnerId { get; }
+        public HPoint Tile { get; }
+        public HDirection Direction { get; }
+        
         public FurnitureMoveEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
@@ -62,14 +53,9 @@ namespace Sulakore.Communication
             // TODO: Find the chunks before OwnerId and read them.
             OwnerId = packet.ReadInteger(packet.Length - 6);
         }
-        public FurnitureMoveEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Id: {1}, OwnerId: {2}, Tile: {3}, Direction: {4}",
-                Packet.Header, Id, OwnerId, Tile, Direction);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Id)}: {Id}, " +
+            $"{nameof(OwnerId)}: {OwnerId}, {nameof(Tile)}: {Tile}, {nameof(Direction)}: {Direction}";
     }
 }

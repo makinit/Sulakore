@@ -31,32 +31,18 @@ namespace Sulakore.Communication
 {
     public class HostNavigateRoomEventArgs : InterceptedEventArgs
     {
-        public int RoomId { get; private set; }
-        public string Password { get; private set; }
-
-        public HostNavigateRoomEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostNavigateRoomEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostNavigateRoomEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public int RoomId { get; }
+        public string Password { get; }
+        
         public HostNavigateRoomEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             RoomId = packet.ReadInteger();
             Password = packet.ReadString();
         }
-        public HostNavigateRoomEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, RoomId: {1}, Password: {2}",
-                Packet.Header, RoomId, Password);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, " +
+            $"{nameof(RoomId)}: {RoomId}, {nameof(Password)}: {Password}";
     }
 }

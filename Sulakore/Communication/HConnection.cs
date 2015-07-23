@@ -135,19 +135,19 @@ namespace Sulakore.Communication
         /// <summary>
         /// Gets the <see cref="IList{T}"/> that contains the headers of outgoing packets to block.
         /// </summary>
-        public IList<ushort> OutgoingBlocked { get; private set; }
+        public IList<ushort> OutgoingBlocked { get; }
         /// <summary>
         /// Gets the <see cref="IList{T}"/> that contains the headers of incoming packets to block.
         /// </summary>
-        public IList<ushort> IncomingBlocked { get; private set; }
+        public IList<ushort> IncomingBlocked { get; }
         /// <summary>
         /// Gets the <see cref="IDictionary{TKey, TValue}"/> that contains the replacement data for an outgoing packet determined by the header.
         /// </summary>
-        public IDictionary<ushort, byte[]> OutgoingReplaced { get; private set; }
+        public IDictionary<ushort, byte[]> OutgoingReplaced { get; }
         /// <summary>
         /// Gets the <see cref="IDictionary{TKey, TValue}"/> that contains the replacement data for an incoming packet determined by the header.
         /// </summary>
-        public IDictionary<ushort, byte[]> IncomingReplaced { get; private set; }
+        public IDictionary<ushort, byte[]> IncomingReplaced { get; }
 
         /// <summary>
         /// Gets the total amount of packets the remote <see cref="HNode"/> has been sent from local.
@@ -318,7 +318,7 @@ namespace Sulakore.Communication
                         OnConnected(EventArgs.Empty);
 
                         HandleOutgoing(packet, ++TotalOutgoing);
-                        ReadIncomingAsync();
+                        Task readInTask = ReadIncomingAsync();
                     }
                     else
                     {
@@ -360,7 +360,7 @@ namespace Sulakore.Communication
         private void HandleOutgoing(byte[] data, int count)
         {
             var args = new InterceptedEventArgs(ReadOutgoingAsync,
-                count, data, HDestination.Server);
+                count, new HMessage(data, HDestination.Server));
 
             if (OutgoingReplaced.ContainsKey(args.Packet.Header))
             {
@@ -375,7 +375,9 @@ namespace Sulakore.Communication
                 SendToServerAsync(args.Replacement.ToBytes()).Wait();
 
             if (!args.WasContinued)
-                ReadOutgoingAsync();
+            {
+                Task readOutTask = ReadOutgoingAsync();
+            }
         }
 
         private async Task ReadIncomingAsync()
@@ -389,7 +391,7 @@ namespace Sulakore.Communication
         private void HandleIncoming(byte[] data, int count)
         {
             var args = new InterceptedEventArgs(ReadIncomingAsync,
-                count, data, HDestination.Client);
+                count, new HMessage(data, HDestination.Client));
 
             if (IncomingReplaced.ContainsKey(args.Packet.Header))
             {
@@ -404,7 +406,9 @@ namespace Sulakore.Communication
                 SendToClientAsync(args.Replacement.ToBytes()).Wait();
 
             if (!args.WasContinued)
-                ReadIncomingAsync();
+            {
+                Task readInTask = ReadIncomingAsync();
+            }
         }
 
         /// <summary>

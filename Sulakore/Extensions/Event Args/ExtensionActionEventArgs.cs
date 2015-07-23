@@ -28,8 +28,8 @@ namespace Sulakore.Extensions
 {
     public class ExtensionActionEventArgs : EventArgs
     {
-        public ExtensionForm Extension { get; private set; }
-        public ExtensionActionType Action { get; private set; }
+        public ExtensionForm Extension { get; }
+        public ExtensionActionType Action { get; }
 
         public ExtensionActionEventArgs(
             ExtensionForm extension, ExtensionActionType action)

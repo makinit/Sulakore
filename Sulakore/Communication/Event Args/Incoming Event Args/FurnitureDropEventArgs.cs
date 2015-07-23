@@ -32,23 +32,14 @@ namespace Sulakore.Communication
 {
     public class FurnitureDropEventArgs : InterceptedEventArgs
     {
-        public int Id { get; private set; }
-        public int TypeId { get; private set; }
-        public int OwnerId { get; private set; }
-        public HPoint Tile { get; private set; }
-        public bool IsRental { get; private set; }
-        public string OwnerName { get; private set; }
-        public HDirection Direction { get; private set; }
-
-        public FurnitureDropEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public FurnitureDropEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public FurnitureDropEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public int Id { get; }
+        public int TypeId { get; }
+        public int OwnerId { get; }
+        public HPoint Tile { get; }
+        public bool IsRental { get; }
+        public string OwnerName { get; }
+        public HDirection Direction { get; }
+        
         public FurnitureDropEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
@@ -72,14 +63,10 @@ namespace Sulakore.Communication
             OwnerId = Packet.ReadInteger();
             OwnerName = Packet.ReadString();
         }
-        public FurnitureDropEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Id: {1}, TypeId: {2}, Tile: {3}, Direction: {4}, IsRental: {5}, OwnerId: {6}, OwnerName: {7}",
-                Packet.Header, Id, TypeId, Tile, Direction, IsRental, OwnerId, OwnerName);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Id)}: {Id}, " +
+            $"{nameof(TypeId)}: {TypeId}, {nameof(Tile)}: {Tile}, {nameof(Direction)}: {Direction}, " +
+            $"{nameof(IsRental)}: {IsRental}, {nameof(OwnerId)}: {OwnerId}, {nameof(OwnerName)}: {OwnerName}";
     }
 }

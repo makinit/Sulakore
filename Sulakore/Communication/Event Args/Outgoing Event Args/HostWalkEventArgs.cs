@@ -32,31 +32,16 @@ namespace Sulakore.Communication
 {
     public class HostWalkEventArgs : InterceptedEventArgs
     {
-        public HPoint Tile { get; private set; }
-
-        public HostWalkEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostWalkEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostWalkEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public HPoint Tile { get; }
+        
         public HostWalkEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             Tile = new HPoint(packet.ReadInteger(0),
                 packet.ReadInteger(4));
         }
-        public HostWalkEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Tile: {1}",
-                Packet.Header, Tile);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Tile)}: {Tile}";
     }
 }

@@ -40,31 +40,31 @@ namespace Sulakore.Extensions
         /// <summary>
         /// Gets the name of <see cref="ExtensionForm"/> creator.
         /// </summary>
-        public string Creator { get; private set; }
+        public string Creator { get; }
         /// <summary>
         /// Gets the name of the <see cref="ExtensionForm"/>.
         /// </summary>
-        public string Identifier { get; private set; }
+        public string Identifier { get; }
         /// <summary>
         /// Gets the description of the <see cref="ExtensionForm"/>.
         /// </summary>
-        public string Description { get; private set; }
+        public string Description { get; }
         /// <summary>
         /// Gets the file path of the <see cref="ExtensionForm"/> assembly.
         /// </summary>
-        public string FileLocation { get; private set; }
+        public string FileLocation { get; }
 
         /// <summary>
         /// Gets the assembly's <see cref="System.Version"/> of the <see cref="ExtensionForm"/>.
         /// </summary>
-        public Version Version { get; private set; }
+        public Version Version { get; }
         /// <summary>
         /// Gets the <see cref="HTriggers"/> that handles the in-game callbacks/events.
         /// </summary>
         public HTriggers Triggers { get; protected set; }
 
-        public HHotel Hotel { get; private set; }
-        public IHConnection Connection { get; private set; }
+        public HHotel Hotel { get; }
+        public IHConnection Connection { get; }
 
         public ExtensionForm()
         {

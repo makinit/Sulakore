@@ -30,7 +30,7 @@ namespace Sulakore.Components
 {
     public class ScheduleTickEventArgs : CancelEventArgs
     {
-        public HMessage Packet { get; private set; }
+        public HMessage Packet { get; }
 
         public ScheduleTickEventArgs(HMessage packet)
         {

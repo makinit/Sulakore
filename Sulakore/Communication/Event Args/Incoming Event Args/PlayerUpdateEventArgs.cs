@@ -32,20 +32,11 @@ namespace Sulakore.Communication
 {
     public class PlayerUpdateEventArgs : InterceptedEventArgs, IHEntity
     {
-        public int Index { get; private set; }
-        public string Motto { get; private set; }
-        public HGender Gender { get; private set; }
-        public string FigureId { get; private set; }
-
-        public PlayerUpdateEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public PlayerUpdateEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public PlayerUpdateEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public int Index { get; }
+        public string Motto { get; }
+        public HGender Gender { get; }
+        public string FigureId { get; }
+        
         public PlayerUpdateEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
@@ -54,14 +45,9 @@ namespace Sulakore.Communication
             Gender = SKore.ToGender(packet.ReadString());
             Motto = packet.ReadString();
         }
-        public PlayerUpdateEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Index: {1}, FigureId: {2}, Gender: {3}, Motto: {4}",
-                Packet.Header, Index, FigureId, Gender, Motto);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Index)}: {Index}, " +
+            $"{nameof(FigureId)}: {FigureId}, {nameof(Gender)}: {Gender}, {nameof(Motto)}: {Motto}";
     }
 }

@@ -50,7 +50,7 @@ namespace Sulakore.Extensions
         }
 
         public HHotel Hotel { get; set; }
-        public HConnection Connection { get; private set; }
+        public HConnection Connection { get; }
 
         private readonly List<ExtensionForm> _extensions;
         public IReadOnlyList<ExtensionForm> Extensions

@@ -32,30 +32,15 @@ namespace Sulakore.Communication
 {
     public class HostGestureEventArgs : InterceptedEventArgs
     {
-        public HGesture Gesture { get; private set; }
-
-        public HostGestureEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostGestureEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostGestureEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public HGesture Gesture { get; }
+        
         public HostGestureEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             Gesture = (HGesture)packet.ReadInteger();
         }
-        public HostGestureEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Gesture: {1}",
-                Packet.Header, Gesture);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Gesture)}: {Gesture}";
     }
 }

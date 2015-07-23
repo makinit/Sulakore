@@ -31,19 +31,10 @@ namespace Sulakore.Communication
 {
     public class HostMutePlayerEventArgs : InterceptedEventArgs
     {
-        public int Id { get; private set; }
-        public int RoomId { get; private set; }
-        public int Minutes { get; private set; }
-
-        public HostMutePlayerEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostMutePlayerEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostMutePlayerEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public int Id { get; }
+        public int RoomId { get; }
+        public int Minutes { get; }
+        
         public HostMutePlayerEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
@@ -51,14 +42,9 @@ namespace Sulakore.Communication
             RoomId = packet.ReadInteger();
             Minutes = packet.ReadInteger();
         }
-        public HostMutePlayerEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Id: {1}, RoomId: {2}, Minutes: {3}",
-                Packet.Header, Id, RoomId, Minutes);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Id)}: {Id}, " +
+            $"{nameof(RoomId)}: {RoomId}, {nameof(Minutes)}: {Minutes}";
     }
 }

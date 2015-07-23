@@ -36,36 +36,36 @@ namespace Sulakore.Habbo
         /// <summary>
         /// Gets the id of the <see cref="HEntity"/>.
         /// </summary>
-        public int Id { get; private set; }
+        public int Id { get; }
         /// <summary>
         /// Gets the room index value of the <see cref="HEntity"/>.
         /// </summary>
-        public int Index { get; private set; }
+        public int Index { get; }
         /// <summary>
         /// Gets the name of the <see cref="HEntity"/>.
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; }
         /// <summary>
         /// Gets the motto of the <see cref="HEntity"/>.
         /// </summary>
-        public string Motto { get; private set; }
+        public string Motto { get; }
         /// <summary>
         /// Gets the figure id of the <see cref="HEntity"/>.
         /// </summary>
-        public string FigureId { get; private set; }
+        public string FigureId { get; }
         /// <summary>
         /// Gets the favorite group badge of the <see cref="HEntity"/>.
         /// </summary>
-        public string FavoriteGroup { get; private set; }
+        public string FavoriteGroup { get; }
 
         /// <summary>
         /// Gets the <see cref="HPoint"/> of the <see cref="HEntity"/>.
         /// </summary>
-        public HPoint Tile { get; private set; }
+        public HPoint Tile { get; }
         /// <summary>
         /// Gets the gender of the <see cref="HEntity"/>.
         /// </summary>
-        public HGender Gender { get; private set; }
+        public HGender Gender { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HEntity"/> class with the specified information,

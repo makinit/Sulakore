@@ -31,25 +31,11 @@ namespace Sulakore.Communication
 {
     public class PlayerKickHostEventArgs : InterceptedEventArgs
     {
-        public PlayerKickHostEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public PlayerKickHostEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public PlayerKickHostEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
         public PlayerKickHostEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         { }
-        public PlayerKickHostEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return "Header: " + Packet.Header;
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}";
     }
 }

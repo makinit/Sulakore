@@ -36,45 +36,22 @@ namespace Sulakore.Communication
     {
         private readonly IReadOnlyList<HEntity> _entityLoadList;
 
-        public int Count
-        {
-            get { return _entityLoadList.Count; }
-        }
-        public HEntity this[int index]
-        {
-            get { return _entityLoadList[index]; }
-        }
+        public int Count => _entityLoadList.Count;
+        public HEntity this[int index] => _entityLoadList[index];
 
-        public EntityLoadEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public EntityLoadEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public EntityLoadEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
         public EntityLoadEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             _entityLoadList = HEntity.Parse(packet);
         }
-        public EntityLoadEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IEnumerable)_entityLoadList).GetEnumerator();
-        }
-        public IEnumerator<HEntity> GetEnumerator()
-        {
-            return _entityLoadList.GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() =>
+            ((IEnumerable)_entityLoadList).GetEnumerator();
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Count: {1}", Packet.Header, Count);
-        }
+        public IEnumerator<HEntity> GetEnumerator() =>
+            _entityLoadList.GetEnumerator();
+
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Count)}: {Count}";
     }
 }

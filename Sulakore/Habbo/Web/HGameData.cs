@@ -28,20 +28,20 @@ namespace Sulakore.Habbo.Web
 {
     public class HGameData
     {
-        public int Port { get; private set; }
-        public string Host { get; private set; }
-        public string Texts { get; private set; }
-        public int AccountId { get; private set; }
-        public string UniqueId { get; private set; }
-        public string Variables { get; private set; }
-        public string OverrideTexts { get; private set; }
-        public string ClientStarting { get; private set; }
-        public string FlashClientUrl { get; private set; }
-        public string FigurePartList { get; private set; }
-        public string FlashClientBuild { get; private set; }
-        public string FurniDataLoadUrl { get; private set; }
-        public string OverrideVariables { get; private set; }
-        public string ProductDataLoadUrl { get; private set; }
+        public int Port { get; }
+        public string Host { get; }
+        public string Texts { get; }
+        public int AccountId { get; }
+        public string UniqueId { get; }
+        public string Variables { get; }
+        public string OverrideTexts { get; }
+        public string ClientStarting { get; }
+        public string FlashClientUrl { get; }
+        public string FigurePartList { get; }
+        public string FlashClientBuild { get; }
+        public string FurniDataLoadUrl { get; }
+        public string OverrideVariables { get; }
+        public string ProductDataLoadUrl { get; }
 
         public HGameData(string gameData)
         {

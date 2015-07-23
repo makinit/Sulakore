@@ -23,7 +23,6 @@
 */
 
 using System;
-using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -52,11 +51,11 @@ namespace Sulakore.Communication
         /// <summary>
         /// Gets the underlying <see cref="Socket"/>.
         /// </summary>
-        public Socket Client { get; private set; }
+        public Socket Client { get; }
         /// <summary>
         /// Gets the <see cref="NetworkStream"/> used to send and receive data.
         /// </summary>
-        public NetworkStream SocketStream { get; private set; }
+        public NetworkStream SocketStream { get; }
         /// <summary>
         /// Gets or sets the value that determines whether the <see cref="HNode"/> has already been disposed.
         /// </summary>
@@ -118,6 +117,9 @@ namespace Sulakore.Communication
             byte[] lengthBlock = new byte[4];
             int length = await ReceiveAsync(lengthBlock, 0, 4)
                 .ConfigureAwait(false);
+
+            byte[] original = new byte[lengthBlock.Length];
+            lengthBlock.CopyTo(original, 0);
 
             if (length == 0)
                 return null;
@@ -209,9 +211,10 @@ namespace Sulakore.Communication
             if (IsDisposed) return;
             if (disposing)
             {
-                Exchange.Dispose();
-                SocketStream.Dispose();
+                if (Exchange != null)
+                    Exchange.Dispose();
 
+                SocketStream.Dispose();
                 Client.Shutdown(SocketShutdown.Both);
                 Client.Close();
 

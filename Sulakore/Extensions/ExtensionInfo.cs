@@ -33,15 +33,15 @@ namespace Sulakore.Extensions
     public class ExtensionInfo
     {
         public string FileLocation { get; set; }
-        public string Creator { get; private set; }
-        public string Identifier { get; private set; }
-        public string Description { get; private set; }
+        public string Creator { get; }
+        public string Identifier { get; }
+        public string Description { get; }
 
         public Version Version { get; set; }
-        public HTriggers Triggers { get; private set; }
+        public HTriggers Triggers { get; }
 
-        public HHotel Hotel { get; private set; }
-        public IHConnection Connection { get; private set; }
+        public HHotel Hotel { get; }
+        public IHConnection Connection { get; }
 
         public ExtensionInfo(Assembly extensionAssembly, HHotel hotel, IHConnection connection)
         {

@@ -32,30 +32,15 @@ namespace Sulakore.Communication
 {
     public class HostRaiseSignEventArgs : InterceptedEventArgs
     {
-        public HSign Sign { get; private set; }
-
-        public HostRaiseSignEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostRaiseSignEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostRaiseSignEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public HSign Sign { get; }
+        
         public HostRaiseSignEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             Sign = (HSign)packet.ReadInteger();
         }
-        public HostRaiseSignEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Sign: {1}",
-                Packet.Header, Sign);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Sign)}: {Sign}";
     }
 }

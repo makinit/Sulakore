@@ -37,41 +37,41 @@ namespace Sulakore.Habbo
         /// <summary>
         /// Gets the room index value of the <see cref="IHEntity"/>.
         /// </summary>
-        public int Index { get; private set; }
+        public int Index { get; }
         /// <summary>
         /// Gets a value that determines whether the <see cref="IHEntity"/> has privileges.
         /// </summary>
-        public bool IsEmpowered { get; private set; }
+        public bool IsEmpowered { get; }
 
         /// <summary>
         /// Gets the <see cref="HPoint"/> of where the <see cref="IHEntity"/> is currently on.
         /// </summary>
-        public HPoint Tile { get; private set; }
+        public HPoint Tile { get; }
         /// <summary>
         /// Gets the <see cref="HPoint"/> of where the <see cref="IHEntity"/> will move to next.
         /// </summary>
-        public HPoint MovingTo { get; private set; }
+        public HPoint MovingTo { get; }
 
         /// <summary>
         /// Gets the <see cref="HSign"/> that the <see cref="IHEntity"/> has raised.
         /// </summary>
-        public HSign Sign { get; private set; }
+        public HSign Sign { get; }
         /// <summary>
         /// Gets the current <see cref="HStance"/> of the <see cref="IHEntity"/>.
         /// </summary>
-        public HStance Stance { get; private set; }
+        public HStance Stance { get; }
         /// <summary>
         /// Gets the <see cref="HAction"/> that the <see cref="IHEntity"/> has recently done.
         /// </summary>
-        public HAction LastAction { get; private set; }
+        public HAction LastAction { get; }
         /// <summary>
         /// Gets the head <see cref="HDirection"/> of the <see cref="IHEntity"/>.
         /// </summary>
-        public HDirection HeadDirection { get; private set; }
+        public HDirection HeadDirection { get; }
         /// <summary>
         /// Gets the body <see cref="HDirection"/> of the <see cref="IHEntity"/>.
         /// </summary>
-        public HDirection BodyDirection { get; private set; }
+        public HDirection BodyDirection { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HEntityAction"/> class with the specified information.

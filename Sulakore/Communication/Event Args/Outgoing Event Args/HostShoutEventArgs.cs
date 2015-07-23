@@ -32,18 +32,9 @@ namespace Sulakore.Communication
 {
     public class HostShoutEventArgs : InterceptedEventArgs
     {
-        public HTheme Theme { get; private set; }
-        public string Message { get; private set; }
-
-        public HostShoutEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostShoutEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostShoutEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public HTheme Theme { get; }
+        public string Message { get; }
+        
         public HostShoutEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
@@ -52,14 +43,9 @@ namespace Sulakore.Communication
             // TODO: Find the chunks before OwnerId and read them.
             Theme = (HTheme)packet.ReadInteger(packet.Length - 6);
         }
-        public HostShoutEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Message: {1}, Theme: {2}",
-                Packet.Header, Message, Theme);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, " +
+            $"{nameof(Message)}: {Message}, {nameof(Theme)}: {Theme}";
     }
 }

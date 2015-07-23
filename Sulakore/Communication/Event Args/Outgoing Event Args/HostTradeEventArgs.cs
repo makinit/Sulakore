@@ -32,30 +32,15 @@ namespace Sulakore.Communication
 {
     public class HostTradeEventArgs : InterceptedEventArgs, IHEntity
     {
-        public int Index { get; private set; }
-
-        public HostTradeEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostTradeEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostTradeEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public int Index { get; }
+        
         public HostTradeEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             Index = packet.ReadInteger();
         }
-        public HostTradeEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Index: {1}",
-                Packet.Header, Index);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Index)}: {Index}";
     }
 }

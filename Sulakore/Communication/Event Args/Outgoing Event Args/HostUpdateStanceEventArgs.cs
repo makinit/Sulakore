@@ -32,30 +32,15 @@ namespace Sulakore.Communication
 {
     public class HostUpdateStanceEventArgs : InterceptedEventArgs
     {
-        public HStance Stance { get; private set; }
-
-        public HostUpdateStanceEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostUpdateStanceEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostUpdateStanceEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public HStance Stance { get; }
+        
         public HostUpdateStanceEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             Stance = (HStance)packet.ReadInteger();
         }
-        public HostUpdateStanceEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Stance: {1}",
-                Packet.Header, Stance);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, {nameof(Stance)}: {Stance}";
     }
 }

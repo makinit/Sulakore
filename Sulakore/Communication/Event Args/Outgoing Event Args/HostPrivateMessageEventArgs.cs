@@ -31,32 +31,18 @@ namespace Sulakore.Communication
 {
     public class HostPrivateMessageEventArgs : InterceptedEventArgs
     {
-        public int Id { get; private set; }
-        public string Message { get; private set; }
-
-        public HostPrivateMessageEventArgs(HMessage packet)
-            : this(null, -1, packet)
-        { }
-        public HostPrivateMessageEventArgs(int step, HMessage packet)
-            : this(null, step, packet)
-        { }
-        public HostPrivateMessageEventArgs(int step, byte[] data, HDestination destination)
-            : this(null, step, new HMessage(data, destination))
-        { }
+        public int Id { get; }
+        public string Message { get; }
+        
         public HostPrivateMessageEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)
         {
             Id = packet.ReadInteger();
             Message = packet.ReadString();
         }
-        public HostPrivateMessageEventArgs(Func<Task> continuation, int step, byte[] data, HDestination destination)
-            : this(continuation, step, new HMessage(data, destination))
-        { }
 
-        public override string ToString()
-        {
-            return string.Format("Header: {0}, Id: {1}, Message: {2}",
-                Packet.Header, Id, Message);
-        }
+        public override string ToString() =>
+            $"{nameof(Packet.Header)}: {Packet.Header}, " +
+            $"{nameof(Id)}: {Id}, {nameof(Message)}: {Message}";
     }
 }
