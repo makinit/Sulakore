@@ -28,7 +28,6 @@ using System.Threading.Tasks;
 
 using Sulakore.Protocol.Encoders;
 using Sulakore.Protocol.Encryption;
-using System.Net;
 
 namespace Sulakore.Communication
 {

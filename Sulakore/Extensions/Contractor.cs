@@ -52,11 +52,8 @@ namespace Sulakore.Extensions
         public HConnection Connection { get; }
 
         private readonly List<ExtensionForm> _extensions;
-        public IReadOnlyList<ExtensionForm> Extensions
-        {
-            get { return _extensions; }
-        }
-
+        public IReadOnlyList<ExtensionForm> Extensions => _extensions;
+        
         static Contractor()
         {
             _extensionInfoByAssembly = new Dictionary<Assembly, ExtensionInfo>();
