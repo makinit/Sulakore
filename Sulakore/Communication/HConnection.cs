@@ -290,6 +290,7 @@ namespace Sulakore.Communication
                         0, outBuffer.Length).ConfigureAwait(false);
 
                     if (length == 0) return;
+                    if (outBuffer[0] == 64) throw new Exception("Base64/VL64 protocol not supported.");
                     if (BigEndian.ToUI16(outBuffer, 4) == Outgoing.CLIENT_CONNECT)
                     {
                         byte[] packet = new byte[BigEndian.ToSI32(outBuffer) + 4];
