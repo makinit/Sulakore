@@ -209,11 +209,11 @@ namespace Sulakore.Protocol
                 case TypeCode.UInt16: valueSize = 2; break;
                 case TypeCode.Boolean: valueSize = 1; break;
                 case TypeCode.String:
-                    {
-                        int stringLength = BigEndian.ToUI16(Body, index);
-                        valueSize = (2 + stringLength);
-                        break;
-                    }
+                {
+                    int stringLength = BigEndian.ToUI16(Body, index);
+                    valueSize = (2 + stringLength);
+                    break;
+                }
             }
 
             _body.RemoveRange(index, valueSize);
@@ -230,14 +230,14 @@ namespace Sulakore.Protocol
                 case TypeCode.UInt16: bytesNeeded = 2; break;
                 case TypeCode.Boolean: bytesNeeded = 1; break;
                 case TypeCode.String:
+                {
+                    if (bytesLeft > 2)
                     {
-                        if (bytesLeft > 2)
-                        {
-                            int stringLength = BigEndian.ToUI16(Body, index);
-                            bytesNeeded = (2 + stringLength);
-                        }
-                        break;
+                        int stringLength = BigEndian.ToUI16(Body, index);
+                        bytesNeeded = (2 + stringLength);
                     }
+                    break;
+                }
             }
             return bytesLeft >= bytesNeeded && bytesNeeded != -1;
         }
@@ -249,11 +249,11 @@ namespace Sulakore.Protocol
                 case TypeCode.UInt16: _body.RemoveRange(index, 2); break;
                 case TypeCode.Boolean: _body.RemoveAt(index); break;
                 case TypeCode.String:
-                    {
-                        int stringLength = BigEndian.ToUI16(Body, index);
-                        _body.RemoveRange(index, 2 + stringLength);
-                        break;
-                    }
+                {
+                    int stringLength = BigEndian.ToUI16(Body, index);
+                    _body.RemoveRange(index, 2 + stringLength);
+                    break;
+                }
             }
 
             _body.InsertRange(index, Encode(chunk));
@@ -444,7 +444,7 @@ namespace Sulakore.Protocol
             {
                 object chunk = chunks[i];
                 if (chunk == null)
-                    throw new NullReferenceException("chunk");
+                    throw new NullReferenceException(nameof(chunk));
 
                 switch (Type.GetTypeCode(chunk.GetType()))
                 {
@@ -455,25 +455,25 @@ namespace Sulakore.Protocol
 
                     default:
                     case TypeCode.String:
+                    {
+                        byte[] data = chunk as byte[];
+                        if (data == null)
                         {
-                            byte[] data = chunk as byte[];
-                            if (data == null)
-                            {
-                                string value = chunk.ToString()
-                                    .Replace("\\a", "\a").Replace("\\b", "\b")
-                                    .Replace("\\f", "\f").Replace("\\n", "\n")
-                                    .Replace("\\r", "\r").Replace("\\t", "\t")
-                                    .Replace("\\v", "\v").Replace("\\0", "\0");
+                            string value = chunk.ToString()
+                                .Replace("\\a", "\a").Replace("\\b", "\b")
+                                .Replace("\\f", "\f").Replace("\\n", "\n")
+                                .Replace("\\r", "\r").Replace("\\t", "\t")
+                                .Replace("\\v", "\v").Replace("\\0", "\0");
 
-                                byte[] stringData = Encoding.UTF8.GetBytes(value);
+                            byte[] stringData = Encoding.UTF8.GetBytes(value);
 
-                                data = new byte[2 + Encoding.UTF8.GetByteCount(value)];
-                                Buffer.BlockCopy(BigEndian.FromUI16((ushort)(data.Length - 2)), 0, data, 0, 2);
-                                Buffer.BlockCopy(Encoding.UTF8.GetBytes(value), 0, data, 2, data.Length - 2);
-                            }
-                            buffer.AddRange(data);
-                            break;
+                            data = new byte[2 + Encoding.UTF8.GetByteCount(value)];
+                            Buffer.BlockCopy(BigEndian.FromUI16((ushort)(data.Length - 2)), 0, data, 0, 2);
+                            Buffer.BlockCopy(Encoding.UTF8.GetBytes(value), 0, data, 2, data.Length - 2);
                         }
+                        buffer.AddRange(data);
+                        break;
+                    }
                 }
             }
             return buffer.ToArray();
