@@ -81,9 +81,7 @@ namespace Sulakore.Habbo
         /// Converts the <see cref="HPoint"/> to a human-readable string.
         /// </summary>
         /// <returns></returns>
-        public override string ToString()
-        {
-            return string.Format("{{X={0},Y={1},Z={2}}}", X, Y, Z);
-        }
+        public override string ToString() =>
+            $"{{X={X},Y={Y},Z={Z}}}";
     }
 }

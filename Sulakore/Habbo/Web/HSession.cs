@@ -162,7 +162,7 @@ namespace Sulakore.Habbo.Web
             {
                 IsAuthenticated = false;
                 Cookies.SetCookies(_hotelUri, await SKore.GetIPCookieAsync(Hotel).ConfigureAwait(false));
-                byte[] postData = Encoding.UTF8.GetBytes(string.Format("{{\"email\":\"{0}\",\"password\":\"{0}\"}}", Email, Password));
+                byte[] postData = Encoding.UTF8.GetBytes($"{{\"email\":\"{Email}\",\"password\":\"{Password}\"}}");
 
                 var loginRequest = (HttpWebRequest)WebRequest.Create(_hotelUri.OriginalString + "/api/public/authentication/login");
                 loginRequest.ContentType = "application/json;charset=UTF-8";
@@ -299,11 +299,8 @@ namespace Sulakore.Habbo.Web
             return sessions;
         }
 
-        public override string ToString()
-        {
-            return string.Format("{0}:{1}:{2}",
-                Email, Password, Hotel.ToDomain());
-        }
+        public override string ToString() =>
+            $"{Email}:{Password}:{Hotel.ToDomain()}";
 
         public void Dispose()
         {

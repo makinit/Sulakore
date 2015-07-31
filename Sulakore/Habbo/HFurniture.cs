@@ -165,8 +165,8 @@ namespace Sulakore.Habbo
 
         public override string ToString()
         {
-            return string.Format("Id: {0}, TypeId: {1}, OwnerId: {2}, OwnerName: {3}",
-                Id, TypeId, OwnerId, OwnerName);
+            return $"{nameof(Id)}: {Id}, {nameof(TypeId)}: {TypeId}, " +
+                $"{nameof(OwnerId)}: {OwnerId}, {nameof(OwnerName)}: {OwnerName}";
         }
     }
 }

@@ -177,8 +177,9 @@ namespace Sulakore.Habbo
         /// <returns></returns>
         public override string ToString()
         {
-            return string.Format("Id: {0}, Index: {1}, Name: {2}, Tile: {3}, Motto: {4}, Gender: {5}, FigureId: {6}, FavoriteGroup: {7}",
-                Id, Index, Name, Tile, Motto, Gender, FigureId, FavoriteGroup);
+            return $"{nameof(Id)}: {Id}, {nameof(Index)}: {Index}, {nameof(Name)}: {Name}, " +
+                $"{nameof(Tile)}: {Tile}, {nameof(Motto)}: {Motto}, {nameof(Gender)}: {Gender}, " +
+                $"{nameof(FigureId)}: {FigureId}, {nameof(FavoriteGroup)}: {FavoriteGroup}";
         }
     }
 }

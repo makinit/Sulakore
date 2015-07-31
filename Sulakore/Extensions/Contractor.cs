@@ -241,7 +241,7 @@ namespace Sulakore.Extensions
                 Directory.CreateDirectory(installDirectory);
 
             string extensionInstallPath = initialPath;
-            string extensionSuffix = string.Format("({0}){1}", fileHash, extensionExt);
+            string extensionSuffix = $"({fileHash}){extensionExt}";
             if (!initialPath.EndsWith(extensionSuffix))
             {
                 extensionInstallPath = Path.Combine(installDirectory,

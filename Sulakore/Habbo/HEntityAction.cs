@@ -196,8 +196,9 @@ namespace Sulakore.Habbo
         /// <returns></returns>
         public override string ToString()
         {
-            return string.Format("IsEmpowered: {0}, Index: {1}, Tile: {2}, MovingTo: {3}, HeadDirection: {4}, BodyDirection: {5}, LastAction: {6}",
-                IsEmpowered, Index, Tile, MovingTo, HeadDirection, BodyDirection, LastAction);
+            return $"{nameof(IsEmpowered)}: {IsEmpowered}, {nameof(Index)}: {Index}, {nameof(Tile)}: {Tile}, " +
+                $"{nameof(MovingTo)}: {MovingTo}, {nameof(HeadDirection)}: {HeadDirection}, " +
+                $"{nameof(BodyDirection)}: {BodyDirection}, {nameof(LastAction)}: {LastAction}";
         }
     }
 }

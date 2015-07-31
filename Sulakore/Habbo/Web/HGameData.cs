@@ -67,7 +67,7 @@ namespace Sulakore.Habbo.Web
                     string varName = addVarArgs.GetParent(":");
                     string varValue = addVarArgs.GetChild(":");
 
-                    string lineToRemove = string.Format(".addVariable(\"{0}\"", varName);
+                    string lineToRemove = $".addVariable(\"{varName}\"";
                     formattedGameData = formattedGameData.Replace(lineToRemove, string.Empty);
 
                     if (!string.IsNullOrWhiteSpace(varValue))
