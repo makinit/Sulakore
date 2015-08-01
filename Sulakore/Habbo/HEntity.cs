@@ -34,38 +34,38 @@ namespace Sulakore.Habbo
     public class HEntity : IHEntity
     {
         /// <summary>
-        /// Gets the id of the <see cref="HEntity"/>.
+        /// Gets or sets the id of the <see cref="HEntity"/>.
         /// </summary>
-        public int Id { get; }
+        public int Id { get; set; }
         /// <summary>
-        /// Gets the room index value of the <see cref="HEntity"/>.
+        /// Gets or sets the room index value of the <see cref="HEntity"/>.
         /// </summary>
-        public int Index { get; }
+        public int Index { get; set; }
         /// <summary>
-        /// Gets the name of the <see cref="HEntity"/>.
+        /// Gets or sets the name of the <see cref="HEntity"/>.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; set; }
         /// <summary>
-        /// Gets the motto of the <see cref="HEntity"/>.
+        /// Gets or sets the motto of the <see cref="HEntity"/>.
         /// </summary>
-        public string Motto { get; }
+        public string Motto { get; set; }
         /// <summary>
-        /// Gets the figure id of the <see cref="HEntity"/>.
+        /// Gets or sets the figure id of the <see cref="HEntity"/>.
         /// </summary>
-        public string FigureId { get; }
+        public string FigureId { get; set; }
         /// <summary>
-        /// Gets the favorite group badge of the <see cref="HEntity"/>.
+        /// Gets or sets the favorite group badge of the <see cref="HEntity"/>.
         /// </summary>
-        public string FavoriteGroup { get; }
+        public string FavoriteGroup { get; set; }
 
         /// <summary>
-        /// Gets the <see cref="HPoint"/> of the <see cref="HEntity"/>.
+        /// Gets or sets the <see cref="HPoint"/> of the <see cref="HEntity"/>.
         /// </summary>
-        public HPoint Tile { get; }
+        public HPoint Tile { get; set; }
         /// <summary>
-        /// Gets the gender of the <see cref="HEntity"/>.
+        /// Gets or sets the gender of the <see cref="HEntity"/>.
         /// </summary>
-        public HGender Gender { get; }
+        public HGender Gender { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HEntity"/> class with the specified information,

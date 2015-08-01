@@ -32,7 +32,7 @@ namespace Sulakore.Communication
 {
     public class PlayerUpdateEventArgs : InterceptedEventArgs, IHEntity
     {
-        public int Index { get; }
+        public int Index { get; set; }
         public string Motto { get; }
         public HGender Gender { get; }
         public string FigureId { get; }

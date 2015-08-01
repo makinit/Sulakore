@@ -159,7 +159,7 @@ namespace Sulakore.Components
 
         public ListViewItem GetSelectedItem()
         {
-            return SelectedItems.Count > 1 ?
+            return SelectedItems.Count > 0 ?
                 SelectedItems[0] : null;
         }
 

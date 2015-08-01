@@ -27,34 +27,22 @@ namespace Sulakore.Habbo
     /// <summary>
     /// Represents a floor object's in-game position relative to the map's three-dimensional plane.
     /// </summary>
-    public struct HPoint
+    public class HPoint
     {
-        private readonly int _x;
         /// <summary>
         /// Gets or sets the x-coordinate of the <see cref="HPoint"/>.
         /// </summary>
-        public int X
-        {
-            get { return _x; }
-        }
+        public int X { get; set; }
 
-        private readonly int _y;
         /// <summary>
         /// Gets or sets the y-coordinate of the <see cref="HPoint"/>.
         /// </summary>
-        public int Y
-        {
-            get { return _y; }
-        }
+        public int Y { get; set; }
 
-        private readonly double _z;
         /// <summary>
         /// Gets or sets the z-coordinate of the <see cref="HPoint"/>.
         /// </summary>
-        public double Z
-        {
-            get { return _z; }
-        }
+        public double Z { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HPoint"/> class with the specified floor object coordinates.
@@ -72,9 +60,9 @@ namespace Sulakore.Habbo
         /// <param name="z">The elevated position of the floor object.</param>
         public HPoint(int x, int y, double z)
         {
-            _x = x;
-            _y = y;
-            _z = z;
+            X = x;
+            Y = y;
+            Z = z;
         }
 
         /// <summary>

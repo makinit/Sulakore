@@ -32,7 +32,7 @@ namespace Sulakore.Communication
 {
     public class PlayerDanceEventArgs : InterceptedEventArgs, IHEntity
     {
-        public int Index { get; }
+        public int Index { get; set; }
         public HDance Dance { get; }
 
         public PlayerDanceEventArgs(Func<Task> continuation, int step, HMessage packet)

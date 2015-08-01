@@ -35,43 +35,43 @@ namespace Sulakore.Habbo
     public class HEntityAction : IHEntity
     {
         /// <summary>
-        /// Gets the room index value of the <see cref="IHEntity"/>.
+        /// Gets or sets the room index value of the <see cref="IHEntity"/>.
         /// </summary>
-        public int Index { get; }
+        public int Index { get; set; }
         /// <summary>
-        /// Gets a value that determines whether the <see cref="IHEntity"/> has privileges.
+        /// Gets or sets a value that determines whether the <see cref="IHEntity"/> has privileges.
         /// </summary>
-        public bool IsEmpowered { get; }
+        public bool IsEmpowered { get; set; }
 
         /// <summary>
-        /// Gets the <see cref="HPoint"/> of where the <see cref="IHEntity"/> is currently on.
+        /// Gets or sets the <see cref="HPoint"/> of where the <see cref="IHEntity"/> is currently on.
         /// </summary>
-        public HPoint Tile { get; }
+        public HPoint Tile { get; set; }
         /// <summary>
-        /// Gets the <see cref="HPoint"/> of where the <see cref="IHEntity"/> will move to next.
+        /// Gets or sets the <see cref="HPoint"/> of where the <see cref="IHEntity"/> will move to next.
         /// </summary>
-        public HPoint MovingTo { get; }
+        public HPoint MovingTo { get; set; }
 
         /// <summary>
-        /// Gets the <see cref="HSign"/> that the <see cref="IHEntity"/> has raised.
+        /// Gets or sets the <see cref="HSign"/> that the <see cref="IHEntity"/> has raised.
         /// </summary>
-        public HSign Sign { get; }
+        public HSign Sign { get; set; }
         /// <summary>
-        /// Gets the current <see cref="HStance"/> of the <see cref="IHEntity"/>.
+        /// Gets or sets the current <see cref="HStance"/> of the <see cref="IHEntity"/>.
         /// </summary>
-        public HStance Stance { get; }
+        public HStance Stance { get; set; }
         /// <summary>
-        /// Gets the <see cref="HAction"/> that the <see cref="IHEntity"/> has recently done.
+        /// Gets or sets the <see cref="HAction"/> that the <see cref="IHEntity"/> has recently done.
         /// </summary>
-        public HAction LastAction { get; }
+        public HAction LastAction { get; set; }
         /// <summary>
-        /// Gets the head <see cref="HDirection"/> of the <see cref="IHEntity"/>.
+        /// Gets or sets the head <see cref="HDirection"/> of the <see cref="IHEntity"/>.
         /// </summary>
-        public HDirection HeadDirection { get; }
+        public HDirection HeadDirection { get; set; }
         /// <summary>
-        /// Gets the body <see cref="HDirection"/> of the <see cref="IHEntity"/>.
+        /// Gets or sets the body <see cref="HDirection"/> of the <see cref="IHEntity"/>.
         /// </summary>
-        public HDirection BodyDirection { get; }
+        public HDirection BodyDirection { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HEntityAction"/> class with the specified information.

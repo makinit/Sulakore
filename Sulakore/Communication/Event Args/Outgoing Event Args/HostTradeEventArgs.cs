@@ -32,7 +32,7 @@ namespace Sulakore.Communication
 {
     public class HostTradeEventArgs : InterceptedEventArgs, IHEntity
     {
-        public int Index { get; }
+        public int Index { get; set; }
         
         public HostTradeEventArgs(Func<Task> continuation, int step, HMessage packet)
             : base(continuation, step, packet)

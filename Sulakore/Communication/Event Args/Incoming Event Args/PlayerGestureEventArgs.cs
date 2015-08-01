@@ -32,7 +32,7 @@ namespace Sulakore.Communication
 {
     public class PlayerGestureEventArgs : InterceptedEventArgs, IHEntity
     {
-        public int Index { get; }
+        public int Index { get; set; }
         public HGesture Gesture { get; }
 
         public PlayerGestureEventArgs(Func<Task> continuation, int step, HMessage packet)

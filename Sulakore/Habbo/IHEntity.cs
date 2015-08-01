@@ -30,8 +30,8 @@ namespace Sulakore.Habbo
     public interface IHEntity
     {
         /// <summary>
-        /// Gets the room index value of the <see cref="IHEntity"/>.
+        /// Gets or sets the room index value of the <see cref="IHEntity"/>.
         /// </summary>
-        int Index { get; }
+        int Index { get; set; }
     }
 }

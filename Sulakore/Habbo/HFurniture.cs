@@ -30,13 +30,13 @@ namespace Sulakore.Habbo
 {
     public class HFurniture
     {
-        public int Id { get; }
-        public int TypeId { get; }
-        public int OwnerId { get; }
-        public string OwnerName { get; }
+        public int Id { get; set; }
+        public int TypeId { get; set; }
+        public int OwnerId { get; set; }
+        public string OwnerName { get; set; }
 
-        public HPoint Tile { get; }
-        public HDirection Direction { get; }
+        public HPoint Tile { get; set; }
+        public HDirection Direction { get; set; }
 
         public HFurniture(int id, int typeId, int ownerId,
             string ownerName, HPoint tile, HDirection direction)
