@@ -461,7 +461,6 @@ namespace Sulakore.Communication
 
                 if (!ignoreCurrent && DetectIncoming)
                     _inPrevious.Push(e.Packet);
-
             }
         }
         protected virtual bool HandleIncoming(HMessage current, HMessage previous)
@@ -485,6 +484,7 @@ namespace Sulakore.Communication
             finally
             {
                 toUpdate.IsBlocked = gameArguments.IsBlocked;
+                toUpdate.Replacement = gameArguments.Replacement;
                 toUpdate.WasContinued = gameArguments.WasContinued;
             }
         }
