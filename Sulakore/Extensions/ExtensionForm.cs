@@ -27,43 +27,58 @@ using System.Reflection;
 using System.Windows.Forms;
 
 using Sulakore.Communication;
+using System.ComponentModel;
 
 namespace Sulakore.Extensions
 {
     public class ExtensionForm : Form
     {
+        [Browsable(false)]
         /// <summary>
         /// Gets a value that determines whether the <see cref="ExtensionForm"/> is running.
         /// </summary>
         public bool IsRunning { get; internal set; }
 
+        [Browsable(false)]
         /// <summary>
         /// Gets the name of <see cref="ExtensionForm"/> creator.
         /// </summary>
         public string Creator { get; }
+
+        [Browsable(false)]
         /// <summary>
         /// Gets the name of the <see cref="ExtensionForm"/>.
         /// </summary>
         public string Identifier { get; }
+
+        [Browsable(false)]
         /// <summary>
         /// Gets the description of the <see cref="ExtensionForm"/>.
         /// </summary>
         public string Description { get; }
+
+        [Browsable(false)]
         /// <summary>
         /// Gets the file path of the <see cref="ExtensionForm"/> assembly.
         /// </summary>
         public string FileLocation { get; }
-
+        
+        [Browsable(false)]
         /// <summary>
         /// Gets the assembly's <see cref="System.Version"/> of the <see cref="ExtensionForm"/>.
         /// </summary>
         public Version Version { get; }
+
+        [Browsable(false)]
         /// <summary>
         /// Gets the <see cref="HTriggers"/> that handles the in-game callbacks/events.
         /// </summary>
         public HTriggers Triggers { get; protected set; }
 
+        [Browsable(false)]
         public HHotel Hotel { get; }
+
+        [Browsable(false)]
         public IHConnection Connection { get; }
 
         public ExtensionForm()
@@ -91,6 +106,12 @@ namespace Sulakore.Extensions
             IsRunning = true;
             base.OnShown(e);
         }
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            IsRunning = false;
+            base.OnFormClosed(e);
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (!IsDisposed && disposing)
