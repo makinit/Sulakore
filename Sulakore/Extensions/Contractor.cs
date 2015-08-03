@@ -53,7 +53,7 @@ namespace Sulakore.Extensions
 
         private readonly List<ExtensionForm> _extensions;
         public IReadOnlyList<ExtensionForm> Extensions => _extensions;
-        
+
         static Contractor()
         {
             _extensionInfoByAssembly = new Dictionary<Assembly, ExtensionInfo>();
@@ -122,12 +122,7 @@ namespace Sulakore.Extensions
                 ExtensionForm extensionForm = _extensionByHash[fileHash];
                 if (extensionForm.IsDisposed)
                 {
-                    if (_extensions.Contains(extensionForm))
-                        _extensions.Remove(extensionForm);
-                    else
-                        CreateExtensionDirectory(extensionForm.Creator, fileHash, path);
-
-                    extensionForm = InitializeExtension(extensionForm.GetType(), fileHash);
+                    extensionForm = ReininitializeExtension(extensionForm);
                 }
                 else
                 {
@@ -166,6 +161,7 @@ namespace Sulakore.Extensions
         }
         public void Uninstall(ExtensionForm extension)
         {
+            string extensionHash = GetFileMD5Hash(extension.FileLocation);
             string creatorDirectory = Path.GetDirectoryName(extension.FileLocation);
             if (File.Exists(extension.FileLocation))
             {
@@ -181,11 +177,41 @@ namespace Sulakore.Extensions
 
             if (extension.IsRunning)
                 extension.Close();
+
+            if (!extension.IsDisposed)
+                extension.Dispose();
+
+            if (_extensionByHash.ContainsKey(extensionHash))
+                _extensionByHash.Remove(extensionHash);
+
+            OnExtensionAction(new ExtensionActionEventArgs(
+                extension, ExtensionActionType.Uninstalled));
         }
         public ExtensionForm GetExtensionForm(string extensionHash)
         {
             return _extensionByHash.ContainsKey(extensionHash) ?
                 _extensionByHash[extensionHash] : null;
+        }
+        public ExtensionForm ReininitializeExtension(ExtensionForm extension)
+        {
+            if (!extension.IsDisposed) return extension;
+            string extensionHash = GetFileMD5Hash(extension.FileLocation);
+
+            ExtensionForm cachedExtensions = _extensionByHash[extensionHash];
+            if (!cachedExtensions.IsDisposed) return cachedExtensions;
+
+            if (_extensions.Contains(extension))
+                _extensions.Remove(extension);
+
+            var extensionForm = (ExtensionForm)Activator.CreateInstance(extension.GetType());
+
+            _extensions.Add(extensionForm);
+            _extensionByHash[extensionHash] = extensionForm;
+
+            extensionForm.Shown += ExtensionForm_Shown;
+            extensionForm.FormClosed += ExtensionForm_FormClosed;
+
+            return extensionForm;
         }
 
         private string GetFileMD5Hash(string path)
@@ -263,7 +289,9 @@ namespace Sulakore.Extensions
         private void ExtensionForm_Shown(object sender, EventArgs e)
         {
             var extension = (ExtensionForm)sender;
-            OnExtensionAction(new ExtensionActionEventArgs(extension, ExtensionActionType.Opened));
+
+            OnExtensionAction(new ExtensionActionEventArgs(
+                extension, ExtensionActionType.Opened));
         }
         private void ExtensionForm_FormClosed(object sender, FormClosedEventArgs e)
         {
@@ -316,13 +344,7 @@ namespace Sulakore.Extensions
                     _initialExtensionPaths[args.RequestingAssembly];
 
                 dependency = LookForDependency(initialExtensionPath, args.Name);
-                if (dependency == null)
-                {
-                    // TODO: Create event handler to notify that a dependency of an extension was not found, possibly even 'ask' for one?
-                    throw new Exception(
-                        "Failed to resolve dependency for the assembly: " +
-                        args.RequestingAssembly.FullName);
-                }
+                if (dependency == null) return null;
 
                 File.Copy(dependency.FullName,
                     Path.Combine("Extensions\\$Dependencies", dependency.Name));
