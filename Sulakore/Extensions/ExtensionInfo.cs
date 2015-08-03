@@ -63,7 +63,12 @@ namespace Sulakore.Extensions
                     Identifier = (string)firstAttributeValue; break;
 
                     case "AssemblyCompanyAttribute":
-                    Creator = (string)firstAttributeValue; break;
+                    {
+                        Creator = (string)firstAttributeValue;
+                        if (string.IsNullOrWhiteSpace(Creator))
+                            Creator = "Unknown";
+                        break;
+                    }
 
                     case "AssemblyDescriptionAttribute":
                     Description = (string)firstAttributeValue; break;
