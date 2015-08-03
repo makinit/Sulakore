@@ -52,10 +52,18 @@ namespace Sulakore.Components
             ExtensionForm extension =
                 _extensionFormByItem[GetSelectedItem()];
 
-            if (!extension.IsRunning)
-                extension.Show();
-            else
-                extension.BringToFront();
+            if (extension.IsDisposed)
+            {
+                var item = _itemByExtensionForm[extension];
+                _itemByExtensionForm.Remove(extension);
+
+                extension = Contractor.ReininitializeExtension(extension);
+                _extensionFormByItem[item] = extension;
+                _itemByExtensionForm.Add(extension, item);
+            }
+
+            if (!extension.IsRunning) extension.Show();
+            else extension.BringToFront();
         }
         public void CloseSelected()
         {
@@ -72,20 +80,32 @@ namespace Sulakore.Components
 
             Contractor.Uninstall(extension);
         }
+        public ExtensionForm GetSelected()
+        {
+            ListViewItem item = GetSelectedItem();
+            if (item == null) return null;
+
+            return _extensionFormByItem[item];
+        }
         public ExtensionForm Install(string path)
         {
             return Contractor.Install(path);
+        }
+
+        public Contractor InitializeContractor(Contractor contractor)
+        {
+            Contractor = contractor;
+            Contractor.ExtensionAction += Contractor_ExtensionAction;
+
+            Contractor.LoadInstalledExtensions();
+            return Contractor;
         }
         public Contractor InitializeContractor(HConnection connection)
         {
             if (Contractor != null)
                 throw new Exception("The contractor has already been initialized.");
 
-            Contractor = new Contractor(connection);
-            Contractor.ExtensionAction += Contractor_ExtensionAction;
-
-            Contractor.LoadInstalledExtensions();
-            return Contractor;
+            return InitializeContractor(new Contractor(connection));
         }
 
         protected override void OnItemActivate(EventArgs e)
@@ -119,7 +139,6 @@ namespace Sulakore.Components
                 {
                     if (AutoOpen)
                         extension.Show();
-
                     break;
                 }
 
@@ -134,6 +153,8 @@ namespace Sulakore.Components
                 {
                     _itemByExtensionForm.Remove(extension);
                     _extensionFormByItem.Remove(extensionItem);
+
+                    Items.Remove(extensionItem);
                     break;
                 }
 
