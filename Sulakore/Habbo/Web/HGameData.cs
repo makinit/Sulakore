@@ -78,12 +78,14 @@ namespace Sulakore.Habbo.Web
             {
                 // embedSWF
                 string tempFlashVars = string.Empty;
+                flashVars = flashVars.Replace(": ", ":");
+
                 while (flashVars.Contains("\":"))
                 {
                     string varName = flashVars.GetChild("\"", '\"');
                     string flashArgParent = $"\"{varName}\":";
 
-                    string flashArgChild = flashVars.GetChild(flashArgParent);
+                    string flashArgChild = flashVars.GetChild(flashArgParent).Trim();
                     bool isVariable = (flashArgChild[0] != '"');
                     bool isEmpty = (flashArgChild[1] == '"');
 
