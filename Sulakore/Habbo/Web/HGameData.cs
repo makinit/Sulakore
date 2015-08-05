@@ -30,6 +30,7 @@ namespace Sulakore.Habbo.Web
     {
         public int Port { get; set; }
         public string Host { get; set; }
+        public string FlashClientBuild { get; set; }
 
         public string Texts { get; }
         public int AccountId { get; }
@@ -41,66 +42,77 @@ namespace Sulakore.Habbo.Web
         public string ClientStarting { get; }
         public string FlashClientUrl { get; }
         public string FigurePartList { get; }
-        public string FlashClientBuild { get; }
         public string FurniDataLoadUrl { get; }
         public string OverrideVariables { get; }
         public string ProductDataLoadUrl { get; }
 
         public HGameData(string gameData)
         {
+            gameData = gameData.Replace(
+                "connections.info", "connection.info");
+
             string formattedGameData = gameData.Replace("\\/", "/").Replace("\"//", "\"http://")
                 .Replace("'//", "'http://").Replace("\r\n", string.Empty).Replace("\t", string.Empty);
 
-            string flashVars = formattedGameData.GetChild("flashvars", '}')
-                .GetChild("{").Replace("\" : ", "\":").Trim();
+            string flashVars = formattedGameData.GetChild("flashvars")
+                .GetParent("}");
 
-            if (string.IsNullOrWhiteSpace(flashVars) &&
-                formattedGameData.Contains("connection.info.host"))
+            if (flashVars.Contains("<param name=\"flashVars\""))
             {
-                // SWFOBject
-                FlashClientUrl = ExtractFlashClientUrl(formattedGameData, "new SWFObject(", ',');
-                while (formattedGameData.Contains(".addVariable"))
-                {
-                    string addVarArgs = formattedGameData.GetChild(".addVariable(", ')')
-                        .Replace("\"", string.Empty).Replace(", ", ":");
-
-                    string varName = addVarArgs.GetParent(":");
-                    string varValue = addVarArgs.GetChild(":");
-
-                    string lineToRemove = $".addVariable(\"{varName}\"";
-                    formattedGameData = formattedGameData.Replace(lineToRemove, string.Empty);
-
-                    if (!string.IsNullOrWhiteSpace(varValue))
-                        flashVars += (addVarArgs + "\r");
-                }
+                flashVars = flashVars.GetChild("\" value=\"").GetParent("\"/>")
+                    .Replace("&amp;", "\r").Replace('=', ':').Trim();
             }
-            else if (!string.IsNullOrWhiteSpace(flashVars))
+            else
             {
-                // embedSWF
-                string tempFlashVars = string.Empty;
-                flashVars = flashVars.Replace(": ", ":");
-
-                while (flashVars.Contains("\":"))
+                flashVars = flashVars.GetChild("{").Replace("\" : ", "\":").Trim();
+                if (string.IsNullOrWhiteSpace(flashVars) &&
+                    formattedGameData.Contains("connection.info.host"))
                 {
-                    string varName = flashVars.GetChild("\"", '\"');
-                    string flashArgParent = $"\"{varName}\":";
+                    // SWFOBject
+                    FlashClientUrl = ExtractFlashClientUrl(formattedGameData, "new SWFObject(", ',');
+                    while (formattedGameData.Contains(".addVariable"))
+                    {
+                        string addVarArgs = formattedGameData.GetChild(".addVariable(", ')')
+                            .Replace("\"", string.Empty).Replace(", ", ":");
 
-                    string flashArgChild = flashVars.GetChild(flashArgParent).Trim();
-                    bool isVariable = (flashArgChild[0] != '"');
-                    bool isEmpty = (flashArgChild[1] == '"');
+                        string varName = addVarArgs.GetParent(":");
+                        string varValue = addVarArgs.GetChild(":");
 
-                    string varValue = isEmpty ? string.Empty : isVariable ?
-                        flashArgChild.GetParent(",") : flashArgChild.GetChild("\"", '"');
+                        string lineToRemove = $".addVariable(\"{varName}\"";
+                        formattedGameData = formattedGameData.Replace(lineToRemove, string.Empty);
 
-                    string flashArg = string.Format("\"{0}\":{2}{1}{2}",
-                        varName, varValue, !isVariable ? "\"" : string.Empty);
-
-                    if (!isEmpty)
-                        tempFlashVars += $"{varName}:{varValue}\r";
-
-                    flashVars = flashVars.Replace(flashArg, string.Empty);
+                        if (!string.IsNullOrWhiteSpace(varValue))
+                            flashVars += (addVarArgs + "\r");
+                    }
                 }
-                flashVars = tempFlashVars;
+                else if (!string.IsNullOrWhiteSpace(flashVars))
+                {
+                    // embedSWF
+                    string tempFlashVars = string.Empty;
+                    flashVars = flashVars.Replace(": ", ":");
+
+                    while (flashVars.Contains("\":"))
+                    {
+                        string varName = flashVars.GetChild("\"", '\"');
+                        string flashArgParent = $"\"{varName}\":";
+
+                        string flashArgChild = flashVars.GetChild(flashArgParent).Trim();
+                        bool isVariable = (flashArgChild[0] != '"');
+                        bool isEmpty = (flashArgChild[1] == '"');
+
+                        string varValue = isEmpty ? string.Empty : isVariable ?
+                            flashArgChild.GetParent(",") : flashArgChild.GetChild("\"", '"');
+
+                        string flashArg = string.Format("\"{0}\":{2}{1}{2}",
+                            varName, varValue, !isVariable ? "\"" : string.Empty);
+
+                        if (!isEmpty)
+                            tempFlashVars += $"{varName}:{varValue}\r";
+
+                        flashVars = flashVars.Replace(flashArg, string.Empty);
+                    }
+                    flashVars = tempFlashVars;
+                }
             }
 
             if (formattedGameData.Contains("var habboName = "))
