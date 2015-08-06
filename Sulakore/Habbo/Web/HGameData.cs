@@ -57,10 +57,10 @@ namespace Sulakore.Habbo.Web
             string flashVars = formattedGameData.GetChild("flashvars")
                 .GetParent("}");
 
-            if (flashVars.Contains("<param name=\"flashVars\""))
+            if (formattedGameData.ToLower().Contains("<param name=\"flashvars\""))
             {
-                flashVars = flashVars.GetChild("\" value=\"").GetParent("\"/>")
-                    .Replace("&amp;", "\r").Replace('=', ':').Trim();
+                flashVars = flashVars.GetChild("\" value=\"").GetParent(">")
+                    .Replace("&amp;", "\r").Replace('=', ':').Replace("\"", string.Empty).Trim();
             }
             else
             {

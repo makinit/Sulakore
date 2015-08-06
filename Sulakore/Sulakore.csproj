@@ -106,6 +106,7 @@
     <Compile Include="Protocol\Enums\HDestination.cs" />
     <Compile Include="Protocol\HMessage.cs" />
     <Compile Include="Protocol\HPacketBase.cs" />
+    <Compile Include="Protocol\HScripture.cs" />
     <Compile Include="Protocol\IHPacket.cs" />
     <Compile Include="Habbo\Web\HBadge.cs" />
     <Compile Include="Habbo\Web\HFriend.cs" />
