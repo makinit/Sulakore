@@ -357,19 +357,35 @@ namespace Sulakore.Protocol
                 (_toStringCache = ToString(ToBytes()));
         }
 
+        // TODO: Create seperate method to extract the objects if params are present.
         public static byte[] ToBytes(string packet)
         {
+            if (packet.Contains("{b:}"))
+                packet = packet.Replace("{b:}", "[0]");
+
+            if (packet.Contains("{u:}"))
+                packet = packet.Replace("{u:}", "[0][0]");
+
+            if (packet.Contains("{s:}"))
+                packet = packet.Replace("{s:}", "[0][0]");
+
+            if (packet.Contains("{i:}"))
+                packet = packet.Replace("{i:}", "[0][0][0][0]");
+
             for (int i = 0; i <= 13; i++)
                 packet = packet.Replace("[" + i + "]", ((char)i).ToString());
 
             string byteValue = string.Empty;
             while (!string.IsNullOrWhiteSpace(
-                byteValue = packet.GetChild("{b:", '}').ToLower()))
+                byteValue = packet.GetChild("{b:").GetParent("}")))
             {
-                char byteChar = byteValue[0];
-                byte value = (byte)(byteChar == 't' || byteChar == '1' ? 1 : 0);
-                if (byteValue[0] != 'f' && value != 1 &&
-                    !byte.TryParse(byteValue, out value))
+                char byteChar = byteValue.ToLower()[0];
+
+                byte value = (byte)(byteChar == 't' ||
+                    (byteChar == '1' && byteValue.Length == 1) ? 1 : 0);
+
+                if (byteChar != 'f' && value != 1 &&
+                    !byte.TryParse(byteValue.ToLower(), out value))
                 {
                     break;
                 }
@@ -380,7 +396,7 @@ namespace Sulakore.Protocol
 
             string ushortValue = string.Empty;
             while (!string.IsNullOrWhiteSpace(
-                ushortValue = packet.GetChild("{u:", '}')))
+                ushortValue = packet.GetChild("{u:").GetParent("}")))
             {
                 ushort value = 0;
                 if (!ushort.TryParse(ushortValue, out value)) break;
@@ -394,7 +410,7 @@ namespace Sulakore.Protocol
 
             string intValue = string.Empty;
             while (!string.IsNullOrWhiteSpace(
-                intValue = packet.GetChild("{i:", '}')))
+                intValue = packet.GetChild("{i:").GetParent("}")))
             {
                 int value = 0;
                 if (!int.TryParse(intValue, out value)) break;
@@ -408,7 +424,7 @@ namespace Sulakore.Protocol
 
             string stringValue = string.Empty;
             while (!string.IsNullOrWhiteSpace(
-                stringValue = packet.GetChild("{s:", '}')))
+                stringValue = packet.GetChild("{s:").GetParent("}")))
             {
                 byte[] stringData = Encode(stringValue);
                 string stringParam = $"{{s:{stringValue}}}";
@@ -417,7 +433,7 @@ namespace Sulakore.Protocol
                     Encoding.Default.GetString(stringData));
             }
 
-            if (packet.StartsWith("{l}"))
+            if (packet.StartsWith("{l}") && packet.Length >= 5)
             {
                 byte[] lengthData = Encode(packet.Length - 3);
                 packet = Encoding.Default.GetString(lengthData) + packet.Substring(3);
