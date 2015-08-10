@@ -34,16 +34,22 @@ namespace Sulakore.Components
     [DesignerCategory("Code")]
     public class SKoreConstructView : SKoreListView
     {
-        private const string CHUNK_TIP = "Type: {0}\nValue: {1}\nBlock Length: {2}\nEncoded: {3}";
-
         private readonly HMessage _packet;
 
+        private const string CHUNK_TIP =
+            "Type: {0}\nValue: {1}\nBlock Length: {2}\nEncoded: {3}";
+
+        [DefaultValue(0)]
         public ushort Header
         {
             get { return _packet.Header; }
             set { _packet.Header = value; }
         }
+
+        [Browsable(false)]
         public int Length => _packet.Length;
+
+        [Browsable(false)]
         public IReadOnlyList<object> ValuesWritten => _packet.ValuesWritten;
 
         public SKoreConstructView()

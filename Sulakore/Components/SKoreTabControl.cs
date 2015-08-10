@@ -31,7 +31,7 @@ namespace Sulakore.Components
     [DesignerCategory("Code")]
     public class SKoreTabControl : TabControl
     {
-        private bool _displayBoundary;
+        private bool _displayBoundary = false;
         [DefaultValue(false)]
         public bool DisplayBoundary
         {

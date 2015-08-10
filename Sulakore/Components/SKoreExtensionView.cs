@@ -35,11 +35,12 @@ namespace Sulakore.Components
     [DesignerCategory("Code")]
     public class SKoreExtensionView : SKoreListView
     {
+        private Contractor _contractor;
+
         private readonly IDictionary<ExtensionForm, ListViewItem> _itemByExtensionForm;
         private readonly IDictionary<ListViewItem, ExtensionForm> _extensionFormByItem;
 
         public bool AutoOpen { get; set; }
-        public Contractor Contractor { get; private set; }
 
         public SKoreExtensionView()
         {
@@ -57,7 +58,7 @@ namespace Sulakore.Components
                 var item = _itemByExtensionForm[extension];
                 _itemByExtensionForm.Remove(extension);
 
-                extension = Contractor.ReininitializeExtension(extension);
+                extension = _contractor.ReininitializeExtension(extension);
                 _extensionFormByItem[item] = extension;
                 _itemByExtensionForm.Add(extension, item);
             }
@@ -78,7 +79,7 @@ namespace Sulakore.Components
             ExtensionForm extension =
                 _extensionFormByItem[GetSelectedItem()];
 
-            Contractor.Uninstall(extension);
+            _contractor.Uninstall(extension);
         }
         public ExtensionForm GetSelected()
         {
@@ -89,20 +90,20 @@ namespace Sulakore.Components
         }
         public ExtensionForm Install(string path)
         {
-            return Contractor.Install(path);
+            return _contractor.Install(path);
         }
 
         public Contractor InitializeContractor(Contractor contractor)
         {
-            Contractor = contractor;
-            Contractor.ExtensionAction += Contractor_ExtensionAction;
+            _contractor = contractor;
+            _contractor.ExtensionAction += Contractor_ExtensionAction;
 
-            Contractor.LoadInstalledExtensions();
-            return Contractor;
+            _contractor.LoadInstalledExtensions();
+            return _contractor;
         }
         public Contractor InitializeContractor(HConnection connection)
         {
-            if (Contractor != null)
+            if (_contractor != null)
                 throw new Exception("The contractor has already been initialized.");
 
             return InitializeContractor(new Contractor(connection));
