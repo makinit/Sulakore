@@ -25,54 +25,61 @@
 using System;
 using System.Reflection;
 using System.Windows.Forms;
-
-using Sulakore.Communication;
 using System.ComponentModel;
+
+using Sulakore.Habbo.Web;
+using Sulakore.Communication;
 
 namespace Sulakore.Extensions
 {
     public class ExtensionForm : Form
     {
-        [Browsable(false)]
         /// <summary>
         /// Gets a value that determines whether the <see cref="ExtensionForm"/> is running.
         /// </summary>
+        [Browsable(false)]
         public bool IsRunning { get; internal set; }
 
-        [Browsable(false)]
         /// <summary>
         /// Gets the name of <see cref="ExtensionForm"/> creator.
         /// </summary>
+        [Browsable(false)]
         public string Creator { get; }
 
-        [Browsable(false)]
         /// <summary>
         /// Gets the name of the <see cref="ExtensionForm"/>.
         /// </summary>
+        [Browsable(false)]
         public string Identifier { get; }
 
-        [Browsable(false)]
         /// <summary>
         /// Gets the description of the <see cref="ExtensionForm"/>.
         /// </summary>
+        [Browsable(false)]
         public string Description { get; }
 
-        [Browsable(false)]
         /// <summary>
         /// Gets the file path of the <see cref="ExtensionForm"/> assembly.
         /// </summary>
-        public string FileLocation { get; }
-        
         [Browsable(false)]
+        public string FileLocation { get; }
+
+        /// <summary>
+        /// Gets the <see cref="HGameData"/> of the <see cref="ExtensionForm"/> assembly.
+        /// </summary>
+        [Browsable(false)]
+        public HGameData GameData { get; }
+
         /// <summary>
         /// Gets the assembly's <see cref="System.Version"/> of the <see cref="ExtensionForm"/>.
         /// </summary>
+        [Browsable(false)]
         public Version Version { get; }
 
-        [Browsable(false)]
         /// <summary>
         /// Gets the <see cref="HTriggers"/> that handles the in-game callbacks/events.
         /// </summary>
+        [Browsable(false)]
         public HTriggers Triggers { get; protected set; }
 
         [Browsable(false)]
@@ -93,6 +100,7 @@ namespace Sulakore.Extensions
                 Description = extensionInfo.Description;
                 FileLocation = extensionInfo.FileLocation;
 
+                GameData = extensionInfo.GameData;
                 Triggers = extensionInfo.Triggers;
                 Version = extensionInfo.Version;
 
