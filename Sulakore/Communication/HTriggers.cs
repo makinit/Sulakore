@@ -296,8 +296,11 @@ namespace Sulakore.Communication
         #endregion
 
         private readonly Stack<HMessage> _outPrevious, _inPrevious;
-        private readonly IDictionary<ushort, Action<InterceptedEventArgs>> _outLocked, _inLocked;
-        private readonly IDictionary<ushort, EventHandler<InterceptedEventArgs>> _inAttaches, _outAttaches;
+        private readonly IDictionary<ushort, Action<InterceptedEventArgs>> _inAttaches, _outAttaches;
+        private readonly IDictionary<ushort, EventHandler<InterceptedEventArgs>> _inEventAttaches, _outEventAttaches;
+
+        protected IDictionary<ushort, Action<InterceptedEventArgs>> InDetected { get; }
+        protected IDictionary<ushort, Action<InterceptedEventArgs>> OutDetected { get; }
 
         /// <summary>
         /// Gets or sets a value that determines whether to begin identifying outgoing events.
@@ -314,46 +317,65 @@ namespace Sulakore.Communication
 
         public HTriggers(bool isDetecting)
         {
-            DetectOutgoing = DetectIncoming = isDetecting;
+            DetectOutgoing =
+                DetectIncoming = isDetecting;
 
             IncomingDetected = new Incoming();
             OutgoingDetected = new Outgoing();
 
+            InDetected = new Dictionary<ushort, Action<InterceptedEventArgs>>();
+            OutDetected = new Dictionary<ushort, Action<InterceptedEventArgs>>();
+
             _inPrevious = new Stack<HMessage>();
             _outPrevious = new Stack<HMessage>();
-
-            _inLocked = new Dictionary<ushort, Action<InterceptedEventArgs>>();
-            _outLocked = new Dictionary<ushort, Action<InterceptedEventArgs>>();
-            _inAttaches = new Dictionary<ushort, EventHandler<InterceptedEventArgs>>();
-            _outAttaches = new Dictionary<ushort, EventHandler<InterceptedEventArgs>>();
+            _inAttaches = new Dictionary<ushort, Action<InterceptedEventArgs>>();
+            _outAttaches = new Dictionary<ushort, Action<InterceptedEventArgs>>();
+            _inEventAttaches = new Dictionary<ushort, EventHandler<InterceptedEventArgs>>();
+            _outEventAttaches = new Dictionary<ushort, EventHandler<InterceptedEventArgs>>();
         }
 
         public void OutDetach()
         {
             _outAttaches.Clear();
+            _outEventAttaches.Clear();
         }
         public void OutDetach(ushort header)
         {
             if (_outAttaches.ContainsKey(header))
                 _outAttaches.Remove(header);
+
+            if (_outEventAttaches.ContainsKey(header))
+                _outEventAttaches.Remove(header);
+        }
+        public void OutAttach(ushort header, Action<InterceptedEventArgs> callback)
+        {
+            _outAttaches[header] = callback;
         }
         public void OutAttach(ushort header, EventHandler<InterceptedEventArgs> callback)
         {
-            _outAttaches[header] = callback;
+            _outEventAttaches[header] = callback;
         }
 
         public void InDetach()
         {
             _inAttaches.Clear();
+            _inEventAttaches.Clear();
         }
         public void InDetach(ushort header)
         {
             if (_inAttaches.ContainsKey(header))
                 _inAttaches.Remove(header);
+
+            if (_inEventAttaches.ContainsKey(header))
+                _inEventAttaches.Remove(header);
+        }
+        public void InAttach(ushort header, Action<InterceptedEventArgs> callback)
+        {
+            _inAttaches[header] = callback;
         }
         public void InAttach(ushort header, EventHandler<InterceptedEventArgs> callback)
         {
-            _inAttaches[header] = callback;
+            _inEventAttaches[header] = callback;
         }
 
         public void HandleOutgoing(InterceptedEventArgs e)
@@ -366,15 +388,17 @@ namespace Sulakore.Communication
             try
             {
                 if (_outAttaches.ContainsKey(e.Packet.Header))
-                    _outAttaches[e.Packet.Header](this, e);
+                    _outAttaches[e.Packet.Header](e);
+                else if (_outEventAttaches.ContainsKey(e.Packet.Header))
+                    _outEventAttaches[e.Packet.Header](this, e);
 
                 if (DetectOutgoing && _outPrevious.Count > 0)
                 {
                     e.Packet.Position = 0;
                     HMessage previous = _outPrevious.Pop();
 
-                    if (!_outLocked.ContainsKey(e.Packet.Header) &&
-                        !_outLocked.ContainsKey(previous.Header))
+                    if (!OutDetected.ContainsKey(e.Packet.Header) &&
+                        !OutDetected.ContainsKey(previous.Header))
                         ignoreCurrent = HandleOutgoing(e.Packet, previous);
                     else ignoreCurrent = true;
 
@@ -383,12 +407,12 @@ namespace Sulakore.Communication
                         e.Packet.Position = 0;
                         previous.Position = 0;
 
-                        if (_outLocked.ContainsKey(e.Packet.Header))
-                            _outLocked[e.Packet.Header](e);
-                        else if (_outLocked.ContainsKey(previous.Header))
+                        if (OutDetected.ContainsKey(e.Packet.Header))
+                            OutDetected[e.Packet.Header](e);
+                        else if (OutDetected.ContainsKey(previous.Header))
                         {
                             var args = new InterceptedEventArgs(null, 0, previous);
-                            _outLocked[previous.Header](args);
+                            OutDetected[previous.Header](args);
                         }
                     }
                 }
@@ -415,7 +439,9 @@ namespace Sulakore.Communication
                 if (TryHandleHostRaiseSign(current, previous)) return true;
                 if (TryHandleHostNavigateRoom(current, previous)) return true;
             }
-            return false;
+
+            return OutDetected.ContainsKey(current.Header) ||
+                OutDetected.ContainsKey(previous.Header);
         }
 
         public void HandleIncoming(InterceptedEventArgs e)
@@ -428,16 +454,20 @@ namespace Sulakore.Communication
             try
             {
                 if (_inAttaches.ContainsKey(e.Packet.Header))
-                    _inAttaches[e.Packet.Header](this, e);
+                    _inAttaches[e.Packet.Header](e);
+                else if (_inEventAttaches.ContainsKey(e.Packet.Header))
+                    _inEventAttaches[e.Packet.Header](this, e);
 
                 if (DetectIncoming && _inPrevious.Count > 0)
                 {
                     e.Packet.Position = 0;
                     HMessage previous = _inPrevious.Pop();
 
-                    if (!_inLocked.ContainsKey(e.Packet.Header) &&
-                        !_inLocked.ContainsKey(previous.Header))
+                    if (!InDetected.ContainsKey(e.Packet.Header) &&
+                        !InDetected.ContainsKey(previous.Header))
+                    {
                         ignoreCurrent = HandleIncoming(e.Packet, previous);
+                    }
                     else ignoreCurrent = true;
 
                     if (ignoreCurrent)
@@ -445,12 +475,12 @@ namespace Sulakore.Communication
                         e.Packet.Position = 0;
                         previous.Position = 0;
 
-                        if (_inLocked.ContainsKey(e.Packet.Header))
-                            _inLocked[e.Packet.Header](e);
-                        else if (_inLocked.ContainsKey(previous.Header))
+                        if (InDetected.ContainsKey(e.Packet.Header))
+                            InDetected[e.Packet.Header](e);
+                        else if (InDetected.ContainsKey(previous.Header))
                         {
                             var args = new InterceptedEventArgs(null, 0, previous);
-                            _inLocked[previous.Header](args);
+                            InDetected[previous.Header](args);
                         }
                     }
                 }
@@ -470,7 +500,9 @@ namespace Sulakore.Communication
                 // Range: 6
                 if (TryHandlePlayerKickHost(current, previous)) return true;
             }
-            return false;
+
+            return InDetected.ContainsKey(current.Header) ||
+                InDetected.ContainsKey(previous.Header);
         }
 
         protected virtual void OnGameEvent<TEventArgs>(EventHandler<TEventArgs> gameEvent,
@@ -495,7 +527,7 @@ namespace Sulakore.Communication
                 return false;
 
             OutgoingDetected.HostExitRoom = previous.Header;
-            _outLocked[previous.Header] = RaiseOnHostExitRoom;
+            OutDetected[previous.Header] = RaiseOnHostExitRoom;
             return true;
         }
         private bool TryHandleHostRaiseSign(HMessage current, HMessage previous)
@@ -504,7 +536,7 @@ namespace Sulakore.Communication
             if (current.CanRead<string>(22) && current.ReadString(22) == "sign")
             {
                 OutgoingDetected.RaiseSign = previous.Header;
-                _outLocked[previous.Header] = RaiseOnHostRaiseSign;
+                OutDetected[previous.Header] = RaiseOnHostRaiseSign;
 
                 isHostRaiseSign = true;
             }
@@ -516,7 +548,7 @@ namespace Sulakore.Communication
             if (isPlayerKickHost)
             {
                 IncomingDetected.PlayerKickHost = current.Header;
-                _inLocked[current.Header] = RaiseOnPlayerKickHost;
+                InDetected[current.Header] = RaiseOnPlayerKickHost;
             }
             return isPlayerKickHost;
         }
@@ -529,7 +561,7 @@ namespace Sulakore.Communication
                 case "stand":
                 {
                     OutgoingDetected.UpdateStance = current.Header;
-                    _outLocked[current.Header] = RaiseOnHostUpdateStance;
+                    OutDetected[current.Header] = RaiseOnHostUpdateStance;
                     return true;
                 }
 
@@ -537,7 +569,7 @@ namespace Sulakore.Communication
                 case "dance_start":
                 {
                     OutgoingDetected.Dance = current.Header;
-                    _outLocked[current.Header] = RaiseOnHostDance;
+                    OutDetected[current.Header] = RaiseOnHostDance;
                     return true;
                 }
 
@@ -547,7 +579,7 @@ namespace Sulakore.Communication
                 case "blow_kiss":
                 {
                     OutgoingDetected.Gesture = current.Header;
-                    _outLocked[current.Header] = RaiseOnHostGesture;
+                    OutDetected[current.Header] = RaiseOnHostGesture;
                     return true;
                 }
             }
@@ -566,7 +598,7 @@ namespace Sulakore.Communication
                 {
                     OutgoingDetected.NavigateRoom = previous.Header;
 
-                    _outLocked[previous.Header] = RaiseOnHostNavigateRoom;
+                    OutDetected[previous.Header] = RaiseOnHostNavigateRoom;
                     return true;
                 }
             }
@@ -585,11 +617,13 @@ namespace Sulakore.Communication
                 _inPrevious.Clear();
                 _outPrevious.Clear();
 
-                _inLocked.Clear();
-                _outLocked.Clear();
+                InDetected.Clear();
+                OutDetected.Clear();
 
                 _inAttaches.Clear();
+                _inEventAttaches.Clear();
                 _outAttaches.Clear();
+                _outEventAttaches.Clear();
 
                 #region Unsubscribe Game Events
                 SKore.Unsubscribe(ref HostBanPlayer);
