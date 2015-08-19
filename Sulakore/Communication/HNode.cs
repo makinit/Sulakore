@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 
 using Sulakore.Protocol.Encoders;
 using Sulakore.Protocol.Encryption;
+using System.Net;
 
 namespace Sulakore.Communication
 {
@@ -182,6 +183,24 @@ namespace Sulakore.Communication
             catch (ObjectDisposedException) { return 0; }
         }
 
+        /// <summary>
+        /// Returns a <see cref="HNode"/> that was intercepted on the specified port in an asynchronous operation.
+        /// </summary>
+        /// <param name="port">The port to listen to for local connection attempts.</param>
+        /// <returns></returns>
+        public static async Task<HNode> ListenAsync(int port)
+        {
+            var listener = new TcpListener(IPAddress.Loopback, port);
+            try
+            {
+                listener.Start();
+                Socket client = await listener.AcceptSocketAsync()
+                    .ConfigureAwait(false);
+
+                return new HNode(client);
+            }
+            finally { listener.Stop(); }
+        }
         /// <summary>
         /// Returns a <see cref="HNode"/> connected with the specified host/port in an asynchronous operation.
         /// </summary>
