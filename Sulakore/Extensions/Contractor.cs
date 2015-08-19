@@ -31,6 +31,7 @@ using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 
+using Sulakore.Habbo.Web;
 using Sulakore.Communication;
 
 namespace Sulakore.Extensions
@@ -49,6 +50,8 @@ namespace Sulakore.Extensions
         }
 
         public HHotel Hotel { get; set; }
+        public HGameData GameData { get; set; }
+
         public HConnection Connection { get; }
 
         private readonly List<ExtensionForm> _extensions;
@@ -65,8 +68,6 @@ namespace Sulakore.Extensions
             _extensions = new List<ExtensionForm>();
             _extensionByHash = new Dictionary<string, ExtensionForm>();
             _initialExtensionPaths = new Dictionary<Assembly, string>();
-
-            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
         }
 
         public void HandleIncoming(InterceptedEventArgs e)
@@ -133,13 +134,25 @@ namespace Sulakore.Extensions
             }
 
             byte[] rawFile = File.ReadAllBytes(path);
-            Assembly fileAssembly = Assembly.Load(rawFile);
+            Assembly fileAssembly = null;
+            try
+            {
+                lock (AppDomain.CurrentDomain)
+                {
+                    AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
+                    fileAssembly = Assembly.Load(rawFile);
+                }
+            }
+            finally
+            {
+                AppDomain.CurrentDomain.AssemblyResolve -= AssemblyResolve;
+            }
             Type extensionFormType = GetExtensionFormType(fileAssembly);
 
             if (extensionFormType != null)
             {
                 var extensionInfo = new ExtensionInfo(
-                    fileAssembly, Hotel, Connection);
+                    fileAssembly, GameData, Hotel, Connection);
 
                 string extensionInstallPath = CreateExtensionDirectory(
                     extensionInfo.Creator, fileHash, path);
@@ -308,23 +321,7 @@ namespace Sulakore.Extensions
             }
         }
 
-        private FileSystemInfo LookForDependency(string path, string dependencyName)
-        {
-            path = Path.GetFullPath(path);
-            var directoryInfo = new DirectoryInfo(path);
-
-            FileSystemInfo[] possibleDependencies = directoryInfo.GetFileSystemInfos("*.dll");
-            foreach (FileSystemInfo possibleDependency in possibleDependencies)
-            {
-                string assemblyName = AssemblyName.GetAssemblyName(
-                    possibleDependency.FullName).FullName;
-
-                if (assemblyName == dependencyName)
-                    return possibleDependency;
-            }
-            return null;
-        }
-        private Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        private Assembly AssemblyResolve(object sender, ResolveEventArgs args)
         {
             if (!Directory.Exists("Extensions\\$Dependencies"))
             {
@@ -352,6 +349,22 @@ namespace Sulakore.Extensions
 
             byte[] rawDependency = File.ReadAllBytes(dependency.FullName);
             return Assembly.Load(rawDependency);
+        }
+        private FileSystemInfo LookForDependency(string path, string dependencyName)
+        {
+            path = Path.GetFullPath(path);
+            var directoryInfo = new DirectoryInfo(path);
+
+            FileSystemInfo[] possibleDependencies = directoryInfo.GetFileSystemInfos("*.dll");
+            foreach (FileSystemInfo possibleDependency in possibleDependencies)
+            {
+                string assemblyName = AssemblyName.GetAssemblyName(
+                    possibleDependency.FullName).FullName;
+
+                if (assemblyName == dependencyName)
+                    return possibleDependency;
+            }
+            return null;
         }
 
         internal static ExtensionInfo GetExtensionInfo(Assembly extensionAssembly)
