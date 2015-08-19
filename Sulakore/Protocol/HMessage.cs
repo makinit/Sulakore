@@ -108,7 +108,7 @@ namespace Sulakore.Protocol
             : this()
         {
             Destination = destination;
-            IsCorrupted = (BigEndian.ToSI32(data) != data.Length - 4);
+            IsCorrupted = (data.Length < 6 || (BigEndian.ToSI32(data) != data.Length - 4));
 
             if (!IsCorrupted)
             {
