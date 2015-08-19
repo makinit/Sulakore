@@ -23,207 +23,234 @@
 */
 
 using System;
+using System.Text;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Sulakore.Habbo.Web
 {
-    public class HGameData
+    public class HGameData : Dictionary<string, string>
     {
-        public int Port { get; set; }
-        public string Host { get; set; }
-        public string FlashClientBuild { get; set; }
+        private static readonly string _clientLoaderFormat;
+        private static readonly string[] _flashValuesSeparator;
+        private static readonly Regex _flashVarsSingleLineMatcher;
 
-        public string Texts { get; }
-        public int AccountId { get; }
-        public string UserName { get; }
-        public string UniqueId { get; }
-        public string Variables { get; }
-        public string BannerUrl { get; }
-        public string OverrideTexts { get; }
-        public string ClientStarting { get; }
-        public string FlashClientUrl { get; }
-        public string FigurePartList { get; }
-        public string FurniDataLoadUrl { get; }
-        public string OverrideVariables { get; }
-        public string ProductDataLoadUrl { get; }
-
-        public HGameData(string gameData)
+        public string Host
         {
-            gameData = gameData.Replace(
-                "connections.info", "connection.info");
-
-            string formattedGameData = gameData.Replace("\\/", "/").Replace("\"//", "\"http://")
-                .Replace("'//", "'http://").Replace("\r\n", string.Empty).Replace("\t", string.Empty);
-
-            string flashVars = formattedGameData.GetChild("flashvars")
-                .GetParent("};");
-
-            if (formattedGameData.ToLower().Contains("<param name=\"flashvars\""))
+            get
             {
-                flashVars = flashVars.GetChild("\" value=\"").GetParent(">")
-                    .Replace("&amp;", "\r").Replace('=', ':').Replace("\"", string.Empty).Trim();
+                if (!ContainsKey("connection.info.host"))
+                    Add("connection.info.host", "");
+
+                return this["connection.info.host"];
             }
-            else
+            set { this["connection.info.host"] = value; }
+        }
+        public string Port
+        {
+            get
             {
-                flashVars = flashVars.GetChild("{").Replace("\" : ", "\":").Trim();
-                if (string.IsNullOrWhiteSpace(flashVars) &&
-                    formattedGameData.Contains("connection.info.host"))
+                if (!ContainsKey("connection.info.port"))
+                    Add("connection.info.port", "0");
+
+                return this["connection.info.port"];
+            }
+            set { this["connection.info.port"] = value; }
+        }
+
+        public string BaseUrl { get; set; }
+        public string MovieUrl { get; set; }
+        public string MovieName { get; set; }
+
+        static HGameData()
+        {
+            _flashValuesSeparator = new string[] { "&amp;" };
+
+            _flashVarsSingleLineMatcher = new Regex("<param name=\"flashVars\" value=\"(?<value>.*?)\"",
+                RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+            var clientLoaderBuilder = new StringBuilder(860);
+            clientLoaderBuilder.AppendLine("<html>");
+            clientLoaderBuilder.AppendLine("<head>");
+            clientLoaderBuilder.AppendLine("<meta http-equiv=\"Expires\" content=\"-1\"/>");
+            clientLoaderBuilder.AppendLine("<meta http-equiv=\"Pragma\" content=\"no-cache, no-store\"/>");
+            clientLoaderBuilder.AppendLine("<meta http-equiv=\"Cache-Control\" content=\"no-cache, no-store\"/>");
+            clientLoaderBuilder.AppendLine("</head>");
+
+            clientLoaderBuilder.AppendLine("<body class=\"flashclient\">");
+            clientLoaderBuilder.AppendLine("<div id=\"flash-wrapper\">");
+            clientLoaderBuilder.AppendLine("<object id=\"flash-container\" width=\"100%\" height=\"100%\">");
+            clientLoaderBuilder.AppendLine("<param name=\"movie\" value=\"{1}\"/>");
+            clientLoaderBuilder.AppendLine("<param name=\"base\" value=\"{0}\"/>");
+            clientLoaderBuilder.AppendLine("<param name=\"allowScriptAccess\" value=\"always\"/>");
+            clientLoaderBuilder.AppendLine("<param name=\"menu\" value=\"false\"/>");
+            clientLoaderBuilder.AppendLine("<param name=\"flashvars\" value=\"{2}\"/>");
+
+            clientLoaderBuilder.AppendLine("<!--[if !IE]>-->");
+            clientLoaderBuilder.AppendLine("<object type=\"application/x-shockwave-flash\" data=\"{1}\" width=\"100%\" height=\"100%\">");
+            clientLoaderBuilder.AppendLine("<param name=\"movie\" value=\"{1}\"/>");
+            clientLoaderBuilder.AppendLine("<param name=\"base\" value=\"{0}\"/>");
+            clientLoaderBuilder.AppendLine("<param name=\"allowScriptAccess\" value=\"always\"/>");
+            clientLoaderBuilder.AppendLine("<param name=\"menu\" value=\"false\"/>");
+            clientLoaderBuilder.AppendLine("<param name=\"flashvars\" value=\"{2}\"/>");
+            clientLoaderBuilder.AppendLine("</object>");
+            clientLoaderBuilder.AppendLine("<!--<![endif]-->");
+
+            clientLoaderBuilder.AppendLine("</object>");
+            clientLoaderBuilder.AppendLine("</div>");
+            clientLoaderBuilder.AppendLine("</body>");
+            clientLoaderBuilder.AppendLine("</html>");
+
+            _clientLoaderFormat = clientLoaderBuilder.ToString();
+        }
+        public HGameData(string source)
+        {
+            Match flashVarsMatch =
+                _flashVarsSingleLineMatcher.Match(source);
+
+            bool isSwfObject = false;
+            if (isSwfObject = !flashVarsMatch.Success)
+            {
+                flashVarsMatch =
+                    GetVariable(source, "flashvars");
+            }
+
+            string variables =
+                flashVarsMatch.Groups["value"].Value;
+
+            string movieUrl = isSwfObject ?
+                source.GetChild(".embedSWF(", ',') :
+                source.GetChild("<param name=\"movie\" value=\"", '"');
+
+            char charBegin = movieUrl[0];
+            bool isFieldName = (charBegin != '\"' || charBegin != '\'');
+
+            if (isSwfObject)
+            {
+                Match paramsMatch = GetVariable(source, "params");
+                if (paramsMatch.Success)
                 {
-                    // SWFOBject
-                    FlashClientUrl = ExtractFlashClientUrl(formattedGameData, "new SWFObject(", ',');
-                    while (formattedGameData.Contains(".addVariable"))
-                    {
-                        string addVarArgs = formattedGameData.GetChild(".addVariable(", ')')
-                            .Replace("\"", string.Empty).Replace(", ", ":");
+                    string flashParams = paramsMatch.Groups["value"].Value
+                        .GetChild("{", '}').Replace(" :", ":").Replace(": ", ":").Trim();
 
-                        string varName = addVarArgs.GetParent(":");
-                        string varValue = addVarArgs.GetChild(":");
-
-                        string lineToRemove = $".addVariable(\"{varName}\"";
-                        formattedGameData = formattedGameData.Replace(lineToRemove, string.Empty);
-
-                        if (!string.IsNullOrWhiteSpace(varValue))
-                            flashVars += (addVarArgs + "\r");
-                    }
+                    BaseUrl = FixUrlString(flashParams.GetChild("\"base\":\"", '"'));
                 }
-                else if (!string.IsNullOrWhiteSpace(flashVars))
+
+                if (isFieldName)
                 {
-                    // embedSWF
-                    string tempFlashVars = string.Empty;
-                    flashVars = flashVars.Replace(": ", ":");
+                    movieUrl = GetVariable(source, movieUrl).Groups["value"].Value;
 
-                    while (flashVars.Contains("\":"))
+                    charBegin = movieUrl[0];
+                    movieUrl = movieUrl.GetChild(charBegin.ToString(), charBegin);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(movieUrl))
+            {
+                MovieUrl = FixUrlString(movieUrl);
+
+                string[] segments = MovieUrl.GetChild("//")
+                    .GetChild("/").Split('/');
+
+                int buildSegmentIndex = segments.Length > 1 ?
+                    segments.Length - 2 : 0;
+
+                MovieName = segments[buildSegmentIndex];
+                if (buildSegmentIndex == 0)
+                {
+                    MovieName = MovieName.GetParent(".swf");
+                }
+            }
+
+            if (isSwfObject)
+            {
+                variables = variables.GetChild("{", '}')
+                    .Replace(" :", ":").Replace(": ", ":").Trim();
+
+                int previousLength = 0;
+                string parsedVariables = string.Empty;
+                while (variables.Contains("\""))
+                {
+                    string name = variables.GetChild("\"", '"');
+                    string child = variables.GetChild($"\"{name}\":").Trim();
+
+                    string value = string.Empty;
+                    string fieldName = string.Empty;
+                    bool isField = (child[0] != '"' && child[0] != '\'');
+                    bool isEmpty = (child.Length > 1 && (child[1] == '"' || child[1] == '\''));
+
+                    if (isField)
                     {
-                        string varName = flashVars.GetChild("\"", '\"');
-                        string flashArgParent = $"\"{varName}\":";
+                        fieldName = child.GetParent(",");
 
-                        string flashArgChild = flashVars.GetChild(flashArgParent).Trim();
-                        bool isVariable = (flashArgChild[0] != '"');
-                        bool isEmpty = (flashArgChild[1] == '"');
+                        Match variableMatch =
+                            GetVariable(source, fieldName);
 
-                        string varValue = isEmpty ? string.Empty : isVariable ?
-                            flashArgChild.GetParent(",") : flashArgChild.GetChild("\"", '"');
-
-                        string flashArg = string.Format("\"{0}\":{2}{1}{2}",
-                            varName, varValue, !isVariable ? "\"" : string.Empty);
+                        string fieldValue = variableMatch.Groups["value"].Value;
+                        isEmpty = string.IsNullOrWhiteSpace(fieldValue);
 
                         if (!isEmpty)
-                            tempFlashVars += $"{varName}:{varValue}\r";
-
-                        flashVars = flashVars.Replace(flashArg, string.Empty);
+                        {
+                            child = child.Replace(fieldName,
+                                variableMatch.Groups["value"].Value);
+                        }
                     }
-                    flashVars = tempFlashVars;
+
+                    if (!isEmpty)
+                        value = child.GetChild("\"", '"');
+
+                    string toRemove = string.Format("\"{0}\":{1}{2}{1}",
+                        name, (isField ? string.Empty : "\""), (isField ? fieldName : value));
+
+                    variables = variables.Replace(toRemove, string.Empty);
+                    parsedVariables += $"{name}={value}&amp;";
+                    previousLength = variables.Length;
                 }
+                variables = parsedVariables;
             }
 
-            if (formattedGameData.Contains("var habboName = "))
+            string[] valuePairs = variables
+                .Split(_flashValuesSeparator, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (string pair in valuePairs)
             {
-                string possibleUserName = formattedGameData
-                    .GetChild("var habboName = \"", '"');
+                int separatorIndex = pair.IndexOf('=');
+                string name = pair.Substring(0, separatorIndex);
+                string value = pair.Substring(separatorIndex + 1);
 
-                if (!string.IsNullOrWhiteSpace(possibleUserName))
-                    UserName = possibleUserName;
-            }
-
-            string[] flashVarArgs = flashVars.Split(new[] { '\r' },
-                StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (string flashArg in flashVarArgs)
-            {
-                string varName = flashArg.GetParent(":").Trim();
-                string varValue = flashArg.GetChild(":").Trim();
-                #region Switch Statement: varName
-                switch (varName)
-                {
-                    case "unique_habbo_id": UniqueId = varValue; break;
-                    case "external.texts.txt": Texts = varValue; break;
-                    case "connection.info.host": Host = varValue; break;
-                    case "client.starting": ClientStarting = varValue; break;
-                    case "hotelview.banner.url": BannerUrl = varValue; break;
-                    case "account_id": AccountId = int.Parse(varValue); break;
-                    case "external.variables.txt": Variables = varValue; break;
-                    case "furnidata.load.url": FurniDataLoadUrl = varValue; break;
-                    case "connection.info.port": Port = int.Parse(varValue.Split(',')[0]); break;
-                    case "productdata.load.url": ProductDataLoadUrl = varValue; break;
-                    case "external.override.texts.txt": OverrideTexts = varValue; break;
-                    case "external.figurepartlist.txt": FigurePartList = varValue; break;
-                    case "external.override.variables.txt": OverrideVariables = varValue; break;
-                    case "flash.client.url":
-                    {
-                        if (string.IsNullOrWhiteSpace(FlashClientUrl))
-                            FlashClientUrl = ExtractFlashClientUrl(formattedGameData, "embedSWF(", ',');
-
-                        string[] segments = FlashClientUrl.GetChild("//")
-                            .GetChild("/").Split('/');
-
-                        int buildSegmentIndex = segments.Length > 1 ?
-                            segments.Length - 2 : 0;
-
-                        FlashClientBuild = segments[buildSegmentIndex];
-
-                        if (buildSegmentIndex == 0)
-                            FlashClientBuild = FlashClientBuild.GetParent(".swf");
-                        break;
-                    }
-                }
-                #endregion
+                value = FixUrlString(value);
+                this[name] = value;
             }
         }
 
-        private string ExtractFlashClientUrl(string source, string parent, char delimiter)
+        protected virtual string FixUrlString(string value)
         {
-            if (!source.Contains(parent))
-                return string.Empty;
+            if (value.StartsWith("\\/"))
+                value = value.Replace("\\/", "/");
 
-            string possibleFlashClientUrl =
-                source.GetChild(parent, delimiter);
+            return value;
+        }
+        protected virtual Match GetVariable(string source, string name)
+        {
+            var variableMatcher = new Regex($"var {name}=(?<value>.*?);",
+                RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
-            if (string.IsNullOrWhiteSpace(possibleFlashClientUrl))
-                return string.Empty;
+            source = source.Replace($"{name} = ", $"{name}=")
+                .Replace($"{name} =", $"{name}=").Replace($"{name}= ", $"{name}=");
 
-            char flashUrlStartChar =
-                possibleFlashClientUrl[0];
+            return variableMatcher.Match(source);
+        }
 
-            bool isVariable =
-                (flashUrlStartChar != '"' && flashUrlStartChar != '\'');
-
-            if (!isVariable)
+        public override string ToString()
+        {
+            string flashvars = string.Empty;
+            foreach (string key in Keys)
             {
-                possibleFlashClientUrl = possibleFlashClientUrl.Replace(
-                    flashUrlStartChar.ToString(), string.Empty);
-            }
-            else
-            {
-                string suffix = string.Empty;
-                if (possibleFlashClientUrl.Contains("+"))
-                {
-                    suffix = possibleFlashClientUrl.GetChild("\"", '"');
-                    if (!string.IsNullOrWhiteSpace(suffix))
-                    {
-                        possibleFlashClientUrl =
-                            possibleFlashClientUrl.GetParent("+").Trim();
-                    }
-                }
-                possibleFlashClientUrl =
-                    source.GetChild(possibleFlashClientUrl).GetChild("\"", '"');
-
-                if (!string.IsNullOrWhiteSpace(suffix) &&
-                    possibleFlashClientUrl.EndsWith("/") &&
-                    suffix.StartsWith("/"))
-                {
-                    possibleFlashClientUrl +=
-                        suffix.Substring(1);
-                }
+                flashvars += $"{key}={this[key]}&amp;";
             }
 
-            if (!string.IsNullOrWhiteSpace(possibleFlashClientUrl) &&
-                possibleFlashClientUrl.Contains(".swf"))
-            {
-                possibleFlashClientUrl =
-                    possibleFlashClientUrl.Split('?')[0];
-            }
-
-            return possibleFlashClientUrl.EndsWith(".swf") ?
-                possibleFlashClientUrl : string.Empty;
+            return string.Format(_clientLoaderFormat,
+                BaseUrl, MovieUrl.Replace("http:", string.Empty), flashvars);
         }
     }
 }
