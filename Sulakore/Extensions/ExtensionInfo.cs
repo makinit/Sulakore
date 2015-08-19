@@ -26,6 +26,7 @@ using System;
 using System.Reflection;
 using System.Collections.Generic;
 
+using Sulakore.Habbo.Web;
 using Sulakore.Communication;
 
 namespace Sulakore.Extensions
@@ -37,15 +38,18 @@ namespace Sulakore.Extensions
         public string Identifier { get; }
         public string Description { get; }
 
+        public HGameData GameData { get; }
         public Version Version { get; set; }
         public HTriggers Triggers { get; }
 
         public HHotel Hotel { get; }
         public IHConnection Connection { get; }
 
-        public ExtensionInfo(Assembly extensionAssembly, HHotel hotel, IHConnection connection)
+        public ExtensionInfo(Assembly extensionAssembly,
+            HGameData gameData, HHotel hotel, IHConnection connection)
         {
             Hotel = hotel;
+            GameData = gameData;
             Connection = connection;
             Triggers = new HTriggers(false);
 
