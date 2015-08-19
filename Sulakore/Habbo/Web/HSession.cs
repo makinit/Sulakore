@@ -148,7 +148,7 @@ namespace Sulakore.Habbo.Web
         }
         public async Task ConnectAsync()
         {
-            Remote = await HNode.ConnectAsync(GameData.Host, GameData.Port)
+            Remote = await HNode.ConnectAsync(GameData.Host, int.Parse(GameData.Port))
                 .ConfigureAwait(false);
 
             IsConnected = true;
@@ -189,8 +189,8 @@ namespace Sulakore.Habbo.Web
                     User = HUser.Create(body);
                     Cookies.SetCookies(_hotelUri, loginResponse.Headers["Set-Cookie"]);
 
-                    IsAuthenticated =
-                        ((HttpWebResponse)loginResponse).StatusCode == HttpStatusCode.OK;
+                    IsAuthenticated = ((HttpWebResponse)loginResponse)
+                        .StatusCode == HttpStatusCode.OK;
 
                     if (IsAuthenticated)
                     {
