@@ -53,7 +53,7 @@ namespace Sulakore.Communication
         /// <summary>
         /// Gets the <see cref="Func{TResult}"/> of type <see cref="Task"/> that will be invoked when <see cref="ContinueRead"/> is called.
         /// </summary>
-        internal Func<Task> Continuation { get; set; }
+        public Func<Task> Continuation { get; internal set; }
         /// <summary>
         /// Gets a value that determines whether <see cref="ContinueRead"/> was called by the receiver.
         /// </summary>
@@ -66,7 +66,7 @@ namespace Sulakore.Communication
             get { return !Packet.ToString().Equals(Replacement.ToString()); }
         }
         /// <summary>
-        /// Gets or sets a value that determines whether the data should be sent.
+        /// Gets or sets a value that determines whether the data should be blocked.
         /// </summary>
         public bool IsBlocked { get; set; }
 
