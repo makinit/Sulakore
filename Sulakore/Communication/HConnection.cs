@@ -26,7 +26,6 @@ using System;
 using System.IO;
 using System.Net;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -411,13 +410,14 @@ namespace Sulakore.Communication
         }
         public static void WriteHosts(params string[] hosts)
         {
-            var hostsFileBuilder = new StringBuilder();
+            string hostsContent = string.Empty;
             foreach (string host in hosts)
             {
-                string mapping = $"127.0.0.1\t\t{host}\t\t#Sulakore";
-                hostsFileBuilder.AppendLine(mapping);
+                string mapping = $"127.0.0.1\t\t{host}\t\t#Sulakore\r\n";
+                if (hostsContent.Contains(mapping)) continue;
+                hostsContent += mapping;
             }
-            File.AppendAllText(_hostsFile, hostsFileBuilder.ToString());
+            File.AppendAllText(_hostsFile, hostsContent);
         }
 
         /// <summary>
