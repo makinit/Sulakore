@@ -26,6 +26,7 @@ using System;
 using System.Linq;
 using System.Windows.Forms;
 using System.ComponentModel;
+using System.Collections.Generic;
 
 namespace Sulakore.Components
 {
@@ -63,6 +64,19 @@ namespace Sulakore.Components
             ShowItemToolTips = true;
             UseCompatibleStateImageBehavior = false;
             HeaderStyle = ColumnHeaderStyle.Nonclickable;
+        }
+
+        public void ClearItems()
+        {
+            var items = new ListViewItem[Items.Count];
+            Items.CopyTo(items, 0);
+
+            ClearItems(items);
+        }
+        protected virtual void ClearItems(IEnumerable<ListViewItem> items)
+        {
+            foreach (ListViewItem item in items)
+                RemoveItem(item);
         }
 
         public void RemoveSelectedItem()

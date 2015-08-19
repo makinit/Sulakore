@@ -69,42 +69,6 @@ namespace Sulakore.Components
             CheckBoxes = true;
         }
 
-        public void RemoveSelected()
-        {
-            ListViewItem item = GetSelectedItem();
-            if (item == null) return;
-
-            System.Timers.Timer timer = _timers[item];
-            try
-            {
-                timer.Elapsed -= Elapsed;
-
-                _timers.Remove(item);
-                _timerItems.Remove(timer);
-
-                if (_runningTimers.Contains(timer))
-                    _runningTimers.Remove(timer);
-            }
-            finally { timer.Dispose(); }
-        }
-        public void AddSchedule(HMessage packet, int interval, int burst)
-        {
-            var timer = new System.Timers.Timer(interval);
-            timer.Elapsed += Elapsed;
-
-            if (IsSynchronized)
-                timer.SynchronizingObject = FindForm();
-
-            ListViewItem item = FocusAdd(packet, packet.Destination,
-                interval, AutoStart ? "Running" : "Stopped");
-
-            var timerTuple = new Tuple<HMessage, int>(packet, burst);
-            _timers.Add(item, timer);
-            _timerItems.Add(timer, timerTuple);
-
-            item.Checked = AutoStart;
-        }
-
         private void Elapsed(object sender, ElapsedEventArgs e)
         {
             var timer = (System.Timers.Timer)sender;
@@ -113,16 +77,15 @@ namespace Sulakore.Components
                 try
                 {
                     timer.Stop();
-
                     Tuple<HMessage, int> timerItems = null;
-
                     if (_timerItems.ContainsKey(timer))
+                    {
                         timerItems = _timerItems[timer];
+                    }
                     else return;
 
-                    int tmpBurst = timerItems.Item2;
-
                     bool shouldStart = true;
+                    int tmpBurst = timerItems.Item2;
                     for (int i = 0; i < tmpBurst && _runningTimers.Contains(timer); i++)
                     {
                         var args = new ScheduleTickEventArgs(timerItems.Item1);
@@ -142,6 +105,49 @@ namespace Sulakore.Components
             }
             else return;
         }
+
+        public void StopAll()
+        {
+            var items = new ListViewItem[Items.Count];
+            Items.CopyTo(items, 0);
+
+            foreach (ListViewItem item in items)
+            {
+                if (item.Checked)
+                    item.Checked = false;
+            }
+        }
+        public void StartAll()
+        {
+            var items = new ListViewItem[Items.Count];
+            Items.CopyTo(items, 0);
+
+            foreach (ListViewItem item in items)
+            {
+                if (!item.Checked)
+                    item.Checked = true;
+            }
+        }
+
+        protected override void RemoveItem(ListViewItem item)
+        {
+            if (_timers.ContainsKey(item))
+            {
+                System.Timers.Timer timer = _timers[item];
+                try
+                {
+                    timer.Elapsed -= Elapsed;
+
+                    _timers.Remove(item);
+                    _timerItems.Remove(timer);
+
+                    if (_runningTimers.Contains(timer))
+                        _runningTimers.Remove(timer);
+                }
+                finally { timer.Dispose(); }
+            }
+            base.RemoveItem(item);
+        }
         protected override void OnItemChecked(ItemCheckedEventArgs e)
         {
             if (_timers.ContainsKey(e.Item))
@@ -149,7 +155,7 @@ namespace Sulakore.Components
                 System.Timers.Timer timer = _timers[e.Item];
                 bool isChecked = e.Item.Checked;
 
-                e.Item.SubItems[3].Text =
+                e.Item.SubItems[4].Text =
                     isChecked ? "Running" : "Stopped";
 
                 if (isChecked)
@@ -164,6 +170,24 @@ namespace Sulakore.Components
                 }
             }
             base.OnItemChecked(e);
+        }
+
+        public void AddSchedule(HMessage packet, int interval, int burst)
+        {
+            var timer = new System.Timers.Timer(interval);
+            timer.Elapsed += Elapsed;
+
+            if (IsSynchronized)
+                timer.SynchronizingObject = FindForm();
+
+            ListViewItem item = FocusAdd(packet, packet.Destination,
+                burst, interval, AutoStart ? "Running" : "Stopped");
+
+            var timerTuple = new Tuple<HMessage, int>(packet, burst);
+            _timers.Add(item, timer);
+            _timerItems.Add(timer, timerTuple);
+
+            item.Checked = AutoStart;
         }
     }
 }
