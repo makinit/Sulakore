@@ -42,9 +42,9 @@ namespace Sulakore.Communication
     /// </summary>
     public class HConnection : IHConnection, IDisposable
     {
-        private TcpListener _listener;
         private readonly object _disconnectLock;
         private static readonly string _hostsFile;
+        private readonly IDictionary<ushort, TcpListener> _listeners;
 
         /// <summary>
         /// Occurs when the intercepted local <see cref="HNode"/> initiates the handshake with the server.
@@ -100,7 +100,7 @@ namespace Sulakore.Communication
         /// <summary>
         /// Gets the port of the remote endpoint.
         /// </summary>
-        public int Port { get; private set; }
+        public ushort Port { get; private set; }
         /// <summary>
         /// Gets the host name of the remote endpoint.
         /// </summary>
@@ -164,6 +164,7 @@ namespace Sulakore.Communication
         public HConnection()
         {
             _disconnectLock = new object();
+            _listeners = new Dictionary<ushort, TcpListener>();
 
             OutgoingBlocked = new List<ushort>();
             IncomingBlocked = new List<ushort>();
@@ -185,7 +186,11 @@ namespace Sulakore.Communication
             {
                 try
                 {
-                    _listener?.Stop();
+                    TcpListener[] listeners = _listeners.Values.ToArray();
+                    foreach (TcpListener listener in listeners)
+                    {
+                        listener.Stop();
+                    }
 
                     Local?.Dispose();
                     Remote?.Dispose();
@@ -206,26 +211,120 @@ namespace Sulakore.Communication
             else return;
         }
         /// <summary>
-        /// Intercepts the attempted connection on the specified port, and establishes a connection with the host in an asynchronous operation.
+        /// Intercepts the attempted connection on the specified port(s), and establishes a connection with the host in an asynchronous operation.
         /// </summary>
         /// <param name="host">The host to establish a connection with.</param>
-        /// <param name="port">The port to intercept the local connection attempt.</param>
+        /// <param name="ports">The port(s) to intercept the local connection attempt.</param>
         /// <returns></returns>
-        public async Task ConnectAsync(string host, int port)
+        public async Task ConnectAsync(string host, params ushort[] ports)
         {
-            Port = port;
-            Host = host.Split(':')[0];
             Disconnect();
+            Host = host.Split(':')[0];
 
-            var hosts = (await Dns.GetHostAddressesAsync(Host).ConfigureAwait(false))
-                .Select(ip => ip.ToString()).ToList();
+            IPAddress[] hostAddresses = await Dns.GetHostAddressesAsync(
+                Host).ConfigureAwait(false);
+
+            IList<string> hosts = hostAddresses.Select(
+                ip => ip.ToString()).Distinct().ToList();
 
             hosts.Add(Host);
             Addresses = hosts.ToArray();
             WriteHosts(Addresses);
 
-            await InterceptClientAsync()
+            await InterceptClientAsync(ports)
                 .ConfigureAwait(false);
+        }
+
+        private async Task InterceptClientAsync(ushort[] ports)
+        {
+            foreach (ushort port in ports)
+            {
+                if (!_listeners.ContainsKey(port))
+                {
+                    _listeners.Add(port,
+                        new TcpListener(IPAddress.Any, port));
+                }
+            }
+
+            var interceptionTasks = new List<Task<ushort>>(_listeners.Count);
+            foreach (TcpListener listener in _listeners.Values)
+            {
+                Task<ushort> interceptTask = InterceptClientAsync(listener);
+                interceptionTasks.Add(interceptTask);
+            }
+
+            Task<ushort> completed = null;
+            do completed = await Task.WhenAny(interceptionTasks);
+            while (completed.IsFaulted);
+
+            Port = completed.Result;
+            foreach (TcpListener listener in _listeners.Values)
+                listener.Stop();
+        }
+        private async Task<ushort> InterceptClientAsync(TcpListener listener)
+        {
+            ushort port = (ushort)(
+                (IPEndPoint)listener.LocalEndpoint).Port;
+
+            try
+            {
+                listener.Start();
+                while (!IsConnected)
+                {
+                    var localSocket = await listener.AcceptSocketAsync()
+                        .ConfigureAwait(false);
+
+                    Local = new HNode(localSocket);
+                    Remote = await HNode.ConnectAsync(Addresses[0], port)
+                        .ConfigureAwait(false);
+
+                    byte[] outBuffer = new byte[6];
+                    int length = await Local.ReceiveAsync(outBuffer,
+                        0, outBuffer.Length).ConfigureAwait(false);
+
+                    if (length == 0) return 0;
+                    if (outBuffer[0] == 64) throw new Exception("Base64/VL64 protocol not supported.");
+                    if (BigEndian.ToUI16(outBuffer, 4) == Outgoing.CLIENT_CONNECT)
+                    {
+                        byte[] packet = new byte[BigEndian.ToSI32(outBuffer) + 4];
+                        Buffer.BlockCopy(outBuffer, 0, packet, 0, 6);
+
+                        length = await Local.ReceiveAsync(packet,
+                            6, packet.Length - 6).ConfigureAwait(false);
+
+                        if (length == 0) break;
+
+                        IsConnected = true;
+                        OnConnected(EventArgs.Empty);
+
+                        HandleOutgoing(packet, ++TotalOutgoing);
+                        Task readInTask = ReadIncomingAsync();
+                    }
+                    else
+                    {
+                        byte[] newOutBuffer = new byte[1000];
+                        Buffer.BlockCopy(outBuffer, 0, newOutBuffer, 0, 6);
+
+                        length = await Local.ReceiveAsync(newOutBuffer, 6, newOutBuffer.Length - 6)
+                            .ConfigureAwait(false);
+
+                        if (length == 0) break;
+                        await Remote.SendAsync(newOutBuffer, 0, length + 6)
+                            .ConfigureAwait(false);
+
+                        length = await Remote.ReceiveAsync(newOutBuffer, 0, newOutBuffer.Length)
+                            .ConfigureAwait(false);
+
+                        if (length == 0) break;
+                        await Local.SendAsync(newOutBuffer, 0, length)
+                            .ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (ObjectDisposedException) { /* Listener stopped. */ }
+            finally { listener.Stop(); }
+
+            return port;
         }
 
         /// <summary>
@@ -266,73 +365,6 @@ namespace Sulakore.Communication
         public Task<int> SendToClientAsync(ushort header, params object[] chunks)
         {
             return Local.SendAsync(HMessage.Construct(header, chunks));
-        }
-
-        private async Task InterceptClientAsync()
-        {
-            _listener = new TcpListener(IPAddress.Loopback, Port);
-            _listener.Start();
-
-            try
-            {
-                while (!IsConnected)
-                {
-                    var localSocket = await _listener.AcceptSocketAsync()
-                        .ConfigureAwait(false);
-
-                    Local = new HNode(localSocket);
-                    Remote = await HNode.ConnectAsync(Addresses[0], Port)
-                        .ConfigureAwait(false);
-
-                    byte[] outBuffer = new byte[6];
-                    int length = await Local.ReceiveAsync(outBuffer,
-                        0, outBuffer.Length).ConfigureAwait(false);
-
-                    if (length == 0) return;
-                    if (outBuffer[0] == 64) throw new Exception("Base64/VL64 protocol not supported.");
-                    if (BigEndian.ToUI16(outBuffer, 4) == Outgoing.CLIENT_CONNECT)
-                    {
-                        byte[] packet = new byte[BigEndian.ToSI32(outBuffer) + 4];
-                        Buffer.BlockCopy(outBuffer, 0, packet, 0, 6);
-
-                        length = await Local.ReceiveAsync(packet,
-                            6, packet.Length - 6).ConfigureAwait(false);
-
-                        if (length == 0) return;
-
-                        IsConnected = true;
-                        OnConnected(EventArgs.Empty);
-
-                        HandleOutgoing(packet, ++TotalOutgoing);
-                        Task readInTask = ReadIncomingAsync();
-                    }
-                    else
-                    {
-                        byte[] newOutBuffer = new byte[1000];
-                        Buffer.BlockCopy(outBuffer, 0, newOutBuffer, 0, 6);
-
-                        length = await Local.ReceiveAsync(newOutBuffer, 6, newOutBuffer.Length - 6)
-                            .ConfigureAwait(false);
-
-                        if (length == 0) return;
-                        await Remote.SendAsync(newOutBuffer, 0, length + 6)
-                            .ConfigureAwait(false);
-
-                        length = await Remote.ReceiveAsync(newOutBuffer, 0, newOutBuffer.Length)
-                            .ConfigureAwait(false);
-
-                        if (length == 0) return;
-                        await Local.SendAsync(newOutBuffer, 0, length)
-                            .ConfigureAwait(false);
-                    }
-                }
-            }
-            catch (ObjectDisposedException) { /* Listener stopped. */ }
-            finally
-            {
-                _listener.Stop();
-                _listener = null;
-            }
         }
 
         private async Task ReadOutgoingAsync()

@@ -35,7 +35,7 @@ namespace Sulakore.Communication
         event EventHandler<InterceptedEventArgs> DataOutgoing;
         event EventHandler<InterceptedEventArgs> DataIncoming;
 
-        int Port { get; }
+        ushort Port { get; }
         string Host { get; }
         string[] Addresses { get; }
 
