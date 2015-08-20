@@ -77,7 +77,7 @@ namespace Sulakore.Habbo.Web
             clientLoaderBuilder.AppendLine("<meta http-equiv=\"Cache-Control\" content=\"no-cache, no-store\"/>");
             clientLoaderBuilder.AppendLine("</head>");
 
-            clientLoaderBuilder.AppendLine("<body class=\"flashclient\">");
+            clientLoaderBuilder.AppendLine("<body class=\"flashclient\" style=\"margin: 0;\">");
             clientLoaderBuilder.AppendLine("<div id=\"flash-wrapper\">");
             clientLoaderBuilder.AppendLine("<object id=\"flash-container\" width=\"100%\" height=\"100%\">");
             clientLoaderBuilder.AppendLine("<param name=\"movie\" value=\"{1}\"/>");
@@ -123,7 +123,7 @@ namespace Sulakore.Habbo.Web
                 source.GetChild("<param name=\"movie\" value=\"", '"');
 
             char charBegin = movieUrl[0];
-            bool isFieldName = (charBegin != '\"' || charBegin != '\'');
+            bool isFieldName = (charBegin != '\"' && charBegin != '\'');
 
             if (isSwfObject)
             {
@@ -139,14 +139,13 @@ namespace Sulakore.Habbo.Web
                 if (isFieldName)
                 {
                     movieUrl = GetVariable(source, movieUrl).Groups["value"].Value;
-
                     charBegin = movieUrl[0];
-                    movieUrl = movieUrl.GetChild(charBegin.ToString(), charBegin);
                 }
             }
 
             if (!string.IsNullOrWhiteSpace(movieUrl))
             {
+                movieUrl = movieUrl.GetChild(charBegin.ToString(), charBegin);
                 MovieUrl = FixUrlString(movieUrl);
 
                 string[] segments = MovieUrl.GetChild("//")
