@@ -118,48 +118,52 @@ namespace Sulakore.Habbo.Web
             string variables =
                 flashVarsMatch.Groups["value"].Value;
 
-            string movieUrl = isSwfObject ?
-                source.GetChild(".embedSWF(", ',') :
-                source.GetChild("<param name=\"movie\" value=\"", '"');
-
-            char charBegin = movieUrl[0];
-            bool isFieldName = (charBegin != '\"' && charBegin != '\'');
-
-            if (isSwfObject)
+            try
             {
-                Match paramsMatch = GetVariable(source, "params");
-                if (paramsMatch.Success)
-                {
-                    string flashParams = paramsMatch.Groups["value"].Value
-                        .GetChild("{", '}').Replace(" :", ":").Replace(": ", ":").Trim();
+                string movieUrl = isSwfObject ?
+                    source.GetChild(".embedSWF(", ',') :
+                    source.GetChild("<param name=\"movie\" value=\"", '"');
 
-                    BaseUrl = FixUrlString(flashParams.GetChild("\"base\":\"", '"'));
+                char charBegin = movieUrl[0];
+                bool isFieldName = (charBegin != '\"' && charBegin != '\'');
+
+                if (isSwfObject)
+                {
+                    Match paramsMatch = GetVariable(source, "params");
+                    if (paramsMatch.Success)
+                    {
+                        string flashParams = paramsMatch.Groups["value"].Value
+                            .GetChild("{", '}').Replace(" :", ":").Replace(": ", ":").Trim();
+
+                        BaseUrl = FixUrlString(flashParams.GetChild("\"base\":\"", '"'));
+                    }
+
+                    if (isFieldName)
+                    {
+                        movieUrl = GetVariable(source, movieUrl).Groups["value"].Value;
+                        charBegin = movieUrl[0];
+                    }
                 }
 
-                if (isFieldName)
+                if (!string.IsNullOrWhiteSpace(movieUrl))
                 {
-                    movieUrl = GetVariable(source, movieUrl).Groups["value"].Value;
-                    charBegin = movieUrl[0];
+                    movieUrl = movieUrl.GetChild(charBegin.ToString(), charBegin);
+                    MovieUrl = FixUrlString(movieUrl);
+
+                    string[] segments = MovieUrl.GetChild("//")
+                        .GetChild("/").Split('/');
+
+                    int buildSegmentIndex = segments.Length > 1 ?
+                        segments.Length - 2 : 0;
+
+                    MovieName = segments[buildSegmentIndex];
+                    if (buildSegmentIndex == 0)
+                    {
+                        MovieName = MovieName.GetParent(".swf");
+                    }
                 }
             }
-
-            if (!string.IsNullOrWhiteSpace(movieUrl))
-            {
-                movieUrl = movieUrl.GetChild(charBegin.ToString(), charBegin);
-                MovieUrl = FixUrlString(movieUrl);
-
-                string[] segments = MovieUrl.GetChild("//")
-                    .GetChild("/").Split('/');
-
-                int buildSegmentIndex = segments.Length > 1 ?
-                    segments.Length - 2 : 0;
-
-                MovieName = segments[buildSegmentIndex];
-                if (buildSegmentIndex == 0)
-                {
-                    MovieName = MovieName.GetParent(".swf");
-                }
-            }
+            catch { }
 
             if (isSwfObject)
             {
