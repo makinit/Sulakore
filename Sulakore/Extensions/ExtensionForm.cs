@@ -29,11 +29,18 @@ using System.ComponentModel;
 
 using Sulakore.Habbo.Web;
 using Sulakore.Communication;
+using System.Threading.Tasks;
 
 namespace Sulakore.Extensions
 {
     public class ExtensionForm : Form
     {
+        /// <summary>
+        /// Gets a value that determines whether this extension has been installed to a <see cref="Contractor"/>.
+        /// </summary>
+        [Browsable(false)]
+        public bool IsInstalled { get; }
+
         /// <summary>
         /// Gets a value that determines whether the <see cref="ExtensionForm"/> is running.
         /// </summary>
@@ -95,6 +102,7 @@ namespace Sulakore.Extensions
 
             if (extensionInfo != null)
             {
+                IsInstalled = true;
                 Creator = extensionInfo.Creator;
                 Identifier = extensionInfo.Identifier;
                 Description = extensionInfo.Description;
@@ -108,6 +116,9 @@ namespace Sulakore.Extensions
                 Connection = extensionInfo.Connection;
             }
         }
+
+        protected virtual void OnDisposed()
+        { }
 
         protected override void OnShown(EventArgs e)
         {
@@ -126,6 +137,7 @@ namespace Sulakore.Extensions
             {
                 IsRunning = false;
                 Triggers?.Dispose();
+                OnDisposed();
             }
             base.Dispose(disposing);
         }
