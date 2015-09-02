@@ -22,10 +22,6 @@
     See License.txt in the project root for license information.
 */
 
-using System;
-using System.Reflection;
-using System.Collections.Generic;
-
 using Sulakore.Habbo.Web;
 using Sulakore.Communication;
 
@@ -33,51 +29,20 @@ namespace Sulakore.Extensions
 {
     public class ExtensionInfo
     {
-        public string FileLocation { get; set; }
-        public string Creator { get; }
-        public string Identifier { get; }
-        public string Description { get; }
-
-        public HGameData GameData { get; }
-        public Version Version { get; set; }
-        public HTriggers Triggers { get; }
-
+        public string Hash { get; }
         public HHotel Hotel { get; }
+        public HGameData GameData { get; }
+        public string FileLocation { get; }
         public IHConnection Connection { get; }
 
-        public ExtensionInfo(Assembly extensionAssembly,
+        public ExtensionInfo(string fileLocation, string hash,
             HGameData gameData, HHotel hotel, IHConnection connection)
         {
+            Hash = hash;
             Hotel = hotel;
             GameData = gameData;
             Connection = connection;
-            Triggers = new HTriggers(false);
-
-            IList<CustomAttributeData> assemblyAttributes =
-                extensionAssembly.GetCustomAttributesData();
-
-            foreach (CustomAttributeData assemblyAttribute in assemblyAttributes)
-            {
-                object firstAttributeValue = assemblyAttribute.ConstructorArguments.Count > 0 ?
-                    assemblyAttribute.ConstructorArguments[0].Value : null;
-
-                switch (assemblyAttribute.AttributeType.Name)
-                {
-                    case "AssemblyTitleAttribute":
-                    Identifier = (string)firstAttributeValue; break;
-
-                    case "AssemblyCompanyAttribute":
-                    {
-                        Creator = (string)firstAttributeValue;
-                        if (string.IsNullOrWhiteSpace(Creator))
-                            Creator = "Unknown";
-                        break;
-                    }
-
-                    case "AssemblyDescriptionAttribute":
-                    Description = (string)firstAttributeValue; break;
-                }
-            }
+            FileLocation = fileLocation;
         }
     }
 }

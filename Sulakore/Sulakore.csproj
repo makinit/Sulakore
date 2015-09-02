@@ -65,11 +65,13 @@
     <Compile Include="Communication\HTriggers.cs" />
     <Compile Include="Communication\IHConnection.cs" />
     <Compile Include="Components\Event Args\ScheduleTickEventArgs.cs" />
+    <Compile Include="Components\Event Args\TileEventArgs.cs" />
     <Compile Include="Components\SKoreButton.cs" />
     <Compile Include="Components\SKoreConstructView.cs" />
     <Compile Include="Components\SKoreExtensionView.cs" />
     <Compile Include="Components\SKoreLabel.cs" />
     <Compile Include="Components\SKoreListView.cs" />
+    <Compile Include="Components\SKoreMap.cs" />
     <Compile Include="Components\SKoreScheduleView.cs" />
     <Compile Include="Components\SKoreTabControl.cs" />
     <Compile Include="Extensions\Enums\ExtensionActionType.cs" />
@@ -95,6 +97,7 @@
     <Compile Include="Habbo\HFurniture.cs" />
     <Compile Include="Habbo\HEntityAction.cs" />
     <Compile Include="Habbo\HEntity.cs" />
+    <Compile Include="Habbo\HMap.cs" />
     <Compile Include="Habbo\HPoint.cs" />
     <Compile Include="Habbo\IHEntity.cs" />
     <Compile Include="Protocol\Encoders\Ancient.cs" />
@@ -125,11 +128,6 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Extensions\ExtensionForm.resx">
-      <DependentUpon>ExtensionForm.cs</DependentUpon>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Net.Http" />
@@ -139,6 +137,10 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

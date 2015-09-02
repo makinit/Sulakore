@@ -26,6 +26,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Collections;
 using System.Diagnostics;
 using System.Windows.Forms;
 using System.Collections.Generic;
@@ -36,12 +37,14 @@ using Sulakore.Communication;
 
 namespace Sulakore.Extensions
 {
-    public class Contractor
+    public class Contractor : IReadOnlyList<ExtensionForm>, IList
     {
-        private static readonly IDictionary<Assembly, ExtensionInfo> _extensionInfoByAssembly;
-
-        private readonly IDictionary<string, ExtensionForm> _extensionByHash;
+        private readonly List<ExtensionForm> _extensions;
+        private readonly IDictionary<string, ExtensionForm> _extensionHash;
         private readonly IDictionary<Assembly, string> _initialExtensionPaths;
+
+        private static readonly IDictionary<Assembly, ExtensionInfo> _extensionInfo;
+        private static readonly DirectoryInfo _dependenciesDirectory, _extensionsDirectory;
 
         public event EventHandler<ExtensionActionEventArgs> ExtensionAction;
         protected virtual void OnExtensionAction(ExtensionActionEventArgs e)
@@ -51,139 +54,91 @@ namespace Sulakore.Extensions
 
         public HHotel Hotel { get; set; }
         public HGameData GameData { get; set; }
+        public HConnection Connection { get; set; }
 
-        public HConnection Connection { get; }
-
-        private readonly List<ExtensionForm> _extensions;
-        public IReadOnlyList<ExtensionForm> Extensions => _extensions;
+        public int Count => _extensions.Count;
+        public ExtensionForm this[int index] => _extensions[index];
 
         static Contractor()
         {
-            _extensionInfoByAssembly = new Dictionary<Assembly, ExtensionInfo>();
-        }
-        public Contractor(HConnection connection)
-        {
-            Connection = connection;
+            // We need to find another way.
+            AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
 
+            _extensionsDirectory = new DirectoryInfo("Extensions");
+            _dependenciesDirectory = new DirectoryInfo("Extensions\\Dependencies");
+
+            _extensionInfo =
+                new Dictionary<Assembly, ExtensionInfo>();
+        }
+        public Contractor()
+        {
             _extensions = new List<ExtensionForm>();
-            _extensionByHash = new Dictionary<string, ExtensionForm>();
+            _extensionHash = new Dictionary<string, ExtensionForm>();
             _initialExtensionPaths = new Dictionary<Assembly, string>();
         }
 
         public void HandleIncoming(InterceptedEventArgs e)
         {
-            if (Extensions.Count < 1) return;
-
-            ExtensionForm[] extensions = _extensions.ToArray();
-            foreach (ExtensionForm extension in extensions)
-            {
-                if (extension.IsRunning)
-                    extension.Triggers?.HandleIncoming(e);
-            }
+            HandleInterception(false, e);
         }
         public void HandleOutgoing(InterceptedEventArgs e)
         {
-            if (Extensions.Count < 1) return;
+            HandleInterception(true, e);
+        }
+        protected virtual void HandleInterception(bool isOutgoing, InterceptedEventArgs e)
+        {
+            if (Count < 1) return;
 
             ExtensionForm[] extensions = _extensions.ToArray();
             foreach (ExtensionForm extension in extensions)
             {
-                if (extension.IsRunning)
-                    extension.Triggers?.HandleOutgoing(e);
+                if (!extension.IsRunning) continue;
+
+                if (isOutgoing) extension.Triggers.HandleOutgoing(e);
+                else extension.Triggers.HandleIncoming(e);
             }
         }
 
-        public void LoadInstalledExtensions()
+        public void LoadExtensions()
         {
-            if (Directory.Exists("Extensions"))
-            {
-                var extensionsDirectory = new DirectoryInfo(Path.GetFullPath("Extensions"));
-                IEnumerable<DirectoryInfo> creatorDirectories = extensionsDirectory
-                    .EnumerateDirectories().Where(d => d.Name != "$Dependencies");
+            if (!_extensionsDirectory.Exists)
+                _extensionsDirectory.Create();
 
-                foreach (DirectoryInfo creatorDirectory in creatorDirectories)
-                {
-                    IEnumerable<FileInfo> creatorFiles = creatorDirectory.EnumerateFiles()
-                        .Where(t => t.Extension == ".dll" || t.Extension == ".exe");
+            IEnumerable<FileSystemInfo> extensions =
+                _extensionsDirectory.EnumerateFileSystemInfos()
+                .Where(f => f.Extension == ".dll" || f.Extension == ".exe");
 
-                    foreach (FileInfo creatorFile in creatorFiles)
-                        Install(creatorFile.FullName);
-                }
-            }
+            LoadExtensions(extensions);
         }
+        protected virtual void LoadExtensions(IEnumerable<FileSystemInfo> extensions)
+        {
+            foreach (FileSystemInfo extension in extensions)
+                Install(extension.FullName);
+        }
+
         public ExtensionForm Install(string path)
         {
+            path = Path.GetFullPath(path);
             if (!File.Exists(path)) return null;
 
-            path = Path.GetFullPath(path);
-            string fileHash = GetFileMD5Hash(path);
-
-            if (_extensionByHash.ContainsKey(fileHash))
+            string hash = GetHash(path);
+            if (_extensionHash.ContainsKey(hash))
             {
-                ExtensionForm extensionForm = _extensionByHash[fileHash];
-                if (extensionForm.IsDisposed)
-                {
-                    extensionForm = ReininitializeExtension(extensionForm);
-                }
-                else
+                ExtensionForm extensionForm = _extensionHash[hash];
+                if (!extensionForm.IsDisposed)
                 {
                     OnExtensionAction(new ExtensionActionEventArgs(
                         extensionForm, ExtensionActionType.Reinstalled));
                 }
+                else extensionForm = Initialize(extensionForm);
                 return extensionForm;
             }
-
-            byte[] rawFile = File.ReadAllBytes(path);
-            Assembly fileAssembly = null;
-            try
-            {
-                lock (AppDomain.CurrentDomain)
-                {
-                    AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
-                    fileAssembly = Assembly.Load(rawFile);
-                }
-            }
-            finally
-            {
-                AppDomain.CurrentDomain.AssemblyResolve -= AssemblyResolve;
-            }
-            Type extensionFormType = GetExtensionFormType(fileAssembly);
-
-            if (extensionFormType != null)
-            {
-                var extensionInfo = new ExtensionInfo(
-                    fileAssembly, GameData, Hotel, Connection);
-
-                string extensionInstallPath = CreateExtensionDirectory(
-                    extensionInfo.Creator, fileHash, path);
-
-                extensionInfo.FileLocation = extensionInstallPath;
-                extensionInfo.Version = new Version(FileVersionInfo
-                    .GetVersionInfo(extensionInstallPath).FileVersion);
-
-                _initialExtensionPaths.Add(fileAssembly, Path.GetDirectoryName(path));
-
-                _extensionInfoByAssembly.Add(fileAssembly, extensionInfo);
-                return InitializeExtension(extensionFormType, fileHash);
-            }
-            else
-            {
-                throw new Exception(
-                    "Application is not a valid extension, unable to locate type inheriting from ExtensionForm.");
-            }
+            return Install(path, hash);
         }
-        public void Uninstall(ExtensionForm extension)
+        public virtual void Uninstall(ExtensionForm extension)
         {
-            string extensionHash = GetFileMD5Hash(extension.FileLocation);
-            string creatorDirectory = Path.GetDirectoryName(extension.FileLocation);
             if (File.Exists(extension.FileLocation))
-            {
                 File.Delete(extension.FileLocation);
-                var creatorDirectoryInfo = new DirectoryInfo(creatorDirectory);
-
-                if (creatorDirectoryInfo.GetFiles().Length < 1)
-                    creatorDirectoryInfo.Delete();
-            }
 
             if (_extensions.Contains(extension))
                 _extensions.Remove(extension);
@@ -194,119 +149,87 @@ namespace Sulakore.Extensions
             if (!extension.IsDisposed)
                 extension.Dispose();
 
-            if (_extensionByHash.ContainsKey(extensionHash))
-                _extensionByHash.Remove(extensionHash);
+            if (_extensionHash.ContainsKey(extension.Hash))
+                _extensionHash.Remove(extension.Hash);
 
             OnExtensionAction(new ExtensionActionEventArgs(
                 extension, ExtensionActionType.Uninstalled));
         }
-        public ExtensionForm GetExtensionForm(string extensionHash)
+        protected virtual ExtensionForm Install(string path, string hash)
         {
-            return _extensionByHash.ContainsKey(extensionHash) ?
-                _extensionByHash[extensionHash] : null;
-        }
-        public ExtensionForm ReininitializeExtension(ExtensionForm extension)
-        {
-            if (!extension.IsDisposed) return extension;
-            string extensionHash = GetFileMD5Hash(extension.FileLocation);
+            // Create a copy of the assembly, and load it into memory(byte[]).
+            string installedExtensionPath = CopyExtension(hash, path);
+            byte[] rawFile = File.ReadAllBytes(installedExtensionPath);
 
-            ExtensionForm cachedExtensions = _extensionByHash[extensionHash];
-            if (!cachedExtensions.IsDisposed) return cachedExtensions;
+            // Read the assembly from memory (byte[]), so we can delete the file when uninstalled.
+            Assembly fileAssembly = Assembly.Load(rawFile);
+            InstallDependenciesFrom(path, fileAssembly);
 
-            if (_extensions.Contains(extension))
-                _extensions.Remove(extension);
-
-            var extensionForm = (ExtensionForm)Activator.CreateInstance(extension.GetType());
-
-            _extensions.Add(extensionForm);
-            _extensionByHash[extensionHash] = extensionForm;
-
-            extensionForm.Shown += ExtensionForm_Shown;
-            extensionForm.FormClosed += ExtensionForm_FormClosed;
-
-            return extensionForm;
-        }
-
-        private string GetFileMD5Hash(string path)
-        {
-            using (var md5 = MD5.Create())
-            using (var fileStream = File.OpenRead(path))
+            Type extensionFormType = GetExtensionFormType(fileAssembly);
+            if (extensionFormType != null)
             {
-                return BitConverter.ToString(
-                    md5.ComputeHash(fileStream)).Replace("-", string.Empty).ToLower();
+                var extensionInfo = new ExtensionInfo(
+                    installedExtensionPath, hash, GameData, Hotel, Connection);
+
+                _extensionInfo.Add(fileAssembly, extensionInfo);
+                _initialExtensionPaths.Add(fileAssembly, Path.GetDirectoryName(path));
+
+                ExtensionForm extension = Initialize(extensionFormType);
+
+                var extensionAction = extension.IsRunning ?
+                    ExtensionActionType.Opened : ExtensionActionType.Installed;
+
+                OnExtensionAction(new ExtensionActionEventArgs(
+                    extension, extensionAction));
+
+                return extension;
+            }
+            else
+            {
+                if (File.Exists(installedExtensionPath))
+                    File.Delete(installedExtensionPath);
+
+                throw new Exception(
+                    $"The given assembly is not a valid {nameof(ExtensionForm)}.");
             }
         }
-        private Type GetExtensionFormType(Assembly fileAssembly)
+
+        private ExtensionForm Initialize(Type extensionType)
         {
-            Type extensionFormType = null;
-            Type[] assemblyTypes = fileAssembly.GetTypes();
-            foreach (Type assemblyType in assemblyTypes)
+            try
             {
-                if (assemblyType.IsInterface || assemblyType.IsAbstract) continue;
+                AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
+                var extension = (ExtensionForm)Activator.CreateInstance(extensionType);
+                extension.Disposed += ExtensionDisposed;
+                extension.Shown += ExtensionShown;
 
-                if (extensionFormType == null &&
-                    assemblyType.BaseType == typeof(ExtensionForm))
-                {
-                    extensionFormType = assemblyType;
-                    break;
-                }
+                _extensions.Add(extension);
+                _extensionHash[extension.Hash] = extension;
+
+                return extension;
             }
-            return extensionFormType;
+            finally { AppDomain.CurrentDomain.AssemblyResolve -= AssemblyResolve; }
         }
-        private ExtensionForm InitializeExtension(Type extensionFormType, string extensionHash)
+        public virtual ExtensionForm Initialize(ExtensionForm extension)
         {
-            var extensionForm = (ExtensionForm)Activator.CreateInstance(extensionFormType);
-
-            extensionForm.Shown += ExtensionForm_Shown;
-            extensionForm.FormClosed += ExtensionForm_FormClosed;
-
-            _extensions.Add(extensionForm);
-            _extensionByHash[extensionHash] = extensionForm;
-            OnExtensionAction(new ExtensionActionEventArgs(extensionForm, ExtensionActionType.Installed));
-
-            if (extensionForm.IsRunning)
-                OnExtensionAction(new ExtensionActionEventArgs(extensionForm, ExtensionActionType.Opened));
-
-            return extensionForm;
-        }
-        private string CreateExtensionDirectory(string creator, string fileHash, string initialPath)
-        {
-            initialPath = Path.GetFullPath(initialPath);
-            string extensionExt = Path.GetExtension(initialPath);
-            string extensionFileName = Path.GetFileNameWithoutExtension(initialPath);
-            string installDirectory = Path.GetFullPath(Path.Combine("Extensions", creator));
-
-            if (!Directory.Exists(installDirectory))
-                Directory.CreateDirectory(installDirectory);
-
-            string extensionInstallPath = initialPath;
-            string extensionSuffix = $"({fileHash}){extensionExt}";
-            if (!initialPath.EndsWith(extensionSuffix))
+            if (extension.IsDisposed)
             {
-                extensionInstallPath = Path.Combine(installDirectory,
-                    extensionFileName + extensionSuffix);
+                if (_extensions.Contains(extension))
+                    _extensions.Remove(extension);
 
-                bool isAlreadyInstalled = false;
-                if (File.Exists(extensionInstallPath))
-                {
-                    string possibleCopyMD5 = GetFileMD5Hash(extensionInstallPath);
-                    isAlreadyInstalled = (possibleCopyMD5 == fileHash);
-                }
-
-                if (!isAlreadyInstalled)
-                    File.Copy(initialPath, extensionInstallPath, !isAlreadyInstalled);
+                return Initialize(extension.GetType());
             }
-            return extensionInstallPath;
+            else return extension;
         }
 
-        private void ExtensionForm_Shown(object sender, EventArgs e)
+        private void ExtensionShown(object sender, EventArgs e)
         {
             var extension = (ExtensionForm)sender;
 
             OnExtensionAction(new ExtensionActionEventArgs(
                 extension, ExtensionActionType.Opened));
         }
-        private void ExtensionForm_FormClosed(object sender, FormClosedEventArgs e)
+        private void ExtensionDisposed(object sender, EventArgs e)
         {
             var extension = (ExtensionForm)sender;
             try
@@ -316,61 +239,169 @@ namespace Sulakore.Extensions
             }
             finally
             {
-                extension.Shown -= ExtensionForm_Shown;
-                extension.FormClosed -= ExtensionForm_FormClosed;
+                extension.Shown -= ExtensionShown;
+                extension.Disposed -= ExtensionDisposed;
             }
         }
 
-        private Assembly AssemblyResolve(object sender, ResolveEventArgs args)
+        private string GetHash(string path)
         {
-            if (!Directory.Exists("Extensions\\$Dependencies"))
+            using (var md5 = MD5.Create())
+            using (var fileStream = File.OpenRead(path))
             {
-                Directory.CreateDirectory("Extensions\\$Dependencies")
-                    .Attributes = (FileAttributes.Directory | FileAttributes.Hidden);
+                return BitConverter.ToString(
+                    md5.ComputeHash(fileStream))
+                    .Replace("-", string.Empty).ToLower();
             }
-
-            FileSystemInfo dependency = LookForDependency(
-                "Extensions\\$Dependencies", args.Name);
-
-            if (dependency == null)
-            {
-                if (args.RequestingAssembly == null)
-                    return null;
-
-                string initialExtensionPath =
-                    _initialExtensionPaths[args.RequestingAssembly];
-
-                dependency = LookForDependency(initialExtensionPath, args.Name);
-                if (dependency == null) return null;
-
-                File.Copy(dependency.FullName,
-                    Path.Combine("Extensions\\$Dependencies", dependency.Name));
-            }
-
-            byte[] rawDependency = File.ReadAllBytes(dependency.FullName);
-            return Assembly.Load(rawDependency);
         }
-        private FileSystemInfo LookForDependency(string path, string dependencyName)
+        private string CopyExtension(string hash, string path)
         {
+            if (!_extensionsDirectory.Exists)
+                _extensionsDirectory.Create();
+
             path = Path.GetFullPath(path);
-            var directoryInfo = new DirectoryInfo(path);
+            string extensionExt = Path.GetExtension(path);
+            string extensionFileName = Path.GetFileNameWithoutExtension(path);
 
-            FileSystemInfo[] possibleDependencies = directoryInfo.GetFileSystemInfos("*.dll");
-            foreach (FileSystemInfo possibleDependency in possibleDependencies)
+            string extensionInstallPath = path;
+            string extensionSuffix = $"({hash}){extensionExt}";
+            if (!path.EndsWith(extensionSuffix))
             {
-                string assemblyName = AssemblyName.GetAssemblyName(
-                    possibleDependency.FullName).FullName;
+                extensionInstallPath = Path.Combine(
+                    _extensionsDirectory.FullName, extensionFileName + extensionSuffix);
 
-                if (assemblyName == dependencyName)
-                    return possibleDependency;
+                bool isAlreadyInstalled = false;
+                if (File.Exists(extensionInstallPath))
+                {
+                    isAlreadyInstalled =
+                        (GetHash(extensionInstallPath) == hash);
+                }
+
+                if (!isAlreadyInstalled)
+                    File.Copy(path, extensionInstallPath, !isAlreadyInstalled);
+            }
+            return extensionInstallPath;
+        }
+        private Type GetExtensionFormType(Assembly fileAssembly)
+        {
+            Type[] assemblyTypes = fileAssembly.GetTypes();
+            foreach (Type assemblyType in assemblyTypes)
+            {
+                if (assemblyType.IsInterface || assemblyType.IsAbstract) continue;
+                if (assemblyType.BaseType == typeof(ExtensionForm)) return assemblyType;
             }
             return null;
         }
 
+        private static FileSystemInfo GetDependency(string path, string dependencyName)
+        {
+            return GetDependency(new DirectoryInfo(path), dependencyName);
+        }
+        protected virtual void InstallDependenciesFrom(string path, Assembly fileAssembly)
+        {
+            if (!_dependenciesDirectory.Exists)
+                _dependenciesDirectory.Create();
+
+            Dictionary<string, AssemblyName> fileReferences = fileAssembly
+                .GetReferencedAssemblies().ToDictionary(an => an.Name);
+
+            string[] loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies()
+                .Select(a => a.GetName().Name).ToArray();
+
+            IEnumerable<string> missingAssemblies = fileReferences
+                .Keys.Except(loadedAssemblies);
+
+            var sourceDirectory = new DirectoryInfo(Path.GetDirectoryName(path));
+            foreach (string missingAssembly in missingAssemblies)
+            {
+                string assemblyName = fileReferences[missingAssembly].FullName;
+                FileSystemInfo dependency = GetDependency(_dependenciesDirectory, assemblyName);
+                if (dependency == null)
+                {
+                    dependency = GetDependency(sourceDirectory, assemblyName);
+                    if (dependency != null)
+                    {
+                        string installDependencyPath = Path.Combine(
+                           _dependenciesDirectory.FullName, dependency.Name);
+
+                        File.Copy(dependency.FullName, installDependencyPath);
+                    }
+                }
+            }
+        }
+        private static FileSystemInfo GetDependency(DirectoryInfo directory, string dependencyName)
+        {
+            FileSystemInfo[] libraries = directory.GetFileSystemInfos("*.dll");
+            foreach (FileSystemInfo library in libraries)
+            {
+                string libraryName = AssemblyName.GetAssemblyName(
+                    library.FullName).FullName;
+
+                if (libraryName == dependencyName)
+                    return library;
+            }
+            return null;
+        }
+
+        private static Assembly AssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            if (!_dependenciesDirectory.Exists)
+                _dependenciesDirectory.Create();
+
+            FileSystemInfo dependency = GetDependency(_dependenciesDirectory, args.Name);
+            if (dependency != null)
+            {
+                byte[] rawDependency = File.ReadAllBytes(dependency.FullName);
+                return Assembly.Load(rawDependency);
+            }
+            return null;
+        }
         internal static ExtensionInfo GetExtensionInfo(Assembly extensionAssembly)
         {
-            return _extensionInfoByAssembly.ContainsKey(extensionAssembly) ?
-                    _extensionInfoByAssembly[extensionAssembly] : null;
+            return _extensionInfo.ContainsKey(extensionAssembly) ?
+                    _extensionInfo[extensionAssembly] : null;
         }
+
+        #region IList Implementation
+        object IList.this[int index]
+        {
+            get { return ((IList)_extensions)[index]; }
+            set { ((IList)_extensions)[index] = value; }
+        }
+        public object SyncRoot => ((IList)_extensions).SyncRoot;
+        public bool IsReadOnly => ((IList)_extensions).IsReadOnly;
+        public bool IsFixedSize => ((IList)_extensions).IsFixedSize;
+        public bool IsSynchronized => ((IList)_extensions).IsSynchronized;
+
+        public void Clear() =>
+            _extensions.Clear();
+
+        public void RemoveAt(int index) =>
+            _extensions.RemoveAt(index);
+
+        public int Add(object value) =>
+            ((IList)_extensions).Add(value);
+
+        public void Remove(object value) =>
+            ((IList)_extensions).Remove(value);
+
+        public bool Contains(object value) =>
+            ((IList)_extensions).Contains(value);
+
+        public int IndexOf(object value) =>
+            ((IList)_extensions).IndexOf(value);
+
+        public void CopyTo(Array array, int index) =>
+            ((IList)_extensions).CopyTo(array, index);
+
+        public void Insert(int index, object value) =>
+            ((IList)_extensions).Insert(index, value);
+
+        public IEnumerator<ExtensionForm> GetEnumerator() =>
+            ((IReadOnlyList<ExtensionForm>)_extensions).GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+             ((IReadOnlyList<ExtensionForm>)_extensions).GetEnumerator();
+        #endregion
     }
 }

@@ -58,7 +58,7 @@ namespace Sulakore.Components
                 var item = _itemByExtensionForm[extension];
                 _itemByExtensionForm.Remove(extension);
 
-                extension = _contractor.ReininitializeExtension(extension);
+                extension = _contractor.Initialize(extension);
                 _extensionFormByItem[item] = extension;
                 _itemByExtensionForm.Add(extension, item);
             }
@@ -98,7 +98,7 @@ namespace Sulakore.Components
             _contractor = contractor;
             _contractor.ExtensionAction += Contractor_ExtensionAction;
 
-            _contractor.LoadInstalledExtensions();
+            _contractor.LoadExtensions();
             return _contractor;
         }
         public Contractor InitializeContractor(HConnection connection)
@@ -106,7 +106,10 @@ namespace Sulakore.Components
             if (_contractor != null)
                 throw new Exception("The contractor has already been initialized.");
 
-            return InitializeContractor(new Contractor(connection));
+            var contractor = new Contractor();
+            contractor.Connection = connection;
+
+            return InitializeContractor(contractor);
         }
 
         protected override void OnItemActivate(EventArgs e)
@@ -155,7 +158,7 @@ namespace Sulakore.Components
                     _itemByExtensionForm.Remove(extension);
                     _extensionFormByItem.Remove(extensionItem);
 
-                    Items.Remove(extensionItem);
+                    RemoveItem(extensionItem);
                     break;
                 }
 
