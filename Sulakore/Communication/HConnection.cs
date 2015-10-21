@@ -1,24 +1,10 @@
-﻿/* Copyright
-
+﻿/*
     GitHub(Source): https://GitHub.com/ArachisH/Sulakore
 
-    .NET library for creating Habbo Hotel related desktop applications.
+    This file is part of the Sulakore library.
     Copyright (C) 2015 ArachisH
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+    
+    This code is licensed under the GNU General Public License.
     See License.txt in the project root for license information.
 */
 
@@ -33,7 +19,6 @@ using System.Collections.Generic;
 
 using Sulakore.Protocol;
 using Sulakore.Habbo.Headers;
-using Sulakore.Protocol.Encoders;
 
 namespace Sulakore.Communication
 {
@@ -244,8 +229,8 @@ namespace Sulakore.Communication
                     _listeners.Add(port,
                         new TcpListener(IPAddress.Any, port));
                 }
-            }
 
+            }
             var interceptionTasks = new List<Task<ushort>>(_listeners.Count);
             foreach (TcpListener listener in _listeners.Values)
             {
@@ -253,13 +238,67 @@ namespace Sulakore.Communication
                 interceptionTasks.Add(interceptTask);
             }
 
-            Task<ushort> completed = null;
-            do completed = await Task.WhenAny(interceptionTasks);
-            while (completed.IsFaulted);
+            while (!IsConnected && interceptionTasks.Count > 0)
+            {
+                Task<ushort> completed = await Task.WhenAny(interceptionTasks);
+                Port = await completed;
 
-            Port = completed.Result;
+                if (interceptionTasks.Contains(completed))
+                    interceptionTasks.Remove(completed);
+            }
+
             foreach (TcpListener listener in _listeners.Values)
                 listener.Stop();
+        }
+        private async Task InterceptClientDataAsync(Socket client, ushort port)
+        {
+            var local = new HNode(client);
+            var remote = await HNode.ConnectAsync(Addresses[0], port)
+                .ConfigureAwait(false);
+
+            var buffer = new byte[1024];
+            int length = await local.ReceiveAsync(
+                buffer, 0, 6).ConfigureAwait(false);
+
+            if (buffer[0] == 64) throw new Exception("Base64/VL64 protocol not supported.");
+            if (BigEndian.ToUInt16(buffer, 4) == Outgoing.CLIENT_CONNECT)
+            {
+                Local = local;
+                Remote = remote;
+
+                byte[] packet = new byte[BigEndian.ToInt32(buffer, 0) + 4];
+                Buffer.BlockCopy(buffer, 0, packet, 0, 6);
+
+                length = await Local.ReceiveAsync(packet, 6, packet.Length - 6)
+                    .ConfigureAwait(false);
+
+                IsConnected = true;
+                OnConnected(EventArgs.Empty);
+
+                HandleOutgoing(packet, ++TotalOutgoing);
+                Task readInTask = ReadIncomingAsync();
+            }
+            else
+            {
+                length += await local.ReceiveAsync(buffer, length, buffer.Length - length)
+                    .ConfigureAwait(false);
+
+                await remote.SendAsync(buffer, 0, length)
+                    .ConfigureAwait(false);
+
+                if (length == 0)
+                {
+                    local.Dispose();
+                    remote.Dispose();
+                    return;
+                }
+
+                length = await remote.ReceiveAsync(buffer, 0, buffer.Length)
+                    .ConfigureAwait(false);
+
+                await local.SendAsync(buffer, 0, length)
+                    .ConfigureAwait(false);
+            }
         }
         private async Task<ushort> InterceptClientAsync(TcpListener listener)
         {
@@ -269,56 +308,15 @@ namespace Sulakore.Communication
             try
             {
                 listener.Start();
+                var interceptDataTasks = new List<Task>();
+
                 while (!IsConnected)
                 {
-                    var localSocket = await listener.AcceptSocketAsync()
+                    Socket localSocket = await listener.AcceptSocketAsync()
                         .ConfigureAwait(false);
 
-                    Local = new HNode(localSocket);
-                    Remote = await HNode.ConnectAsync(Addresses[0], port)
-                        .ConfigureAwait(false);
-
-                    byte[] outBuffer = new byte[6];
-                    int length = await Local.ReceiveAsync(outBuffer,
-                        0, outBuffer.Length).ConfigureAwait(false);
-
-                    if (length == 0) return 0;
-                    if (outBuffer[0] == 64) throw new Exception("Base64/VL64 protocol not supported.");
-                    if (BigEndian.ToUI16(outBuffer, 4) == Outgoing.CLIENT_CONNECT)
-                    {
-                        byte[] packet = new byte[BigEndian.ToSI32(outBuffer) + 4];
-                        Buffer.BlockCopy(outBuffer, 0, packet, 0, 6);
-
-                        length = await Local.ReceiveAsync(packet,
-                            6, packet.Length - 6).ConfigureAwait(false);
-
-                        if (length == 0) break;
-
-                        IsConnected = true;
-                        OnConnected(EventArgs.Empty);
-
-                        HandleOutgoing(packet, ++TotalOutgoing);
-                        Task readInTask = ReadIncomingAsync();
-                    }
-                    else
-                    {
-                        byte[] newOutBuffer = new byte[1000];
-                        Buffer.BlockCopy(outBuffer, 0, newOutBuffer, 0, 6);
-
-                        length = await Local.ReceiveAsync(newOutBuffer, 6, newOutBuffer.Length - 6)
-                            .ConfigureAwait(false);
-
-                        if (length == 0) break;
-                        await Remote.SendAsync(newOutBuffer, 0, length + 6)
-                            .ConfigureAwait(false);
-
-                        length = await Remote.ReceiveAsync(newOutBuffer, 0, newOutBuffer.Length)
-                            .ConfigureAwait(false);
-
-                        if (length == 0) break;
-                        await Local.SendAsync(newOutBuffer, 0, length)
-                            .ConfigureAwait(false);
-                    }
+                    Task interceptDataTask =
+                        InterceptClientDataAsync(localSocket, port);
                 }
             }
             catch (ObjectDisposedException) { /* Listener stopped. */ }

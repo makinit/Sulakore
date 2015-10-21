@@ -1,24 +1,10 @@
-﻿/* Copyright
-
+﻿/*
     GitHub(Source): https://GitHub.com/ArachisH/Sulakore
 
-    .NET library for creating Habbo Hotel related desktop applications.
+    This file is part of the Sulakore library.
     Copyright (C) 2015 ArachisH
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+    
+    This code is licensed under the GNU General Public License.
     See License.txt in the project root for license information.
 */
 
@@ -36,268 +22,163 @@ namespace Sulakore.Communication
         public event EventHandler<FurnitureLoadEventArgs> FurnitureLoad;
         public void RaiseOnFurnitureLoad(InterceptedEventArgs e)
         {
-            if (FurnitureLoad != null)
-            {
-                var args = new FurnitureLoadEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(FurnitureLoad, args, e);
-            }
+            RaiseOnGameEvent(FurnitureLoad, e);
         }
 
         public event EventHandler<FurnitureDropEventArgs> FurnitureDrop;
         public void RaiseOnFurnitureDrop(InterceptedEventArgs e)
         {
-            if (FurnitureDrop != null)
-            {
-                var args = new FurnitureDropEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(FurnitureDrop, args, e);
-            }
+            RaiseOnGameEvent(FurnitureDrop, e);
         }
 
         public event EventHandler<FurnitureMoveEventArgs> FurnitureMove;
         public void RaiseOnFurnitureMove(InterceptedEventArgs e)
         {
-            if (FurnitureMove != null)
-            {
-                var args = new FurnitureMoveEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(FurnitureMove, args, e);
-            }
+            RaiseOnGameEvent(FurnitureMove, e);
         }
 
         public event EventHandler<EntityLoadEventArgs> EntityLoad;
         public void RaiseOnEntityLoad(InterceptedEventArgs e)
         {
-            if (EntityLoad != null)
-            {
-                var args = new EntityLoadEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(EntityLoad, args, e);
-            }
+            RaiseOnGameEvent(EntityLoad, e);
         }
 
         public event EventHandler<EntityActionEventArgs> EntityAction;
         public void RaiseOnEntityAction(InterceptedEventArgs e)
         {
-            if (EntityAction != null)
-            {
-                var args = new EntityActionEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(EntityAction, args, e);
-            }
+            RaiseOnGameEvent(EntityAction, e);
         }
 
         public event EventHandler<PlayerKickHostEventArgs> PlayerKickHost;
         public void RaiseOnPlayerKickHost(InterceptedEventArgs e)
         {
-            if (PlayerKickHost != null)
-            {
-                var args = new PlayerKickHostEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(PlayerKickHost, args, e);
-            }
+            RaiseOnGameEvent(PlayerKickHost, e);
         }
 
         public event EventHandler<PlayerUpdateEventArgs> PlayerUpdate;
         public void RaiseOnPlayerUpdate(InterceptedEventArgs e)
         {
-            if (PlayerUpdate != null)
-            {
-                var args = new PlayerUpdateEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(PlayerUpdate, args, e);
-            }
+            RaiseOnGameEvent(PlayerUpdate, e);
         }
 
         public event EventHandler<PlayerDanceEventArgs> PlayerDance;
         public void RaiseOnPlayerDance(InterceptedEventArgs e)
         {
-            if (PlayerDance != null)
-            {
-                var args = new PlayerDanceEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(PlayerDance, args, e);
-            }
+            RaiseOnGameEvent(PlayerDance, e);
         }
 
         public event EventHandler<PlayerGestureEventArgs> PlayerGesture;
         public void RaiseOnPlayerGesture(InterceptedEventArgs e)
         {
-            if (PlayerGesture != null)
-            {
-                var args = new PlayerGestureEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(PlayerGesture, args, e);
-            }
+            RaiseOnGameEvent(PlayerGesture, e);
         }
         #endregion
         #region Outgoing Game Event Handlers
         public event EventHandler<HostBanPlayerEventArgs> HostBanPlayer;
         public void RaiseOnHostBanPlayer(InterceptedEventArgs e)
         {
-            if (HostBanPlayer != null)
-            {
-                var args = new HostBanPlayerEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostBanPlayer, args, e);
-            }
+            RaiseOnGameEvent(HostBanPlayer, e);
         }
 
         public event EventHandler<HostUpdateClothesEventArgs> HostUpdateClothes;
         public void RaiseOnHostUpdateClothes(InterceptedEventArgs e)
         {
-            if (HostUpdateClothes != null)
-            {
-                var args = new HostUpdateClothesEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostUpdateClothes, args, e);
-            }
+            RaiseOnGameEvent(HostUpdateClothes, e);
         }
 
         public event EventHandler<HostUpdateMottoEventArgs> HostUpdateMotto;
         public void RaiseOnHostUpdateMotto(InterceptedEventArgs e)
         {
-            if (HostUpdateMotto != null)
-            {
-                var args = new HostUpdateMottoEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostUpdateMotto, args, e);
-            }
+            RaiseOnGameEvent(HostUpdateMotto, e);
         }
 
         public event EventHandler<HostUpdateStanceEventArgs> HostUpdateStance;
         public void RaiseOnHostUpdateStance(InterceptedEventArgs e)
         {
-            if (HostUpdateStance != null)
-            {
-                var args = new HostUpdateStanceEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostUpdateStance, args, e);
-            }
+            RaiseOnGameEvent(HostUpdateStance, e);
         }
 
         public event EventHandler<HostClickPlayerEventArgs> HostClickPlayer;
         public void RaiseOnHostClickPlayer(InterceptedEventArgs e)
         {
-            if (HostClickPlayer != null)
-            {
-                var args = new HostClickPlayerEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostClickPlayer, args, e);
-            }
+            RaiseOnGameEvent(HostClickPlayer, e);
         }
 
         public event EventHandler<HostDanceEventArgs> HostDance;
         public void RaiseOnHostDance(InterceptedEventArgs e)
         {
-            if (HostDance != null)
-            {
-                var args = new HostDanceEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostDance, args, e);
-            }
+            RaiseOnGameEvent(HostDance, e);
         }
 
         public event EventHandler<HostGestureEventArgs> HostGesture;
         public void RaiseOnHostGesture(InterceptedEventArgs e)
         {
-            if (HostGesture != null)
-            {
-                var args = new HostGestureEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostGesture, args, e);
-            }
+            RaiseOnGameEvent(HostGesture, e);
         }
 
         public event EventHandler<HostKickPlayerEventArgs> HostKickPlayer;
         public void RaiseOnHostKickPlayer(InterceptedEventArgs e)
         {
-            if (HostKickPlayer != null)
-            {
-                var args = new HostKickPlayerEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostKickPlayer, args, e);
-            }
+            RaiseOnGameEvent(HostKickPlayer, e);
         }
 
         public event EventHandler<HostMoveFurnitureEventArgs> HostMoveFurniture;
         public void RaiseOnHostMoveFurniture(InterceptedEventArgs e)
         {
-            if (HostMoveFurniture != null)
-            {
-                var args = new HostMoveFurnitureEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostMoveFurniture, args, e);
-            }
+            RaiseOnGameEvent(HostMoveFurniture, e);
         }
 
         public event EventHandler<HostMutePlayerEventArgs> HostMutePlayer;
         public void RaiseOnHostMutePlayer(InterceptedEventArgs e)
         {
-            if (HostMutePlayer != null)
-            {
-                var args = new HostMutePlayerEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostMutePlayer, args, e);
-            }
+            RaiseOnGameEvent(HostMutePlayer, e);
         }
 
         public event EventHandler<HostRaiseSignEventArgs> HostRaiseSign;
         public void RaiseOnHostRaiseSign(InterceptedEventArgs e)
         {
-            if (HostRaiseSign != null)
-            {
-                var args = new HostRaiseSignEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostRaiseSign, args, e);
-            }
+            RaiseOnGameEvent(HostRaiseSign, e);
         }
 
         public event EventHandler<HostExitRoomEventArgs> HostExitRoom;
         public void RaiseOnHostExitRoom(InterceptedEventArgs e)
         {
-            if (HostExitRoom != null)
-            {
-                var args = new HostExitRoomEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostExitRoom, args, e);
-            }
+            RaiseOnGameEvent(HostExitRoom, e);
         }
 
         public event EventHandler<HostNavigateRoomEventArgs> HostNavigateRoom;
         public void RaiseOnHostNavigateRoom(InterceptedEventArgs e)
         {
-            if (HostNavigateRoom != null)
-            {
-                var args = new HostNavigateRoomEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostNavigateRoom, args, e);
-            }
+            RaiseOnGameEvent(HostNavigateRoom, e);
         }
 
         public event EventHandler<HostSayEventArgs> HostSay;
         public void RaiseOnHostSay(InterceptedEventArgs e)
         {
-            if (HostSay != null)
-            {
-                var args = new HostSayEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostSay, args, e);
-            }
+            RaiseOnGameEvent(HostSay, e);
         }
 
         public event EventHandler<HostShoutEventArgs> HostShout;
         public void RaiseOnHostShout(InterceptedEventArgs e)
         {
-            if (HostShout != null)
-            {
-                var args = new HostShoutEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostShout, args, e);
-            }
+            RaiseOnGameEvent(HostShout, e);
         }
 
         public event EventHandler<HostTradeEventArgs> HostTradePlayer;
         public void RaiseOnHostTradePlayer(InterceptedEventArgs e)
         {
-            if (HostTradePlayer != null)
-            {
-                var args = new HostTradeEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostTradePlayer, args, e);
-            }
+            RaiseOnGameEvent(HostTradePlayer, e);
         }
 
         public event EventHandler<HostWalkEventArgs> HostWalk;
         public void RaiseOnHostWalk(InterceptedEventArgs e)
         {
-            if (HostWalk != null)
-            {
-                var args = new HostWalkEventArgs(e.Continuation, e.Step, e.Packet);
-                OnGameEvent(HostWalk, args, e);
-            }
+            RaiseOnGameEvent(HostWalk, e);
         }
         #endregion
 
         private readonly Stack<HMessage> _outPrevious, _inPrevious;
         private readonly IDictionary<ushort, Action<InterceptedEventArgs>> _inAttaches, _outAttaches;
-        private readonly IDictionary<ushort, EventHandler<InterceptedEventArgs>> _inEventAttaches, _outEventAttaches;
 
         protected IDictionary<ushort, Action<InterceptedEventArgs>> InDetected { get; }
         protected IDictionary<ushort, Action<InterceptedEventArgs>> OutDetected { get; }
@@ -330,88 +211,69 @@ namespace Sulakore.Communication
             _outPrevious = new Stack<HMessage>();
             _inAttaches = new Dictionary<ushort, Action<InterceptedEventArgs>>();
             _outAttaches = new Dictionary<ushort, Action<InterceptedEventArgs>>();
-            _inEventAttaches = new Dictionary<ushort, EventHandler<InterceptedEventArgs>>();
-            _outEventAttaches = new Dictionary<ushort, EventHandler<InterceptedEventArgs>>();
         }
 
         public void OutDetach()
         {
             _outAttaches.Clear();
-            _outEventAttaches.Clear();
         }
         public void OutDetach(ushort header)
         {
             if (_outAttaches.ContainsKey(header))
                 _outAttaches.Remove(header);
-
-            if (_outEventAttaches.ContainsKey(header))
-                _outEventAttaches.Remove(header);
         }
         public void OutAttach(ushort header, Action<InterceptedEventArgs> callback)
         {
             _outAttaches[header] = callback;
         }
-        public void OutAttach(ushort header, EventHandler<InterceptedEventArgs> callback)
-        {
-            _outEventAttaches[header] = callback;
-        }
 
         public void InDetach()
         {
             _inAttaches.Clear();
-            _inEventAttaches.Clear();
         }
         public void InDetach(ushort header)
         {
             if (_inAttaches.ContainsKey(header))
                 _inAttaches.Remove(header);
-
-            if (_inEventAttaches.ContainsKey(header))
-                _inEventAttaches.Remove(header);
         }
         public void InAttach(ushort header, Action<InterceptedEventArgs> callback)
         {
             _inAttaches[header] = callback;
         }
-        public void InAttach(ushort header, EventHandler<InterceptedEventArgs> callback)
-        {
-            _inEventAttaches[header] = callback;
-        }
 
         public void HandleOutgoing(InterceptedEventArgs e)
         {
-            if (e.Packet == null || e.Packet.IsCorrupted)
-                return;
-
-            e.Packet.Position = 0;
-            bool ignoreCurrent = false;
+            bool ignoreCurrent = true;
             try
             {
+                e.Packet.Position = 0;
                 if (_outAttaches.ContainsKey(e.Packet.Header))
                     _outAttaches[e.Packet.Header](e);
-                else if (_outEventAttaches.ContainsKey(e.Packet.Header))
-                    _outEventAttaches[e.Packet.Header](this, e);
 
-                if (DetectOutgoing && _outPrevious.Count > 0)
+                if (DetectOutgoing)
                 {
                     e.Packet.Position = 0;
-                    HMessage previous = _outPrevious.Pop();
+                    HMessage previous = _outPrevious.Count > 0 ?
+                        _outPrevious.Pop() : e.Packet;
 
-                    if (!OutDetected.ContainsKey(e.Packet.Header) &&
-                        !OutDetected.ContainsKey(previous.Header))
+                    bool currentDetected = OutDetected.ContainsKey(e.Packet.Header);
+                    bool previousDetected = OutDetected.ContainsKey(previous.Header);
+
+                    if (!currentDetected && !previousDetected)
                         ignoreCurrent = HandleOutgoing(e.Packet, previous);
-                    else ignoreCurrent = true;
 
                     if (ignoreCurrent)
                     {
-                        e.Packet.Position = 0;
-                        previous.Position = 0;
+                        e.Packet.Position =
+                            previous.Position = 0;
 
                         if (OutDetected.ContainsKey(e.Packet.Header))
+                        {
                             OutDetected[e.Packet.Header](e);
+                        }
                         else if (OutDetected.ContainsKey(previous.Header))
                         {
-                            var args = new InterceptedEventArgs(null, 0, previous);
+                            var args = new InterceptedEventArgs(null, e.Step - 1, previous);
                             OutDetected[previous.Header](args);
                         }
                     }
@@ -421,7 +283,7 @@ namespace Sulakore.Communication
             {
                 e.Packet.Position = 0;
 
-                if (!ignoreCurrent && DetectOutgoing)
+                if (DetectOutgoing && !ignoreCurrent)
                     _outPrevious.Push(e.Packet);
             }
         }
@@ -446,40 +308,37 @@ namespace Sulakore.Communication
 
         public void HandleIncoming(InterceptedEventArgs e)
         {
-            if (e.Packet == null || e.Packet.IsCorrupted)
-                return;
-
-            e.Packet.Position = 0;
-            bool ignoreCurrent = false;
+            bool ignoreCurrent = true;
             try
             {
+                e.Packet.Position = 0;
                 if (_inAttaches.ContainsKey(e.Packet.Header))
                     _inAttaches[e.Packet.Header](e);
-                else if (_inEventAttaches.ContainsKey(e.Packet.Header))
-                    _inEventAttaches[e.Packet.Header](this, e);
 
-                if (DetectIncoming && _inPrevious.Count > 0)
+                if (DetectIncoming)
                 {
                     e.Packet.Position = 0;
-                    HMessage previous = _inPrevious.Pop();
+                    HMessage previous = _inPrevious.Count > 0 ?
+                        _inPrevious.Pop() : e.Packet;
 
-                    if (!InDetected.ContainsKey(e.Packet.Header) &&
-                        !InDetected.ContainsKey(previous.Header))
-                    {
+                    bool currentDetected = InDetected.ContainsKey(e.Packet.Header);
+                    bool previousDetected = InDetected.ContainsKey(previous.Header);
+
+                    if (!currentDetected && !previousDetected)
                         ignoreCurrent = HandleIncoming(e.Packet, previous);
-                    }
-                    else ignoreCurrent = true;
 
                     if (ignoreCurrent)
                     {
-                        e.Packet.Position = 0;
-                        previous.Position = 0;
+                        e.Packet.Position =
+                            previous.Position = 0;
 
                         if (InDetected.ContainsKey(e.Packet.Header))
+                        {
                             InDetected[e.Packet.Header](e);
+                        }
                         else if (InDetected.ContainsKey(previous.Header))
                         {
-                            var args = new InterceptedEventArgs(null, 0, previous);
+                            var args = new InterceptedEventArgs(null, e.Step - 1, previous);
                             InDetected[previous.Header](args);
                         }
                     }
@@ -489,7 +348,7 @@ namespace Sulakore.Communication
             {
                 e.Packet.Position = 0;
 
-                if (!ignoreCurrent && DetectIncoming)
+                if (DetectIncoming && !ignoreCurrent)
                     _inPrevious.Push(e.Packet);
             }
         }
@@ -500,40 +359,76 @@ namespace Sulakore.Communication
                 // Range: 6
                 if (TryHandlePlayerKickHost(current, previous)) return true;
             }
+            else if (current.Length >= 35)
+            {
+                if (TryHandleEntityAction(current, previous)) return true;
+            }
 
             return InDetected.ContainsKey(current.Header) ||
                 InDetected.ContainsKey(previous.Header);
         }
 
-        protected virtual void OnGameEvent<TEventArgs>(EventHandler<TEventArgs> gameEvent,
-            TEventArgs gameArguments, InterceptedEventArgs toUpdate) where TEventArgs : InterceptedEventArgs
+        protected virtual void RaiseOnGameEvent<T>(EventHandler<T> handler, InterceptedEventArgs e) where T : InterceptedEventArgs
         {
-            try { gameEvent?.Invoke(this, gameArguments); }
-            catch
+            if (handler != null)
             {
-                // TODO: Notify subscriber(s) that an exception has been thrown?
+                var args = (T)Activator.CreateInstance(typeof(T),
+                    e.Continuation, e.Step, e.Packet);
+
+                OnGameEvent(handler, args, e);
             }
+        }
+        protected virtual void OnGameEvent<T>(EventHandler<T> handler, T arguments, InterceptedEventArgs e) where T : InterceptedEventArgs
+        {
+            try { handler?.Invoke(this, arguments); }
             finally
             {
-                toUpdate.IsBlocked = gameArguments.IsBlocked;
-                toUpdate.Replacement = gameArguments.Replacement;
-                toUpdate.WasContinued = gameArguments.WasContinued;
+                e.IsBlocked = arguments.IsBlocked;
+                e.Replacement = arguments.Replacement;
+                e.WasContinued = arguments.WasContinued;
             }
         }
 
         private bool TryHandleHostExitRoom(HMessage current, HMessage previous)
         {
-            if (previous.Length != 2 || current.ReadInteger(0) != -1)
+            if (previous.Length != 2 ||
+                current.ReadInteger(0) != -1)
+            {
                 return false;
+            }
 
             OutgoingDetected.HostExitRoom = previous.Header;
             OutDetected[previous.Header] = RaiseOnHostExitRoom;
             return true;
         }
+        private bool TryHandleEntityAction(HMessage current, HMessage previous)
+        {
+            if (!current.CanReadString(16)) return false;
+
+            int position = 16;
+            string z = current.ReadString(ref position);
+
+            if (position + 8 >= current.Length) return false;
+            int d1 = current.ReadInteger(ref position);
+            int d2 = current.ReadInteger(ref position);
+
+            if (d1 < 0 || d2 < 0) return false;
+            if (d1 > 7 || d2 > 7) return false;
+
+            if (!current.CanReadString(position)) return false;
+            string action = current.ReadString(ref position);
+
+            if ((position + 2) == current.Length)
+            {
+                InDetected[current.Header] = RaiseOnEntityAction;
+                return true;
+            }
+            else return false;
+        }
         private bool TryHandleHostRaiseSign(HMessage current, HMessage previous)
         {
             bool isHostRaiseSign = false;
-            if (current.CanRead<string>(22) && current.ReadString(22) == "sign")
+            if (current.CanReadString(22) && current.ReadString(22) == "sign")
             {
                 OutgoingDetected.RaiseSign = previous.Header;
                 OutDetected[previous.Header] = RaiseOnHostRaiseSign;
@@ -554,7 +449,7 @@ namespace Sulakore.Communication
         }
         private bool TryHandleAvatarMenuClick(HMessage current, HMessage previous)
         {
-            if (!previous.CanRead<string>(22)) return false;
+            if (!previous.CanReadString(22)) return false;
             switch (previous.ReadString(22))
             {
                 case "sit":
@@ -588,7 +483,7 @@ namespace Sulakore.Communication
         private bool TryHandleHostNavigateRoom(HMessage current, HMessage previous)
         {
             if (previous.Length >= 12 &&
-                current.CanRead<string>(0) &&
+                current.CanReadString(0) &&
                 current.ReadString() == "Navigation")
             {
                 current.ReadString();
@@ -621,9 +516,7 @@ namespace Sulakore.Communication
                 OutDetected.Clear();
 
                 _inAttaches.Clear();
-                _inEventAttaches.Clear();
                 _outAttaches.Clear();
-                _outEventAttaches.Clear();
 
                 #region Unsubscribe Game Events
                 SKore.Unsubscribe(ref HostBanPlayer);

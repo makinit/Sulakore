@@ -1,24 +1,10 @@
-﻿/* Copyright
-
+﻿/*
     GitHub(Source): https://GitHub.com/ArachisH/Sulakore
 
-    .NET library for creating Habbo Hotel related desktop applications.
+    This file is part of the Sulakore library.
     Copyright (C) 2015 ArachisH
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+    
+    This code is licensed under the GNU General Public License.
     See License.txt in the project root for license information.
 */
 
@@ -26,28 +12,29 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 
-using Sulakore.Protocol.Encoders;
-
 namespace Sulakore.Protocol
 {
-    public class HMessage : HPacketBase
+    public sealed class HMessage
     {
         private readonly List<byte> _body;
 
-        private byte[] _toBytesCache;
         private string _toStringCache;
-        private bool _beganConstructing;
+        private byte[] _toBytesCache, _bodyBuffer;
+
+        private int _position;
+        public int Position
+        {
+            get { return _position; }
+            set { _position = value; }
+        }
 
         private ushort _header;
-        /// <summary>
-        /// Gets or sets the header of the <see cref="HMessage"/>.
-        /// </summary>
-        public override ushort Header
+        public ushort Header
         {
             get { return _header; }
             set
             {
-                if (!IsCorrupted || _header != value)
+                if (!IsCorrupted && _header != value)
                 {
                     _header = value;
                     ResetCache();
@@ -55,38 +42,16 @@ namespace Sulakore.Protocol
             }
         }
 
-        /// <summary>
-        /// Gets or sets the position that determines where to begin the next read/write operation in the <see cref="HMessage"/>.
-        /// </summary>
-        public override int Position { get; set; }
-        /// <summary>
-        /// Gets or sets the <see cref="HDestination"/> for the <see cref="HMessage"/>.
-        /// </summary>
-        public override HDestination Destination { get; set; }
+        public int Length => (_body.Count + 2);
+        public int Readable => (_body.Count - Position);
 
-        /// <summary>
-        /// Gets a value that determines whether the <see cref="HMessage"/> is readable/writable.
-        /// </summary>
-        public override bool IsCorrupted { get; }
-        /// <summary>
-        /// Gets the length of the <see cref="HMessage"/>.
-        /// </summary>
-        public override int Length { get; protected set; }
-        /// <summary>
-        /// Gets the block of data considered as the body of the packet that excludes the header.
-        /// </summary>
-        public override byte[] Body { get; protected set; }
+        public bool IsCorrupted { get; }
+        public HDestination Destination { get; set; }
 
         private readonly List<object> _read;
-        /// <summary>
-        /// Gets a <see cref="IReadOnlyList{T}"/> of type <see cref="object"/> containing read values from the <see cref="HMessage"/>.
-        /// </summary>
         public IReadOnlyList<object> ValuesRead => _read;
 
         private readonly List<object> _written;
-        /// <summary>
-        /// Gets a <see cref="IReadOnlyList{T}"/> of type <see cref="object"/> containing the written values of the <see cref="HMessage"/>.
-        /// </summary>
         public IReadOnlyList<object> ValuesWritten => _written;
 
         private HMessage()
@@ -98,394 +63,379 @@ namespace Sulakore.Protocol
         public HMessage(byte[] data)
             : this(data, HDestination.Client)
         { }
-        public HMessage(string packet)
-            : this(ToBytes(packet), HDestination.Client)
+        public HMessage(string data)
+            : this(ToBytes(data), HDestination.Client)
         { }
-        public HMessage(string packet, HDestination destination)
-            : this(ToBytes(packet), destination)
+        public HMessage(string data, HDestination destination)
+            : this(ToBytes(data), destination)
         { }
         public HMessage(byte[] data, HDestination destination)
             : this()
         {
             Destination = destination;
-            IsCorrupted = (data.Length < 6 || (BigEndian.ToSI32(data) != data.Length - 4));
+            IsCorrupted = (data.Length < 6 ||
+                (BigEndian.ToInt32(data, 0) != data.Length - 4));
 
             if (!IsCorrupted)
             {
-                Header = BigEndian.ToUI16(data, 4);
+                Header = BigEndian.ToUInt16(data, 4);
 
-                _body.AddRange(data);
-                _body.RemoveRange(0, 6);
-
-                Reconstruct();
+                _bodyBuffer = new byte[data.Length - 6];
+                Buffer.BlockCopy(data, 6, _bodyBuffer, 0, data.Length - 6);
             }
-            else
-            {
-                Length = data.Length;
-                _toBytesCache = data;
-            }
+            else _bodyBuffer = data;
+
+            _body.AddRange(_bodyBuffer);
         }
-        public HMessage(ushort header, params object[] chunks)
-            : this(Construct(header, chunks), HDestination.Client)
+        public HMessage(ushort header, params object[] values)
+            : this(Construct(header, values), HDestination.Client)
         {
-            _beganConstructing = true;
-            AddToWritten(chunks);
+            _written.AddRange(values);
         }
 
-        public void Write(params object[] chunks)
+        public int ReadInteger()
         {
-            AddToWritten(chunks);
-            byte[] constructed = Encode(chunks);
-
-            _body.AddRange(constructed);
-            Reconstruct();
+            return ReadInteger(ref _position);
         }
-        public override int ReadInteger(ref int index)
+        public int ReadInteger(int position)
         {
-            if (index + 4 > Body.Length)
-                throw new Exception($"Not enough data at position:{index} to read 4 bytes(32-Bit Integer).");
-
-            int value = BigEndian.ToSI32(Body, index);
-            index += 4;
-
-            AddToRead(value);
-            return value;
+            return ReadInteger(ref position);
         }
-        public override ushort ReadShort(ref int index)
+        public int ReadInteger(ref int position)
         {
-            if (index + 2 > Body.Length)
-                throw new Exception($"Not enough data at position:{index} to read 2 bytes(16-Bit Unsigned Integer).");
+            int value = BigEndian.ToInt32(_bodyBuffer, position);
+            position += BigEndian.GetSize(value);
 
-            ushort value = BigEndian.ToUI16(Body, index);
-            index += 2;
-
-            AddToRead(value);
-            return value;
-        }
-        public override bool ReadBoolean(ref int index)
-        {
-            if (index + 1 > Body.Length)
-                throw new Exception($"Not enough data at position:{index} to read a byte(Boolean - True|False).");
-
-            bool value = (Body[index++] == 1);
-
-            AddToRead(value);
-            return value;
-        }
-        public override string ReadString(ref int index)
-        {
-            ushort length = ReadShort(ref index);
-
-            if (index + length > Body.Length)
-                throw new Exception($"Not enough data at position:{index} to read a UTF-8 encoded string with the length of {length} bytes.");
-
-            byte[] stringData = ReadBytes(length, ref index);
-            string value = Encoding.UTF8.GetString(stringData);
-
-            AddToRead(value);
-            return value;
-        }
-        public override byte[] ReadBytes(int length, ref int index)
-        {
-            if (length + index > Body.Length)
-                throw new Exception($"Not enough data at position:{index} to read {length} bytes.");
-
-            byte[] value = new byte[length];
-            Buffer.BlockCopy(Body, index, value, 0, length);
-            index += length;
-
-            AddToRead(value);
+            _read.Add(value);
             return value;
         }
 
-        public override void Remove<T>(int index)
+        public void RemoveInteger()
         {
-            int valueSize = 0;
-            switch (Type.GetTypeCode(typeof(T)))
-            {
-                default: return;
-
-                case TypeCode.Int32: valueSize = 4; break;
-                case TypeCode.UInt16: valueSize = 2; break;
-                case TypeCode.Boolean: valueSize = 1; break;
-                case TypeCode.String:
-                {
-                    int stringLength = BigEndian.ToUI16(Body, index);
-                    valueSize = (2 + stringLength);
-                    break;
-                }
-            }
-
-            _body.RemoveRange(index, valueSize);
-            Reconstruct();
+            RemoveInteger(_position);
         }
-        public override bool CanRead<T>(int index)
+        public void RemoveInteger(int position)
         {
-            int bytesLeft = (Body.Length - index), bytesNeeded = -1;
-            if (bytesLeft < 1) return false;
-
-            switch (Type.GetTypeCode(typeof(T)))
-            {
-                case TypeCode.Int32: bytesNeeded = 4; break;
-                case TypeCode.UInt16: bytesNeeded = 2; break;
-                case TypeCode.Boolean: bytesNeeded = 1; break;
-                case TypeCode.String:
-                {
-                    if (bytesLeft > 2)
-                    {
-                        int stringLength = BigEndian.ToUI16(Body, index);
-                        bytesNeeded = (2 + stringLength);
-                    }
-                    break;
-                }
-            }
-            return bytesLeft >= bytesNeeded && bytesNeeded != -1;
-        }
-        public override void Replace<T>(int index, object chunk)
-        {
-            switch (Type.GetTypeCode(typeof(T)))
-            {
-                case TypeCode.Int32: _body.RemoveRange(index, 4); break;
-                case TypeCode.UInt16: _body.RemoveRange(index, 2); break;
-                case TypeCode.Boolean: _body.RemoveAt(index); break;
-                case TypeCode.String:
-                {
-                    int stringLength = BigEndian.ToUI16(Body, index);
-                    _body.RemoveRange(index, 2 + stringLength);
-                    break;
-                }
-            }
-
-            _body.InsertRange(index, Encode(chunk));
-            Reconstruct();
+            RemoveBytes(4, position);
         }
 
-        public void ClearWritten()
+        public void WriteInteger(int value)
         {
-            if (!_beganConstructing)
-                throw new Exception("This method cannot be called on a packet that you did not begin constructing.");
-
-            if (_written.Count < 1)
-                return;
-
-            _body.Clear();
-            _written.Clear();
-
-            Reconstruct();
+            WriteInteger(value, _body.Count);
         }
-        public void RemoveWritten(int index)
+        public void WriteInteger(int value, int position)
         {
-            if (!_beganConstructing)
-                throw new Exception("This method cannot be called on a packet that you did not begin constructing.");
-
-            if (index < 0 || index >= _written.Count)
-                return;
-
-            _written.RemoveAt(index);
-
-            _body.Clear();
-            if (_written.Count > 0)
-                _body.AddRange(Encode(_written.ToArray()));
-
-            Reconstruct();
-        }
-        public void ReplaceWritten(int index, object chunk)
-        {
-            if (!_beganConstructing)
-                throw new Exception("This method cannot be called on a packet that you did not begin constructing.");
-
-            if (index < 0 || index >= _written.Count)
-                return;
-
-            _written[index] = chunk;
-
-            _body.Clear();
-            _body.AddRange(Encode(_written.ToArray()));
-            Reconstruct();
-        }
-        public void MoveWritten(int index, int jump, bool toRight)
-        {
-            if (!_beganConstructing)
-                throw new Exception("This method cannot be called on a packet that you did not begin constructing.");
-
-            if (jump < 1) return;
-            int newIndex = (toRight ? index + jump : index - jump);
-            if (newIndex < 0) newIndex = 0;
-            if (newIndex >= _written.Count) newIndex = _written.Count - 1;
-
-            object chunk = _written[index];
-            _written.Remove(chunk);
-            _written.Insert(newIndex, chunk);
-
-            _body.Clear();
-            _body.AddRange(Encode(_written.ToArray()));
-            Reconstruct();
+            byte[] encoded = BigEndian.GetBytes(value);
+            WriteObject(encoded, value, position);
         }
 
-        private void AddToRead(params object[] chunks)
+        public ushort ReadShort()
         {
-            _read.AddRange(chunks);
+            return ReadShort(ref _position);
         }
-        private void AddToWritten(params object[] chunks)
+        public ushort ReadShort(int position)
         {
-            _written.AddRange(chunks);
+            return ReadShort(ref position);
+        }
+        public ushort ReadShort(ref int position)
+        {
+            ushort value = BigEndian.ToUInt16(_bodyBuffer, position);
+            position += BigEndian.GetSize(value);
+
+            _read.Add(value);
+            return value;
         }
 
+        public void RemoveShort()
+        {
+            RemoveShort(_position);
+        }
+        public void RemoveShort(int position)
+        {
+            RemoveBytes(2, position);
+        }
+
+        public void WriteShort(ushort value)
+        {
+            WriteShort(value, _body.Count);
+        }
+        public void WriteShort(ushort value, int position)
+        {
+            byte[] encoded = BigEndian.GetBytes(value);
+            WriteObject(encoded, value, position);
+        }
+
+        public bool ReadBoolean()
+        {
+            return ReadBoolean(ref _position);
+        }
+        public bool ReadBoolean(int position)
+        {
+            return ReadBoolean(ref position);
+        }
+        public bool ReadBoolean(ref int position)
+        {
+            bool value = BigEndian.ToBoolean(_bodyBuffer, position);
+            position += BigEndian.GetSize(value);
+
+            _read.Add(value);
+            return value;
+        }
+
+        public void RemoveBoolean()
+        {
+            RemoveBoolean(_position);
+        }
+        public void RemoveBoolean(int position)
+        {
+            RemoveBytes(1, position);
+        }
+
+        public void WriteBoolean(bool value)
+        {
+            WriteBoolean(value, _body.Count);
+        }
+        public void WriteBoolean(bool value, int position)
+        {
+            byte[] encoded = BigEndian.GetBytes(value);
+            WriteObject(encoded, value, position);
+        }
+
+        public string ReadString()
+        {
+            return ReadString(ref _position);
+        }
+        public string ReadString(int position)
+        {
+            return ReadString(ref position);
+        }
+        public string ReadString(ref int position)
+        {
+            string value = BigEndian.ToString(_bodyBuffer, position);
+            position += BigEndian.GetSize(value);
+
+            _read.Add(value);
+            return value;
+        }
+
+        public bool CanReadString()
+        {
+            return CanReadString(_position);
+        }
+        public bool CanReadString(int position)
+        {
+            int readable = (_body.Count - position);
+            if (readable < 2) return false;
+
+            ushort stringLength =
+                BigEndian.ToUInt16(_bodyBuffer, position);
+
+            return (readable >= (stringLength + 2));
+        }
+
+        public void RemoveString()
+        {
+            RemoveString(_position);
+        }
+        public void RemoveString(int position)
+        {
+            int readable = (_body.Count - position);
+            if (readable < 2) return;
+
+            ushort stringLength =
+                BigEndian.ToUInt16(_bodyBuffer, position);
+
+            if (readable >= (stringLength + 2))
+                RemoveBytes(stringLength + 2, position);
+        }
+
+        public void WriteString(string value)
+        {
+            WriteString(value, _body.Count);
+        }
+        public void WriteString(string value, int position)
+        {
+            byte[] encoded = BigEndian.GetBytes(value);
+            WriteObject(encoded, value, position);
+        }
+
+        public byte[] ReadBytes(int length)
+        {
+            return ReadBytes(length, ref _position);
+        }
+        public byte[] ReadBytes(int length, int position)
+        {
+            return ReadBytes(length, ref position);
+        }
+        public byte[] ReadBytes(int length, ref int position)
+        {
+            var value = new byte[length];
+            Buffer.BlockCopy(_bodyBuffer, position, value, 0, length);
+            position += length;
+
+            _read.Add(value);
+            return value;
+        }
+
+        public void RemoveBytes(int length)
+        {
+            RemoveBytes(length, _position);
+        }
+        public void RemoveBytes(int length, int position)
+        {
+            _body.RemoveRange(position, length);
+            Refresh();
+        }
+
+        public void WriteBytes(byte[] value)
+        {
+            WriteBytes(value, _body.Count);
+        }
+        public void WriteBytes(byte[] value, int position)
+        {
+            WriteObject(value, value, position);
+        }
+
+        private void Refresh()
+        {
+            ResetCache();
+            _bodyBuffer = _body.ToArray();
+        }
         private void ResetCache()
         {
             _toBytesCache = null;
             _toStringCache = null;
         }
-        private void Reconstruct()
+        private void WriteObject(byte[] encoded, object value, int position)
         {
-            ResetCache();
+            _written.Add(value);
+            _body.InsertRange(position, encoded);
 
-            Length = _body.Count + 2;
-            Body = new byte[_body.Count];
-
-            Buffer.BlockCopy(_body.ToArray(), 0, Body, 0, Body.Length);
+            Refresh();
         }
 
         public byte[] ToBytes()
         {
             return _toBytesCache ??
-                (_toBytesCache = Construct(Header, Body));
+                (_toBytesCache = Construct(Header, _bodyBuffer));
         }
+        public static byte[] ToBytes(string value)
+        {
+            value = value.Replace("{b:}", "[0]")
+                .Replace("{u:}", "[0][0]")
+                .Replace("{s:}", "[0][0]")
+                .Replace("{i:}", "[0][0][0][0]");
+
+            for (int i = 0; i <= 13; i++)
+            {
+                value = value.Replace(
+                    "[" + i + "]", ((char)i).ToString());
+            }
+
+            string objectValue = string.Empty;
+            while (!string.IsNullOrWhiteSpace(
+                objectValue = value.GetChild("{b:").GetParent("}")))
+            {
+                char byteChar = objectValue.ToLower()[0];
+
+                byte byteValue = (byte)(byteChar == 't' ||
+                    (byteChar == '1' && objectValue.Length == 1) ? 1 : 0);
+
+                if (byteChar != 'f' && byteValue != 1 &&
+                    !byte.TryParse(objectValue.ToLower(), out byteValue))
+                {
+                    break;
+                }
+
+                string byteParam = $"{{b:{objectValue}}}";
+                value = value.Replace(byteParam, ((char)byteValue).ToString());
+            }
+
+            while (!string.IsNullOrWhiteSpace(
+                objectValue = value.GetChild("{u:").GetParent("}")))
+            {
+                ushort shortValue = 0;
+                if (!ushort.TryParse(objectValue, out shortValue)) break;
+
+                byte[] ushortData = BigEndian.GetBytes(shortValue);
+                string ushortParam = $"{{u:{objectValue}}}";
+
+                value = value.Replace(ushortParam,
+                    Encoding.Default.GetString(ushortData));
+            }
+
+            while (!string.IsNullOrWhiteSpace(
+                objectValue = value.GetChild("{i:").GetParent("}")))
+            {
+                int intValue = 0;
+                if (!int.TryParse(objectValue, out intValue)) break;
+
+                byte[] intData = BigEndian.GetBytes(intValue);
+                string intParam = $"{{i:{objectValue}}}";
+
+                value = value.Replace(intParam,
+                    Encoding.Default.GetString(intData));
+            }
+
+            while (!string.IsNullOrWhiteSpace(
+                objectValue = value.GetChild("{s:").GetParent("}")))
+            {
+                byte[] stringData = BigEndian.GetBytes(objectValue);
+                string stringParam = $"{{s:{objectValue}}}";
+
+                value = value.Replace(stringParam,
+                    Encoding.Default.GetString(stringData));
+            }
+
+            if (value.StartsWith("{l}") && value.Length >= 5)
+            {
+                byte[] lengthData = BigEndian.GetBytes(value.Length - 3);
+                value = Encoding.Default.GetString(lengthData) + value.Substring(3);
+            }
+            return Encoding.Default.GetBytes(value);
+        }
+
         public override string ToString()
         {
             return _toStringCache ??
                 (_toStringCache = ToString(ToBytes()));
         }
-
-        // TODO: Create seperate method to extract the objects if params are present.
-        public static byte[] ToBytes(string packet)
+        public static string ToString(byte[] value)
         {
-            if (packet.Contains("{b:}"))
-                packet = packet.Replace("{b:}", "[0]");
-
-            if (packet.Contains("{u:}"))
-                packet = packet.Replace("{u:}", "[0][0]");
-
-            if (packet.Contains("{s:}"))
-                packet = packet.Replace("{s:}", "[0][0]");
-
-            if (packet.Contains("{i:}"))
-                packet = packet.Replace("{i:}", "[0][0][0][0]");
-
+            string result = Encoding.Default.GetString(value);
             for (int i = 0; i <= 13; i++)
-                packet = packet.Replace("[" + i + "]", ((char)i).ToString());
-
-            string byteValue = string.Empty;
-            while (!string.IsNullOrWhiteSpace(
-                byteValue = packet.GetChild("{b:").GetParent("}")))
             {
-                char byteChar = byteValue.ToLower()[0];
-
-                byte value = (byte)(byteChar == 't' ||
-                    (byteChar == '1' && byteValue.Length == 1) ? 1 : 0);
-
-                if (byteChar != 'f' && value != 1 &&
-                    !byte.TryParse(byteValue.ToLower(), out value))
-                {
-                    break;
-                }
-
-                string byteParam = $"{{b:{byteValue}}}";
-                packet = packet.Replace(byteParam, ((char)value).ToString());
+                result = result.Replace(
+                    ((char)i).ToString(), "[" + i + "]");
             }
-
-            string ushortValue = string.Empty;
-            while (!string.IsNullOrWhiteSpace(
-                ushortValue = packet.GetChild("{u:").GetParent("}")))
-            {
-                ushort value = 0;
-                if (!ushort.TryParse(ushortValue, out value)) break;
-
-                byte[] ushortData = Encode(value);
-                string ushortParam = $"{{u:{ushortValue}}}";
-
-                packet = packet.Replace(ushortParam,
-                    Encoding.Default.GetString(ushortData));
-            }
-
-            string intValue = string.Empty;
-            while (!string.IsNullOrWhiteSpace(
-                intValue = packet.GetChild("{i:").GetParent("}")))
-            {
-                int value = 0;
-                if (!int.TryParse(intValue, out value)) break;
-
-                byte[] intData = Encode(value);
-                string intParam = $"{{i:{intValue}}}";
-
-                packet = packet.Replace(intParam,
-                    Encoding.Default.GetString(intData));
-            }
-
-            string stringValue = string.Empty;
-            while (!string.IsNullOrWhiteSpace(
-                stringValue = packet.GetChild("{s:").GetParent("}")))
-            {
-                byte[] stringData = Encode(stringValue);
-                string stringParam = $"{{s:{stringValue}}}";
-
-                packet = packet.Replace(stringParam,
-                    Encoding.Default.GetString(stringData));
-            }
-
-            if (packet.StartsWith("{l}") && packet.Length >= 5)
-            {
-                byte[] lengthData = Encode(packet.Length - 3);
-                packet = Encoding.Default.GetString(lengthData) + packet.Substring(3);
-            }
-
-            return Encoding.Default.GetBytes(packet);
-        }
-        public static string ToString(byte[] packet)
-        {
-            string result = Encoding.Default.GetString(packet);
-
-            for (int i = 0; i <= 13; i++)
-                result = result.Replace(((char)i).ToString(), "[" + i + "]");
-
             return result;
         }
-        public static byte[] Encode(params object[] chunks)
+
+        public static byte[] GetBytes(params object[] values)
         {
-            if (chunks.Length < 1)
-                return new byte[0];
-
             var buffer = new List<byte>();
-            for (int i = 0; i < chunks.Length; i++)
+            foreach (object value in values)
             {
-                object chunk = chunks[i];
-                if (chunk == null)
-                    throw new NullReferenceException(nameof(chunk));
-
-                switch (Type.GetTypeCode(chunk.GetType()))
+                switch (Type.GetTypeCode(value.GetType()))
                 {
-                    case TypeCode.Byte: buffer.Add((byte)chunk); break;
-                    case TypeCode.Boolean: buffer.Add(Convert.ToByte((bool)chunk)); break;
-                    case TypeCode.Int32: buffer.AddRange(BigEndian.FromSI32((int)chunk)); break;
-                    case TypeCode.UInt16: buffer.AddRange(BigEndian.FromUI16((ushort)chunk)); break;
+                    case TypeCode.Byte: buffer.Add((byte)value); break;
+                    case TypeCode.Boolean: buffer.Add(Convert.ToByte((bool)value)); break;
+                    case TypeCode.Int32: buffer.AddRange(BigEndian.GetBytes((int)value)); break;
+                    case TypeCode.UInt16: buffer.AddRange(BigEndian.GetBytes((ushort)value)); break;
 
                     default:
                     case TypeCode.String:
                     {
-                        byte[] data = chunk as byte[];
+                        byte[] data = value as byte[];
                         if (data == null)
                         {
-                            string value = chunk.ToString()
-                                .Replace("\\a", "\a").Replace("\\b", "\b")
-                                .Replace("\\f", "\f").Replace("\\n", "\n")
-                                .Replace("\\r", "\r").Replace("\\t", "\t")
-                                .Replace("\\v", "\v").Replace("\\0", "\0");
+                            string stringValue = value.ToString()
+                               .Replace("\\a", "\a").Replace("\\b", "\b")
+                               .Replace("\\f", "\f").Replace("\\n", "\n")
+                               .Replace("\\r", "\r").Replace("\\t", "\t")
+                               .Replace("\\v", "\v").Replace("\\0", "\0");
 
-                            byte[] stringData = Encoding.UTF8.GetBytes(value);
-
-                            data = new byte[2 + Encoding.UTF8.GetByteCount(value)];
-                            Buffer.BlockCopy(BigEndian.FromUI16((ushort)(data.Length - 2)), 0, data, 0, 2);
-                            Buffer.BlockCopy(Encoding.UTF8.GetBytes(value), 0, data, 2, data.Length - 2);
+                            data = BigEndian.GetBytes(stringValue);
                         }
                         buffer.AddRange(data);
                         break;
@@ -494,16 +444,18 @@ namespace Sulakore.Protocol
             }
             return buffer.ToArray();
         }
-        public static byte[] Construct(ushort header, params object[] chunks)
+        public static byte[] Construct(ushort header, params object[] values)
         {
-            byte[] body = (chunks != null && chunks.Length > 0) ?
-                Encode(chunks) : new byte[0];
+            byte[] body = GetBytes(values);
+            var buffer = new byte[6 + body.Length];
 
-            byte[] data = new byte[6 + body.Length];
-            Buffer.BlockCopy(BigEndian.FromSI32(body.Length + 2), 0, data, 0, 4);
-            Buffer.BlockCopy(BigEndian.FromUI16(header), 0, data, 4, 2);
-            Buffer.BlockCopy(body, 0, data, 6, body.Length);
-            return data;
+            byte[] headerData = BigEndian.GetBytes(header);
+            byte[] lengthData = BigEndian.GetBytes(2 + body.Length);
+
+            Buffer.BlockCopy(lengthData, 0, buffer, 0, 4);
+            Buffer.BlockCopy(headerData, 0, buffer, 4, 2);
+            Buffer.BlockCopy(body, 0, buffer, 6, body.Length);
+            return buffer;
         }
     }
 }

@@ -12,6 +12,14 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <AssemblyVersion>4.0.25.0</AssemblyVersion>
+    <PrimaryVersionType>AssemblyFileVersionAttribute</PrimaryVersionType>
+    <AssemblyInfoFilePath>Properties\AssemblyInfo.cs</AssemblyInfoFilePath>
+    <UpdateAssemblyVersion>True</UpdateAssemblyVersion>
+    <UpdateAssemblyFileVersion>True</UpdateAssemblyFileVersion>
+    <UpdateAssemblyInfoVersion>False</UpdateAssemblyInfoVersion>
+    <AssemblyVersionSettings>None.IncrementOnDemandWithReset.Increment.None</AssemblyVersionSettings>
+    <AssemblyFileVersionSettings>None.IncrementOnDemandWithReset.Increment.None</AssemblyFileVersionSettings>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -100,8 +108,7 @@
     <Compile Include="Habbo\HMap.cs" />
     <Compile Include="Habbo\HPoint.cs" />
     <Compile Include="Habbo\IHEntity.cs" />
-    <Compile Include="Protocol\Encoders\Ancient.cs" />
-    <Compile Include="Protocol\Encoders\BigEndian.cs" />
+    <Compile Include="Protocol\BigEndian.cs" />
     <Compile Include="Protocol\Encryption\BigInteger.cs" />
     <Compile Include="Protocol\Encryption\Enums\PkcsPadding.cs" />
     <Compile Include="Protocol\Encryption\HKeyExchange.cs" />
@@ -109,9 +116,6 @@
     <Compile Include="Protocol\Encryption\RsaKey.cs" />
     <Compile Include="Protocol\Enums\HDestination.cs" />
     <Compile Include="Protocol\HMessage.cs" />
-    <Compile Include="Protocol\HPacketBase.cs" />
-    <Compile Include="Protocol\HScripture.cs" />
-    <Compile Include="Protocol\IHPacket.cs" />
     <Compile Include="Habbo\Web\HBadge.cs" />
     <Compile Include="Habbo\Web\HFriend.cs" />
     <Compile Include="Habbo\Web\HGameData.cs" />

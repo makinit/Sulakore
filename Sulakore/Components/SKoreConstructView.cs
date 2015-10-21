@@ -1,24 +1,10 @@
-﻿/* Copyright
-
+﻿/*
     GitHub(Source): https://GitHub.com/ArachisH/Sulakore
 
-    .NET library for creating Habbo Hotel related desktop applications.
+    This file is part of the Sulakore library.
     Copyright (C) 2015 ArachisH
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+    
+    This code is licensed under the GNU General Public License.
     See License.txt in the project root for license information.
 */
 
@@ -60,13 +46,13 @@ namespace Sulakore.Components
         public void ReplaceItem(object chunk)
         {
             ListViewItem item = SelectedItems[0];
-            _packet.ReplaceWritten(item.Index, chunk);
+            //_packet.ReplaceWritten(item.Index, chunk);
             ListViewItem.ListViewSubItemCollection subItems = item.SubItems;
 
             subItems[0].Text = chunk.GetType().Name
                 .Replace("Int32", "Integer");
 
-            byte[] data = HMessage.Encode(chunk);
+            byte[] data = HMessage.GetBytes(chunk);
             subItems[1].Text = chunk.ToString();
             subItems[2].Text = HMessage.ToString(data);
 
@@ -75,7 +61,7 @@ namespace Sulakore.Components
         }
         public void Write(params object[] chunks)
         {
-            _packet.Write(chunks);
+            //_packet.Write(chunks);
             try
             {
                 BeginUpdate();
@@ -85,7 +71,7 @@ namespace Sulakore.Components
                 foreach (object chunk in chunks)
                 {
                     string value = chunk.ToString();
-                    byte[] data = HMessage.Encode(chunk);
+                    byte[] data = HMessage.GetBytes(chunk);
                     string encoded = HMessage.ToString(data);
                     string typeName = chunk.GetType().Name.Replace("Int32", "Integer");
 
@@ -101,24 +87,24 @@ namespace Sulakore.Components
 
         protected override void RemoveItem(ListViewItem listViewItem)
         {
-            _packet.RemoveWritten(listViewItem.Index);
+            //_packet.RemoveWritten(listViewItem.Index);
             base.RemoveItem(listViewItem);
         }
         protected override void MoveItemUp(ListViewItem listViewItem)
         {
-            _packet.MoveWritten(listViewItem.Index, 1, false);
+            //_packet.MoveWritten(listViewItem.Index, 1, false);
             base.MoveItemUp(listViewItem);
         }
         protected override void MoveItemDown(ListViewItem listViewItem)
         {
-            _packet.MoveWritten(listViewItem.Index, 1, true);
+            //_packet.MoveWritten(listViewItem.Index, 1, true);
             base.MoveItemDown(listViewItem);
         }
 
         public void ClearWritten()
         {
             Items.Clear();
-            _packet.ClearWritten();
+            //_packet.ClearWritten();
             OnItemsDeselected(EventArgs.Empty);
         }
         public byte[] GetBytes() => _packet.ToBytes();
