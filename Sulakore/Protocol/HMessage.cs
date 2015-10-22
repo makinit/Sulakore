@@ -296,6 +296,70 @@ namespace Sulakore.Protocol
             WriteObject(value, value, position);
         }
 
+        public void WriteObjects(params object[] values)
+        {
+            _written.AddRange(values);
+            _body.AddRange(GetBytes(values));
+
+            Refresh();
+        }
+        private void WriteObject(byte[] encoded, object value, int position)
+        {
+            _written.Add(value);
+            _body.InsertRange(position, encoded);
+
+            Refresh();
+        }
+
+        public void ClearWritten()
+        {
+            if (_written.Count < 1) return;
+
+            _body.Clear();
+            _written.Clear();
+
+            Refresh();
+        }
+        public void RemoveWritten(int index)
+        {
+            if (index < 0 || index >= _written.Count) return;
+
+            _written.RemoveAt(index);
+
+            _body.Clear();
+            if (_written.Count > 0)
+                _body.AddRange(GetBytes(_written.ToArray()));
+
+            Refresh();
+        }
+        public void ReplaceWritten(int index, object chunk)
+        {
+            if (index < 0 || index >= _written.Count) return;
+
+            _written[index] = chunk;
+
+            _body.Clear();
+            _body.AddRange(GetBytes(_written.ToArray()));
+
+            Refresh();
+        }
+        public void MoveWritten(int index, int jump, bool toRight)
+        {
+            if (jump < 1) return;
+            int newIndex = (toRight ? index + jump : index - jump);
+            if (newIndex < 0) newIndex = 0;
+            if (newIndex >= _written.Count) newIndex = _written.Count - 1;
+
+            object chunk = _written[index];
+            _written.Remove(chunk);
+            _written.Insert(newIndex, chunk);
+
+            _body.Clear();
+            _body.AddRange(GetBytes(_written.ToArray()));
+
+            Refresh();
+        }
+
         private void Refresh()
         {
             ResetCache();
@@ -305,13 +369,6 @@ namespace Sulakore.Protocol
         {
             _toBytesCache = null;
             _toStringCache = null;
-        }
-        private void WriteObject(byte[] encoded, object value, int position)
-        {
-            _written.Add(value);
-            _body.InsertRange(position, encoded);
-
-            Refresh();
         }
 
         public byte[] ToBytes()

@@ -46,7 +46,7 @@ namespace Sulakore.Components
         public void ReplaceItem(object chunk)
         {
             ListViewItem item = SelectedItems[0];
-            //_packet.ReplaceWritten(item.Index, chunk);
+            _packet.ReplaceWritten(item.Index, chunk);
             ListViewItem.ListViewSubItemCollection subItems = item.SubItems;
 
             subItems[0].Text = chunk.GetType().Name
@@ -59,24 +59,24 @@ namespace Sulakore.Components
             item.ToolTipText = string.Format(CHUNK_TIP,
                 subItems[0].Text, subItems[1].Text, data.Length, subItems[2].Text);
         }
-        public void Write(params object[] chunks)
+        public void Write(params object[] values)
         {
-            //_packet.Write(chunks);
+            _packet.WriteObjects(values);
             try
             {
                 BeginUpdate();
                 ListViewItem item = null;
                 SuppressItemSelectedEvent = true;
 
-                foreach (object chunk in chunks)
+                foreach (object value in values)
                 {
-                    string value = chunk.ToString();
-                    byte[] data = HMessage.GetBytes(chunk);
+                    string valueString = value.ToString();
+                    byte[] data = HMessage.GetBytes(value);
                     string encoded = HMessage.ToString(data);
-                    string typeName = chunk.GetType().Name.Replace("Int32", "Integer");
+                    string typeName = value.GetType().Name.Replace("Int32", "Integer");
 
-                    item = FocusAdd(typeName, value, encoded);
-                    item.ToolTipText = string.Format(CHUNK_TIP, typeName, value, data.Length, encoded);
+                    item = FocusAdd(typeName, valueString, encoded);
+                    item.ToolTipText = string.Format(CHUNK_TIP, typeName, valueString, data.Length, encoded);
                 }
 
                 SuppressItemSelectedEvent = false;
@@ -87,24 +87,24 @@ namespace Sulakore.Components
 
         protected override void RemoveItem(ListViewItem listViewItem)
         {
-            //_packet.RemoveWritten(listViewItem.Index);
+            _packet.RemoveWritten(listViewItem.Index);
             base.RemoveItem(listViewItem);
         }
         protected override void MoveItemUp(ListViewItem listViewItem)
         {
-            //_packet.MoveWritten(listViewItem.Index, 1, false);
+            _packet.MoveWritten(listViewItem.Index, 1, false);
             base.MoveItemUp(listViewItem);
         }
         protected override void MoveItemDown(ListViewItem listViewItem)
         {
-            //_packet.MoveWritten(listViewItem.Index, 1, true);
+            _packet.MoveWritten(listViewItem.Index, 1, true);
             base.MoveItemDown(listViewItem);
         }
 
         public void ClearWritten()
         {
             Items.Clear();
-            //_packet.ClearWritten();
+            _packet.ClearWritten();
             OnItemsDeselected(EventArgs.Empty);
         }
         public byte[] GetBytes() => _packet.ToBytes();

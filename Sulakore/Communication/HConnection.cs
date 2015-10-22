@@ -231,24 +231,41 @@ namespace Sulakore.Communication
                 }
 
             }
-            var interceptionTasks = new List<Task<ushort>>(_listeners.Count);
+            var interceptionTasks = new List<Task>(_listeners.Count);
             foreach (TcpListener listener in _listeners.Values)
-            {
-                Task<ushort> interceptTask = InterceptClientAsync(listener);
-                interceptionTasks.Add(interceptTask);
-            }
+                interceptionTasks.Add(InterceptClientAsync(listener));
 
             while (!IsConnected && interceptionTasks.Count > 0)
             {
-                Task<ushort> completed = await Task.WhenAny(interceptionTasks);
-                Port = await completed;
+                Task completedInterception =
+                    await Task.WhenAny(interceptionTasks);
 
-                if (interceptionTasks.Contains(completed))
-                    interceptionTasks.Remove(completed);
+                if (interceptionTasks.Contains(completedInterception))
+                    interceptionTasks.Remove(completedInterception);
             }
 
             foreach (TcpListener listener in _listeners.Values)
                 listener.Stop();
+        }
+        private async Task InterceptClientAsync(TcpListener listener)
+        {
+            var port = (ushort)(
+                (IPEndPoint)listener.LocalEndpoint).Port;
+
+            try
+            {
+                listener.Start();
+                while (!IsConnected)
+                {
+                    Socket localSocket = await listener.AcceptSocketAsync()
+                        .ConfigureAwait(false);
+
+                    await InterceptClientDataAsync(
+                        localSocket, port).ConfigureAwait(false);
+                }
+            }
+            catch (ObjectDisposedException) { /* Listener stopped. */ }
+            finally { listener.Stop(); }
         }
         private async Task InterceptClientDataAsync(Socket client, ushort port)
         {
@@ -263,6 +280,7 @@ namespace Sulakore.Communication
             if (buffer[0] == 64) throw new Exception("Base64/VL64 protocol not supported.");
             if (BigEndian.ToUInt16(buffer, 4) == Outgoing.CLIENT_CONNECT)
             {
+                Port = port;
                 Local = local;
                 Remote = remote;
 
@@ -299,30 +317,6 @@ namespace Sulakore.Communication
                 await local.SendAsync(buffer, 0, length)
                     .ConfigureAwait(false);
             }
-        }
-        private async Task<ushort> InterceptClientAsync(TcpListener listener)
-        {
-            ushort port = (ushort)(
-                (IPEndPoint)listener.LocalEndpoint).Port;
-
-            try
-            {
-                listener.Start();
-                var interceptDataTasks = new List<Task>();
-
-                while (!IsConnected)
-                {
-                    Socket localSocket = await listener.AcceptSocketAsync()
-                        .ConfigureAwait(false);
-
-                    Task interceptDataTask =
-                        InterceptClientDataAsync(localSocket, port);
-                }
-            }
-            catch (ObjectDisposedException) { /* Listener stopped. */ }
-            finally { listener.Stop(); }
-
-            return port;
         }
 
         /// <summary>
