@@ -255,13 +255,15 @@ namespace Sulakore.Communication
             try
             {
                 listener.Start();
+                var intercepTasks = new List<Task>();
+
                 while (!IsConnected)
                 {
                     Socket localSocket = await listener.AcceptSocketAsync()
                         .ConfigureAwait(false);
 
-                    await InterceptClientDataAsync(
-                        localSocket, port).ConfigureAwait(false);
+                    intercepTasks.Add(
+                        InterceptClientDataAsync(localSocket, port));
                 }
             }
             catch (ObjectDisposedException) { /* Listener stopped. */ }
