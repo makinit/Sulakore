@@ -1,14 +1,4 @@
-﻿/*
-    GitHub(Source): https://GitHub.com/ArachisH/Sulakore
-
-    This file is part of the Sulakore library.
-    Copyright (C) 2015 ArachisH
-    
-    This code is licensed under the GNU General Public License.
-    See License.txt in the project root for license information.
-*/
-
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 using Sulakore.Protocol;
 
@@ -16,11 +6,18 @@ namespace Sulakore.Components
 {
     public class ScheduleTickEventArgs : CancelEventArgs
     {
+        public int BurstLeft { get; }
+        public int BurstCount { get; }
         public HMessage Packet { get; }
+        public bool IsFinalBurst { get; }
 
-        public ScheduleTickEventArgs(HMessage packet)
+        public ScheduleTickEventArgs(HMessage packet,
+            int burstCount, int burstLeft, bool isFinalBurst)
         {
             Packet = packet;
+            BurstLeft = burstLeft;
+            BurstCount = burstCount;
+            IsFinalBurst = isFinalBurst;
         }
     }
 }

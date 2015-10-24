@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Sulakore")]
-[assembly: AssemblyDescription(".NET library for creating Habbo Hotel related desktop applications.")]
+[assembly: AssemblyDescription("Unofficial Habbo Hotel SDK.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("ArachisH")]
 [assembly: AssemblyProduct("Sulakore")]
@@ -31,5 +31,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("4.0.38.0")]
-[assembly: AssemblyFileVersion("4.0.38.0")]
+[assembly: AssemblyVersion("5.0.57.0")]
+[assembly: AssemblyFileVersion("5.0.57.0")]

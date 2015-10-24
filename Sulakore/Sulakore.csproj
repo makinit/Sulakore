@@ -12,7 +12,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <AssemblyVersion>4.0.38.0</AssemblyVersion>
+    <AssemblyVersion>5.0.57.0</AssemblyVersion>
     <PrimaryVersionType>AssemblyFileVersionAttribute</PrimaryVersionType>
     <AssemblyInfoFilePath>Properties\AssemblyInfo.cs</AssemblyInfoFilePath>
     <UpdateAssemblyVersion>True</UpdateAssemblyVersion>
@@ -82,6 +82,10 @@
     <Compile Include="Components\SKoreMap.cs" />
     <Compile Include="Components\SKoreScheduleView.cs" />
     <Compile Include="Components\SKoreTabControl.cs" />
+    <Compile Include="Eavesdrop\CertificateManager.cs" />
+    <Compile Include="Eavesdrop\Eavesdropper.cs" />
+    <Compile Include="Eavesdrop\Event Args\EavesdropperRequestEventArgs.cs" />
+    <Compile Include="Eavesdrop\Event Args\EavesdropperResponseEventArgs.cs" />
     <Compile Include="Extensions\Enums\ExtensionActionType.cs" />
     <Compile Include="Extensions\Event Args\ExtensionActionEventArgs.cs" />
     <Compile Include="Extensions\Contractor.cs" />
@@ -89,6 +93,61 @@
     <Compile Include="Extensions\ExtensionForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FlashInspect\ActionScript\ABCFile.cs" />
+    <Compile Include="FlashInspect\ActionScript\ASClass.cs" />
+    <Compile Include="FlashInspect\ActionScript\ASCode.cs" />
+    <Compile Include="FlashInspect\ActionScript\ASConstants.cs" />
+    <Compile Include="FlashInspect\ActionScript\ASException.cs" />
+    <Compile Include="FlashInspect\ActionScript\ASInstance.cs" />
+    <Compile Include="FlashInspect\ActionScript\ASMetadata.cs" />
+    <Compile Include="FlashInspect\ActionScript\ASMethod.cs" />
+    <Compile Include="FlashInspect\ActionScript\ASMethodBody.cs" />
+    <Compile Include="FlashInspect\ActionScript\ASParameter.cs" />
+    <Compile Include="FlashInspect\ActionScript\ASScript.cs" />
+    <Compile Include="FlashInspect\ActionScript\ASTrait.cs" />
+    <Compile Include="FlashInspect\ActionScript\Constants\ASMultiname.cs" />
+    <Compile Include="FlashInspect\ActionScript\Constants\ASNamespace.cs" />
+    <Compile Include="FlashInspect\ActionScript\Constants\ASNamespaceSet.cs" />
+    <Compile Include="FlashInspect\ActionScript\Constants\Enums\ConstantType.cs" />
+    <Compile Include="FlashInspect\ActionScript\Enums\ClassFlags.cs" />
+    <Compile Include="FlashInspect\ActionScript\Enums\MethodFlags.cs" />
+    <Compile Include="FlashInspect\ActionScript\Enums\OPCode.cs" />
+    <Compile Include="FlashInspect\ActionScript\Multinames\IMultiname.cs" />
+    <Compile Include="FlashInspect\ActionScript\Multinames\Multiname.cs" />
+    <Compile Include="FlashInspect\ActionScript\Multinames\MultinameL.cs" />
+    <Compile Include="FlashInspect\ActionScript\Multinames\QName.cs" />
+    <Compile Include="FlashInspect\ActionScript\Multinames\RTQName.cs" />
+    <Compile Include="FlashInspect\ActionScript\Multinames\RTQNameL.cs" />
+    <Compile Include="FlashInspect\ActionScript\Multinames\Typename.cs" />
+    <Compile Include="FlashInspect\ActionScript\Traits\ClassTrait.cs" />
+    <Compile Include="FlashInspect\ActionScript\Traits\Enums\TraitAttributes.cs" />
+    <Compile Include="FlashInspect\ActionScript\Traits\Enums\TraitType.cs" />
+    <Compile Include="FlashInspect\ActionScript\Traits\FunctionTrait.cs" />
+    <Compile Include="FlashInspect\ActionScript\Traits\ITrait.cs" />
+    <Compile Include="FlashInspect\ActionScript\Traits\MethodGetterSetterTrait.cs" />
+    <Compile Include="FlashInspect\ActionScript\Traits\SlotConstantTrait.cs" />
+    <Compile Include="FlashInspect\ActionScript\Traits\TraitContainer.cs" />
+    <Compile Include="FlashInspect\Dictionary\FlashDictionary.cs" />
+    <Compile Include="FlashInspect\Dictionary\ICharacter.cs" />
+    <Compile Include="FlashInspect\IO\FlashReader.cs" />
+    <Compile Include="FlashInspect\IO\FlashWriter.cs" />
+    <Compile Include="FlashInspect\Records\RectangleRecord.cs" />
+    <Compile Include="FlashInspect\Records\TagRecord.cs" />
+    <Compile Include="FlashInspect\ShockwaveFlash.cs" />
+    <Compile Include="FlashInspect\Tags\DefineBinaryDataTag.cs" />
+    <Compile Include="FlashInspect\Tags\DefineBitsLossless2Tag.cs" />
+    <Compile Include="FlashInspect\Tags\DefineFontNameTag.cs" />
+    <Compile Include="FlashInspect\Tags\DoABCTag.cs" />
+    <Compile Include="FlashInspect\Tags\Enums\FlashTagType.cs" />
+    <Compile Include="FlashInspect\Tags\ExportAssetsTag.cs" />
+    <Compile Include="FlashInspect\Tags\FlashTag.cs" />
+    <Compile Include="FlashInspect\Tags\FrameLabelTag.cs" />
+    <Compile Include="FlashInspect\Tags\ProductInfoTag.cs" />
+    <Compile Include="FlashInspect\Tags\ScriptLimitsTag.cs" />
+    <Compile Include="FlashInspect\Tags\SetBackgroundColorTag.cs" />
+    <Compile Include="FlashInspect\Tags\ShowFrameTag.cs" />
+    <Compile Include="FlashInspect\Tags\SymbolClassTag.cs" />
+    <Compile Include="FlashInspect\Tags\UnknownTag.cs" />
     <Compile Include="Habbo\Enums\HAction.cs" />
     <Compile Include="Habbo\Enums\HBan.cs" />
     <Compile Include="Habbo\Enums\HDance.cs" />
@@ -108,6 +167,20 @@
     <Compile Include="Habbo\HMap.cs" />
     <Compile Include="Habbo\HPoint.cs" />
     <Compile Include="Habbo\IHEntity.cs" />
+    <Compile Include="Internals\NativeMethods.cs" />
+    <Compile Include="Ionic\Crc\CRC32.cs" />
+    <Compile Include="Ionic\Zlib\Deflate.cs" />
+    <Compile Include="Ionic\Zlib\DeflateStream.cs" />
+    <Compile Include="Ionic\Zlib\GZipStream.cs" />
+    <Compile Include="Ionic\Zlib\Inflate.cs" />
+    <Compile Include="Ionic\Zlib\InfTree.cs" />
+    <Compile Include="Ionic\Zlib\ParallelDeflateOutputStream.cs" />
+    <Compile Include="Ionic\Zlib\Tree.cs" />
+    <Compile Include="Ionic\Zlib\Zlib.cs" />
+    <Compile Include="Ionic\Zlib\ZlibBaseStream.cs" />
+    <Compile Include="Ionic\Zlib\ZlibCodec.cs" />
+    <Compile Include="Ionic\Zlib\ZlibConstants.cs" />
+    <Compile Include="Ionic\Zlib\ZlibStream.cs" />
     <Compile Include="Protocol\BigEndian.cs" />
     <Compile Include="Protocol\Encryption\BigInteger.cs" />
     <Compile Include="Protocol\Encryption\Enums\PkcsPadding.cs" />
@@ -126,6 +199,7 @@
     <Compile Include="Habbo\Web\HUser.cs" />
     <Compile Include="HHotel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Protocol\HSchedule.cs" />
     <Compile Include="SKore.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -138,6 +212,11 @@
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.XML" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="makecert.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,14 +1,4 @@
-﻿/*
-    GitHub(Source): https://GitHub.com/ArachisH/Sulakore
-
-    This file is part of the Sulakore library.
-    Copyright (C) 2015 ArachisH
-    
-    This code is licensed under the GNU General Public License.
-    See License.txt in the project root for license information.
-*/
-
-using System;
+﻿using System;
 using System.IO;
 using System.Net;
 using System.Linq;
@@ -235,14 +225,8 @@ namespace Sulakore.Communication
             foreach (TcpListener listener in _listeners.Values)
                 interceptionTasks.Add(InterceptClientAsync(listener));
 
-            while (!IsConnected && interceptionTasks.Count > 0)
-            {
-                Task completedInterception =
-                    await Task.WhenAny(interceptionTasks);
-
-                if (interceptionTasks.Contains(completedInterception))
-                    interceptionTasks.Remove(completedInterception);
-            }
+            Task completedInterception =
+                await Task.WhenAny(interceptionTasks);
 
             foreach (TcpListener listener in _listeners.Values)
                 listener.Stop();
@@ -255,15 +239,15 @@ namespace Sulakore.Communication
             try
             {
                 listener.Start();
-                var intercepTasks = new List<Task>();
+                await Task.Yield();
 
                 while (!IsConnected)
                 {
                     Socket localSocket = await listener.AcceptSocketAsync()
                         .ConfigureAwait(false);
 
-                    intercepTasks.Add(
-                        InterceptClientDataAsync(localSocket, port));
+                    Task interceptDataTask =
+                        InterceptClientDataAsync(localSocket, port);
                 }
             }
             catch (ObjectDisposedException) { /* Listener stopped. */ }
@@ -275,49 +259,68 @@ namespace Sulakore.Communication
             var remote = await HNode.ConnectAsync(Addresses[0], port)
                 .ConfigureAwait(false);
 
-            var buffer = new byte[1024];
-            int length = await local.ReceiveAsync(
-                buffer, 0, 6).ConfigureAwait(false);
-
-            if (buffer[0] == 64) throw new Exception("Base64/VL64 protocol not supported.");
-            if (BigEndian.ToUInt16(buffer, 4) == Outgoing.CLIENT_CONNECT)
+            try
             {
-                Port = port;
-                Local = local;
-                Remote = remote;
+                var buffer = new byte[1024];
+                int length = await local.ReceiveAsync(
+                    buffer, 0, 6).ConfigureAwait(false);
 
-                byte[] packet = new byte[BigEndian.ToInt32(buffer, 0) + 4];
-                Buffer.BlockCopy(buffer, 0, packet, 0, 6);
-
-                length = await Local.ReceiveAsync(packet, 6, packet.Length - 6)
-                    .ConfigureAwait(false);
-
-                IsConnected = true;
-                OnConnected(EventArgs.Empty);
-
-                HandleOutgoing(packet, ++TotalOutgoing);
-                Task readInTask = ReadIncomingAsync();
-            }
-            else
-            {
-                length += await local.ReceiveAsync(buffer, length, buffer.Length - length)
-                    .ConfigureAwait(false);
-
-                await remote.SendAsync(buffer, 0, length)
-                    .ConfigureAwait(false);
-
-                if (length == 0)
+                if (length < 1)
                 {
                     local.Dispose();
-                    remote.Dispose();
-                    return;
+                    local = new HNode(await _listeners[port]
+                        .AcceptSocketAsync().ConfigureAwait(false));
+
+                    length = await local.ReceiveAsync(
+                        buffer, 0, 6).ConfigureAwait(false);
                 }
 
-                length = await remote.ReceiveAsync(buffer, 0, buffer.Length)
-                    .ConfigureAwait(false);
+                if (buffer[0] == 64) throw new Exception("Base64/VL64 protocol not supported.");
+                if (BigEndian.ToUInt16(buffer, 4) == Outgoing.CLIENT_CONNECT)
+                {
+                    IsConnected = true;
 
-                await local.SendAsync(buffer, 0, length)
-                    .ConfigureAwait(false);
+                    Port = port;
+                    Local = local;
+                    Remote = remote;
+
+                    byte[] packet = new byte[BigEndian.ToInt32(buffer, 0) + 4];
+                    Buffer.BlockCopy(buffer, 0, packet, 0, 6);
+
+                    length = await Local.ReceiveAsync(packet, 6, packet.Length - 6)
+                        .ConfigureAwait(false);
+
+                    OnConnected(EventArgs.Empty);
+                    HandleOutgoing(packet, ++TotalOutgoing);
+
+                    Task readInTask = ReadIncomingAsync();
+                }
+                else
+                {
+                    length += await local.ReceiveAsync(buffer, length, buffer.Length - length)
+                        .ConfigureAwait(false);
+
+                    await remote.SendAsync(buffer, 0, length)
+                        .ConfigureAwait(false);
+
+                    length = await remote.ReceiveAsync(buffer, 0, buffer.Length)
+                        .ConfigureAwait(false);
+
+                    await local.SendAsync(buffer, 0, length)
+                        .ConfigureAwait(false);
+
+                    // Send empty data to local socket.
+                    await local.SendAsync(buffer, 0, 0)
+                        .ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                if (Local != local)
+                    local.Dispose();
+
+                if (Remote != remote)
+                    remote.Dispose();
             }
         }
 

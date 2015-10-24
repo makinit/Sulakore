@@ -1,14 +1,4 @@
-﻿/*
-    GitHub(Source): https://GitHub.com/ArachisH/Sulakore
-
-    This file is part of the Sulakore library.
-    Copyright (C) 2015 ArachisH
-    
-    This code is licensed under the GNU General Public License.
-    See License.txt in the project root for license information.
-*/
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Sulakore.Protocol.Encryption
@@ -23,11 +13,11 @@ namespace Sulakore.Protocol.Encryption
 
         public Rc4(byte[] key)
         {
-            Key = new List<byte>(key);
-
-            _parseLock = new object();
             _table = new int[256];
+            _parseLock = new object();
 
+            Key = new List<byte>(key);
+            
             for (int i = 0; i < 256; i++)
                 _table[i] = i;
 
