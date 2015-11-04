@@ -55,7 +55,7 @@ namespace Sulakore.Protocol.Encryption
         /// </summary>
         public bool IsDisposed { get; private set; }
 
-        public PkcsPadding Padding { get; set; }
+        public PKCSPadding Padding { get; set; }
 
         static RsaKey()
         {
@@ -138,7 +138,7 @@ namespace Sulakore.Protocol.Encryption
                 buffer.Length - data.Length, data.Length);
 
             buffer[1] = (byte)(Padding + 1);
-            bool isRandom = (Padding == PkcsPadding.RandomByte);
+            bool isRandom = (Padding == PKCSPadding.RandomByte);
 
             for (int i = 2; i < buffer.Length; i++)
             {
@@ -158,7 +158,7 @@ namespace Sulakore.Protocol.Encryption
         }
         private byte[] PKCS1Unpad(byte[] data, int length)
         {
-            Padding = (PkcsPadding)(data[0] - 1);
+            Padding = (PKCSPadding)(data[0] - 1);
 
             int position = 0;
             while (data[position++] != 0) ;

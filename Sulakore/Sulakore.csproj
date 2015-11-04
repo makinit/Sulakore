@@ -12,7 +12,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <AssemblyVersion>5.0.57.0</AssemblyVersion>
+    <AssemblyVersion>5.0.186.0</AssemblyVersion>
     <PrimaryVersionType>AssemblyFileVersionAttribute</PrimaryVersionType>
     <AssemblyInfoFilePath>Properties\AssemblyInfo.cs</AssemblyInfoFilePath>
     <UpdateAssemblyVersion>True</UpdateAssemblyVersion>
@@ -167,6 +167,7 @@
     <Compile Include="Habbo\HMap.cs" />
     <Compile Include="Habbo\HPoint.cs" />
     <Compile Include="Habbo\IHEntity.cs" />
+    <Compile Include="Habbo\Web\HRequest.cs" />
     <Compile Include="Internals\NativeMethods.cs" />
     <Compile Include="Ionic\Crc\CRC32.cs" />
     <Compile Include="Ionic\Zlib\Deflate.cs" />
@@ -183,7 +184,7 @@
     <Compile Include="Ionic\Zlib\ZlibStream.cs" />
     <Compile Include="Protocol\BigEndian.cs" />
     <Compile Include="Protocol\Encryption\BigInteger.cs" />
-    <Compile Include="Protocol\Encryption\Enums\PkcsPadding.cs" />
+    <Compile Include="Protocol\Encryption\Enums\PKCSPadding.cs" />
     <Compile Include="Protocol\Encryption\HKeyExchange.cs" />
     <Compile Include="Protocol\Encryption\Rc4.cs" />
     <Compile Include="Protocol\Encryption\RsaKey.cs" />
@@ -210,6 +211,7 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.XML" />
   </ItemGroup>

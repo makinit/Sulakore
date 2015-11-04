@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -13,88 +12,81 @@ namespace Sulakore
     /// </summary>
     public static class SKore
     {
-        private const string USER_API_SUFFIX = "/api/public/users?name=";
+        private const string USER_API_FORMAT = "{0}/api/public/users?name={1}";
         private const string PROFILE_API_FORMAT = "{0}/api/public/users/{1}/profile";
-        private const string IP_COOKIE_PREFIX = "YPF8827340282Jdskjhfiw_928937459182JAX666";
 
-        private static string _ipCookie;
-
+        private static readonly HRequest _hRequest;
         private static readonly Array _randomThemes;
-        private static readonly HttpClient _httpClient;
-        private static readonly HttpClientHandler _httpClientHandler;
         private static readonly Random _randomSignGen, _randomThemeGen;
         private static readonly IDictionary<HHotel, IDictionary<string, string>> _uniqueIds;
 
+        public const string ChromeAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.80 Safari/537.36";
+
         static SKore()
         {
+            _hRequest = new HRequest();
             _randomSignGen = new Random();
             _randomThemeGen = new Random();
-
             _randomThemes = Enum.GetValues(typeof(HTheme));
-
-            _httpClientHandler = new HttpClientHandler() { UseProxy = false };
-            _httpClient = new HttpClient(_httpClientHandler, true);
-
             _uniqueIds = new Dictionary<HHotel, IDictionary<string, string>>();
         }
 
         /// <summary>
-        /// Returns your external Internet Protocol (IP) address that is required to successfully send GET/POST request to the specified <seealso cref="HHotel"/> in an asynchronous operation.
-        /// </summary>
-        /// <param name="hotel">The hotel you wish to retrieve the cookie containing your external Internet Protocol (IP) address from.</param>
-        /// <returns></returns>
-        public static async Task<string> GetIPCookieAsync(HHotel hotel)
-        {
-            if (!string.IsNullOrEmpty(_ipCookie)) return _ipCookie;
-            string body = await _httpClient.GetStringAsync(hotel.ToUrl())
-                .ConfigureAwait(false);
-
-            string ip = body.GetChild(IP_COOKIE_PREFIX + "', '", '\'');
-            return _ipCookie = (IP_COOKIE_PREFIX + "=" + ip);
-        }
-        /// <summary>
-        /// Returns the <seealso cref="HUser"/> from the specified hotel associated with the given name in an asynchronous operation.
+        /// Returns the <seealso cref="HUser"/> from <see cref="HHotel.Com"/> associated with the given name in an asynchronous operation.
         /// </summary>
         /// <param name="name">The name of the player you wish to retrieve the <seealso cref="HUser"/> from.</param>
-        /// <param name="hotel">The <seealso cref="HHotel"/> that the target user is located on.</param>
-        /// <returns></returns>
         public static async Task<HUser> GetUserAsync(string name, HHotel hotel)
         {
-            string userJson = await _httpClient.GetStringAsync(
-                hotel.ToUrl() + USER_API_SUFFIX + name);
+            if (hotel.IsLegacy())
+                throw new Exception("User API not available for: " + hotel.ToUrl(true));
 
-            return HUser.Create(userJson);
+            string userJson = await _hRequest.DownloadStringAsync(
+                string.Format(USER_API_FORMAT, hotel.ToUrl(true), name)).ConfigureAwait(false);
+
+            var user = HUser.Create(userJson);
+
+            if (!_uniqueIds.ContainsKey(hotel))
+                _uniqueIds[hotel] = new Dictionary<string, string>();
+
+            _uniqueIds[hotel][user.Name] = user.UniqueId;
+            return user;
         }
         /// <summary>
-        /// Returns the unique identifier from the specified <seealso cref="HHotel"/> associated with the given name in an asynchronous operation.
+        /// Returns the unique identifier from <seealso cref="HHotel.Com"/> associated with the given name in an asynchronous operation.
         /// </summary>
         /// <param name="name">The name of the player you wish to retrieve the unique identifier from.</param>
-        /// <param name="hotel">The <seealso cref="HHotel"/> that the target user is located on.</param>
-        /// <returns></returns>
         public static async Task<string> GetUniqueIdAsync(string name, HHotel hotel)
         {
-            bool hotelInitialized = _uniqueIds.ContainsKey(hotel);
-
-            if (!hotelInitialized)
-                _uniqueIds.Add(hotel, new Dictionary<string, string>());
-            else if (_uniqueIds[hotel].ContainsKey(name))
+            if (_uniqueIds.ContainsKey(hotel) &&
+                _uniqueIds[hotel].ContainsKey(name))
+            {
                 return _uniqueIds[hotel][name];
+            }
 
-            string uniqueId = (await GetUserAsync(name, hotel)).UniqueId;
+            HUser user = await GetUserAsync(
+                name, hotel).ConfigureAwait(false);
 
-            _uniqueIds[hotel][name] = uniqueId;
-            return uniqueId;
+            return user.UniqueId;
         }
         /// <summary>
-        /// Returns the <seealso cref="HProfile"/> from the specified hotel associated with the given unique identifier in an asynchronous operation.
+        /// Returns the <seealso cref="HProfile"/> from <see cref="HHotel.Com"/> associated with the given unique identifier in an asynchronous operation.
         /// </summary>
-        /// <param name="uniqueId">The unique identifier of the player you wish to retrieve the <see cref="HProfile"/> from.</param>
-        /// <param name="hotel">The <seealso cref="HHotel"/> that the target user is located on.</param>
-        /// <returns></returns>
-        public static async Task<HProfile> GetProfileAsync(string uniqueId, HHotel hotel)
+        /// <param name="name">The unique identifier of the player you wish to retrieve the <see cref="HProfile"/> from.</param>
+        public static async Task<HProfile> GetProfileAsync(string name, HHotel hotel)
         {
-            string profileJson = await _httpClient.GetStringAsync(
-                string.Format(PROFILE_API_FORMAT, hotel.ToUrl(), uniqueId));
+            if (hotel.IsLegacy())
+                throw new Exception("Profile API not available for: " + hotel.ToUrl(true));
+
+            if (!_uniqueIds.ContainsKey(hotel) ||
+                !_uniqueIds[hotel].ContainsKey(name))
+            {
+                HUser user = await GetUserAsync(
+                    name, hotel).ConfigureAwait(false);
+            }
+
+            string uniqueId = _uniqueIds[hotel][name];
+            string profileJson = await _hRequest.DownloadStringAsync(
+                string.Format(PROFILE_API_FORMAT, hotel.ToUrl(true), uniqueId)).ConfigureAwait(false);
 
             return HProfile.Create(profileJson);
         }
@@ -144,15 +136,19 @@ namespace Sulakore
                 .GetValue(randomIndex);
         }
 
-        /// <summary>
-        /// Returns the full URL representation of the specified <seealso cref="HHotel"/>.
-        /// </summary>
-        /// <param name="hotel">The <seealso cref="HHotel"/> you wish to retrieve the full URL from.</param>
-        /// <returns></returns>
-        public static string ToUrl(this HHotel hotel)
+        public static bool IsLegacy(this HHotel hotel)
         {
-            const string HotelUrlFormat = "https://www.Habbo.";
-            return HotelUrlFormat + hotel.ToDomain();
+            switch (hotel)
+            {
+                case HHotel.It:
+                case HHotel.Fr:
+                case HHotel.Fi:
+                case HHotel.De:
+                case HHotel.Com:
+                case HHotel.ComTr: return false;
+
+                default: return true;
+            }
         }
         /// <summary>
         /// Returns the domain associated with the specified <see cref="HHotel"/>.
@@ -163,6 +159,16 @@ namespace Sulakore
         {
             string value = hotel.ToString().ToLower();
             return value.Length != 5 ? value : value.Insert(3, ".");
+        }
+        /// <summary>
+        /// Returns the full URL representation of the specified <seealso cref="HHotel"/>.
+        /// </summary>
+        /// <param name="hotel">The <seealso cref="HHotel"/> you wish to retrieve the full URL from.</param>
+        /// <returns></returns>
+        public static string ToUrl(this HHotel hotel, bool isHttps)
+        {
+            string protocol = (isHttps ? "https" : "http");
+            return $"{protocol}://www.Habbo.{hotel.ToDomain()}";
         }
 
         /// <summary>
@@ -194,6 +200,9 @@ namespace Sulakore
 
             if (string.IsNullOrWhiteSpace(identifier))
             {
+                if (host.StartsWith("."))
+                    host = ("habbo" + host);
+
                 identifier = host.GetChild("habbo.", '/')
                     .Replace(".", string.Empty);
             }

@@ -60,8 +60,11 @@ namespace Sulakore.Habbo.Web
         [DataMember(Name = "country", EmitDefaultValue = false)]
         public string Country { get; set; }
 
+        [DataMember(Name = "force", EmitDefaultValue = false)]
+        public IList<string> Force { get; set; }
+
         [DataMember(Name = "traits", EmitDefaultValue = false)]
-        public string Traits { get; set; }
+        public IList<string> Traits { get; set; }
 
         [DataMember(Name = "partner", EmitDefaultValue = false)]
         public string Partner { get; set; }

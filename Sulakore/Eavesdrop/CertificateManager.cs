@@ -148,11 +148,7 @@ namespace Eavesdrop
                     }
                     return certificates == null;
                 }
-                catch (CryptographicException)
-                {
-                    // Unable to remove certificate(s).
-                    return false;
-                }
+                catch (CryptographicException) { /* Certificate removal failed. */ return false; }
                 finally
                 {
                     store.Close();

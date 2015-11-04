@@ -4,6 +4,7 @@ using System.Net;
 using System.Text;
 using System.Linq;
 using System.Threading;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -12,59 +13,41 @@ using Sulakore.Communication;
 
 namespace Sulakore.Habbo.Web
 {
+    [DebuggerDisplay("Email: {Email}, Hotel: {Hotel}")]
     public class HSession : IDisposable
     {
-        private readonly Uri _hotelUri;
-        private readonly object _disconnectLock;
-
-        /// <summary>
-        /// Occurs when the connection to the remote <see cref="HNode"/> has been established.
-        /// </summary>
         public event EventHandler<EventArgs> Connected;
-        /// <summary>
-        /// Raises the <see cref="Connected"/> event.
-        /// </summary>
-        /// <param name="e">An <see cref="EventArgs"/> that contains the event data.</param>
         protected virtual void OnConnected(EventArgs e)
         {
             Connected?.Invoke(this, e);
         }
-        /// <summary>
-        /// Occurs when either client/server have been disconnected, or when <see cref="Disconnect"/> has been called if the <see cref="HConnection"/> is currently connected.
-        /// </summary>
+
         public event EventHandler<EventArgs> Disconnected;
-        /// <summary>
-        /// Raises the <see cref="Disconnected"/> event.
-        /// </summary>
-        /// <param name="e">An <see cref="EventArgs"/> that contains the event data.</param>
         protected virtual void OnDisconnected(EventArgs e)
         {
             Disconnected?.Invoke(this, e);
         }
-        /// <summary>
-        /// Occurs when incoming data from the server has been intercepted.
-        /// </summary>
+
         public event EventHandler<InterceptedEventArgs> DataIncoming;
-        /// <summary>
-        /// Raises the <see cref="DataIncoming"/> event.
-        /// </summary>
-        /// <param name="e">An <see cref="InterceptedEventArgs"/> that contains the event data.</param>
-        /// <returns></returns>
         protected virtual void OnDataIncoming(InterceptedEventArgs e)
         {
             DataIncoming?.Invoke(this, e);
         }
 
+        private readonly Uri _hotelUri;
+        private readonly object _disconnectLock;
+
         public HHotel Hotel { get; }
         public string Email { get; }
         public string Password { get; }
         public HTriggers Triggers { get; }
-        public CookieContainer Cookies { get; }
+        public HRequest Requester { get; }
+
+        public string SsoTicket { get; private set; }
+        public int TotalIncoming { get; private set; }
 
         public HUser User { get; private set; }
         public HNode Remote { get; private set; }
-        public string SsoTicket { get; private set; }
-        public int TotalIncoming { get; private set; }
         public HGameData GameData { get; private set; }
 
         public bool IsDisposed { get; private set; }
@@ -98,11 +81,12 @@ namespace Sulakore.Habbo.Web
             Email = email;
             Hotel = hotel;
             Password = password;
+
+            Requester = new HRequest();
             Triggers = new HTriggers(false);
-            Cookies = new CookieContainer();
 
             _disconnectLock = new object();
-            _hotelUri = new Uri(Hotel.ToUrl());
+            _hotelUri = new Uri(Hotel.ToUrl(true));
         }
 
         public void Disconnect()
@@ -124,8 +108,25 @@ namespace Sulakore.Habbo.Web
         }
         public async Task ConnectAsync()
         {
-            Remote = await HNode.ConnectAsync(GameData.Host, int.Parse(GameData.Port))
-                .ConfigureAwait(false);
+            if (GameData == null)
+            {
+                GameData = await GetGameDataAsync()
+                    .ConfigureAwait(false);
+            }
+
+            int port = int.Parse(GameData.Port.Split(',')[0]);
+            string address = (await Dns.GetHostAddressesAsync(
+                GameData.Host).ConfigureAwait(false))[0].ToString();
+
+            Remote = await HNode.ConnectAsync(address,
+                port).ConfigureAwait(false);
+
+            await SendToServerAsync(Encoding.UTF8.GetBytes(
+                "<policy-file-request/>\0")).ConfigureAwait(false);
+
+            Remote.Dispose();
+            Remote = await HNode.ConnectAsync(Dns.GetHostAddresses(GameData.Host)[0].ToString(),
+                int.Parse(GameData.Port.Split(',')[0])).ConfigureAwait(false);
 
             IsConnected = true;
             OnConnected(EventArgs.Empty);
@@ -137,46 +138,37 @@ namespace Sulakore.Habbo.Web
             try
             {
                 IsAuthenticated = false;
-                Cookies.SetCookies(_hotelUri, await SKore.GetIPCookieAsync(Hotel).ConfigureAwait(false));
-                byte[] postData = Encoding.UTF8.GetBytes($"{{\"email\":\"{Email}\",\"password\":\"{Password}\"}}");
+                byte[] postData = Encoding.UTF8.GetBytes(
+                    $"{{\"email\":\"{Email}\",\"password\":\"{Password}\"}}");
 
-                var loginRequest = (HttpWebRequest)WebRequest.Create(_hotelUri.OriginalString + "/api/public/authentication/login");
-                loginRequest.ContentType = "application/json;charset=UTF-8";
-                loginRequest.CookieContainer = Cookies;
-                loginRequest.AllowAutoRedirect = false;
-                loginRequest.Method = "POST";
-                loginRequest.Proxy = null;
+                var request = (HttpWebRequest)WebRequest.Create(
+                    _hotelUri.OriginalString + "/api/public/authentication/login");
 
-                using (Stream requestStream = await loginRequest.GetRequestStreamAsync()
-                    .ConfigureAwait(false))
+                request.ContentType = "application/json;charset=UTF-8";
+                string body = await Requester.DownloadStringAsync(
+                    request, postData).ConfigureAwait(false);
+
+                if (!string.IsNullOrWhiteSpace(body))
                 {
-                    await requestStream.WriteAsync(postData,
-                        0, postData.Length).ConfigureAwait(false);
-                }
-
-                using (WebResponse loginResponse = await loginRequest
-                    .GetResponseAsync().ConfigureAwait(false))
-                using (Stream loginStream = loginResponse.GetResponseStream())
-                using (var loginReader = new StreamReader(loginStream))
-                {
-                    string body = await loginReader.ReadToEndAsync()
-                        .ConfigureAwait(false);
-
+                    IsAuthenticated = true;
                     User = HUser.Create(body);
-                    Cookies.SetCookies(_hotelUri, loginResponse.Headers["Set-Cookie"]);
-
-                    IsAuthenticated = ((HttpWebResponse)loginResponse)
-                        .StatusCode == HttpStatusCode.OK;
-
-                    if (IsAuthenticated)
-                    {
-                        await ExtractGameDataAsync()
-                            .ConfigureAwait(false);
-                    }
                 }
             }
             catch { IsAuthenticated = false; }
             return IsAuthenticated;
+        }
+        public async Task<HGameData> GetGameDataAsync()
+        {
+            string body = await Requester.DownloadStringAsync(
+                _hotelUri.OriginalString + "/api/client/clienturl").ConfigureAwait(false);
+
+            body = body.GetChild("{\"clienturl\":\"", '"');
+            SsoTicket = body.Split('/').Last();
+
+            body = await Requester.DownloadStringAsync(body)
+                .ConfigureAwait(false);
+
+            return (GameData = new HGameData(body));
         }
 
         public Task<int> SendToServerAsync(byte[] data)
@@ -195,40 +187,6 @@ namespace Sulakore.Habbo.Web
 
             if (packet == null) Disconnect();
             else HandleIncoming(packet, ++TotalIncoming);
-        }
-        private async Task ExtractGameDataAsync()
-        {
-            var clientUrlRequest = (HttpWebRequest)WebRequest.Create(_hotelUri.OriginalString + "/api/client/clienturl");
-            clientUrlRequest.ContentType = "application/json;charset=UTF-8";
-            clientUrlRequest.CookieContainer = Cookies;
-            clientUrlRequest.AllowAutoRedirect = false;
-            clientUrlRequest.Method = "GET";
-            clientUrlRequest.Proxy = null;
-
-            using (WebResponse clientUrlResponse = await clientUrlRequest
-                .GetResponseAsync().ConfigureAwait(false))
-            using (Stream clientUrlStream = clientUrlResponse.GetResponseStream())
-            using (var clientUrlReader = new StreamReader(clientUrlStream))
-            {
-                string clientUrl = await clientUrlReader
-                    .ReadToEndAsync().ConfigureAwait(false);
-
-                clientUrl = clientUrl
-                    .GetChild("{\"clienturl\":\"", '"');
-
-                using (var client = new WebClient())
-                {
-                    client.Proxy = null;
-                    client.Headers["Cookie"] =
-                        clientUrlRequest.Headers["Cookie"];
-
-                    SsoTicket = clientUrl.Split('/').Last();
-                    string clientBody = await client.DownloadStringTaskAsync(
-                        clientUrl).ConfigureAwait(false);
-
-                    GameData = new HGameData(clientBody);
-                }
-            }
         }
         private void HandleIncoming(byte[] data, int count)
         {
