@@ -12,7 +12,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <AssemblyVersion>5.0.186.0</AssemblyVersion>
+    <AssemblyVersion>5.0.287.0</AssemblyVersion>
     <PrimaryVersionType>AssemblyFileVersionAttribute</PrimaryVersionType>
     <AssemblyInfoFilePath>Properties\AssemblyInfo.cs</AssemblyInfoFilePath>
     <UpdateAssemblyVersion>True</UpdateAssemblyVersion>
@@ -29,6 +29,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -161,6 +162,7 @@
     <Compile Include="Habbo\Enums\HTheme.cs" />
     <Compile Include="Habbo\Headers\Incoming.cs" />
     <Compile Include="Habbo\Headers\Outgoing.cs" />
+    <Compile Include="Habbo\HFlash.cs" />
     <Compile Include="Habbo\HFurniture.cs" />
     <Compile Include="Habbo\HEntityAction.cs" />
     <Compile Include="Habbo\HEntity.cs" />
@@ -169,6 +171,7 @@
     <Compile Include="Habbo\IHEntity.cs" />
     <Compile Include="Habbo\Web\HRequest.cs" />
     <Compile Include="Internals\NativeMethods.cs" />
+    <Compile Include="Internals\NetSettings.cs" />
     <Compile Include="Ionic\Crc\CRC32.cs" />
     <Compile Include="Ionic\Zlib\Deflate.cs" />
     <Compile Include="Ionic\Zlib\DeflateStream.cs" />

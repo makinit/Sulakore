@@ -35,6 +35,7 @@ namespace FlashInspect
     /// </summary>
     public class ShockwaveFlash : IDisposable
     {
+        private int _frameEndPos;
         private byte[] _flashData, _frameData;
 
         public string Location { get; }
@@ -175,42 +176,17 @@ namespace FlashInspect
         /// <summary>
         /// Reads the flash tags that make up the content of the Shockwave Flash(SWF) file.
         /// </summary>
-        public List<FlashTag> ReadTags()
+        public virtual List<FlashTag> ReadTags()
         {
+            Tags.Clear();
+            Reader.Position = _frameEndPos;
+
             while (Reader.Position != Reader.Length)
             {
-                FlashTag tag = null;
                 var header = new TagRecord(Reader);
                 int expectedPosition = (header.Body.Length + Reader.Position);
 
-                switch (header.TagType)
-                {
-                    default:
-                    tag = new UnknownTag(Reader, header);
-                    break;
-
-                    case FlashTagType.DoABC:
-                    tag = new DoABCTag(Reader, header);
-                    break;
-
-                    case FlashTagType.DefineBitsLossless2:
-                    tag = new DefineBitsLossless2Tag(Reader, header);
-                    break;
-
-                    case FlashTagType.DefineBinaryData:
-                    tag = new DefineBinaryDataTag(Reader, header);
-                    break;
-                }
-
-                var character = (tag as ICharacter);
-                if (character != null)
-                {
-                    // Add ICharacter tag to the global dictionary.
-                    Dictionary.Characters[
-                        character.CharacterId] = character;
-                }
-
-                Tags.Add(tag);
+                Tags.Add(ReadTag(Reader, header));
                 if (Reader.Position != expectedPosition)
                 {
                     int lastTagIndex = (Tags.Count - 1);
@@ -220,6 +196,38 @@ namespace FlashInspect
                 }
             }
             return Tags;
+        }
+
+        protected virtual FlashTag ReadTag(FlashReader reader, TagRecord header)
+        {
+            FlashTag tag = null;
+            switch (header.TagType)
+            {
+                default:
+                tag = new UnknownTag(Reader, header);
+                break;
+
+                case FlashTagType.DoABC:
+                tag = new DoABCTag(Reader, header);
+                break;
+
+                case FlashTagType.DefineBitsLossless2:
+                tag = new DefineBitsLossless2Tag(Reader, header);
+                break;
+
+                case FlashTagType.DefineBinaryData:
+                tag = new DefineBinaryDataTag(Reader, header);
+                break;
+            }
+
+            var character = (tag as ICharacter);
+            if (character != null)
+            {
+                // Add ICharacter tag to the global dictionary.
+                Dictionary.Characters[
+                    character.CharacterId] = character;
+            }
+            return tag;
         }
 
         /// <summary>
@@ -237,10 +245,10 @@ namespace FlashInspect
             FrameRate = (ushort)(Reader.ReadUInt16() >> 8);
             FrameCount = Reader.ReadUInt16();
 
-            int end = Reader.Position;
+            _frameEndPos = Reader.Position;
             Reader.Position = 8;
 
-            _frameData = Reader.ReadBytes(end - 8);
+            _frameData = Reader.ReadBytes(_frameEndPos - 8);
         }
         /// <summary>
         /// Stitches the Shockwave Flash(SWF) file header containing basic information, with the compressed/uncompressed content of the file. 

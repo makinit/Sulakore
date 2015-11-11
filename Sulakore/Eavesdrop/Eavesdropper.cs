@@ -20,10 +20,9 @@ namespace Eavesdrop
         private static TcpListener _listener;
 
         private static readonly Regex _cookieSplitter;
+        private static readonly byte[] _fakeOkResponse;
         private static readonly List<Task> _handleClientRequestTasks;
         private static readonly object _initiateLock, _terminateLock;
-
-        private static readonly byte[] _fakeOkResponse = { 72, 84, 84, 80, 47, 49, 46, 48, 32, 50, 48, 48, 13, 10, 13, 10 };
 
         public static event EventHandler<EavesdropperRequestEventArgs> EavesdropperRequest;
         private static void OnEavesdropperRequest(EavesdropperRequestEventArgs e)
@@ -37,15 +36,7 @@ namespace Eavesdrop
             EavesdropperResponse?.Invoke(null, e);
         }
 
-        public static bool IsSslSupported
-        {
-            get { return NativeMethods.IsSslSupported; }
-            set { NativeMethods.IsSslSupported = value; }
-        }
-        public static bool IsProxyRegistered
-        {
-            get { return NativeMethods.IsProxyRegistered; }
-        }
+        public static bool IsSslSupported { get; set; }
         public static bool IsCacheDisabled { get; set; }
         public static bool IsRunning { get; private set; }
 
@@ -61,6 +52,7 @@ namespace Eavesdrop
             _terminateLock = new object();
             _cookieSplitter = new Regex(@",(?! )");
             _handleClientRequestTasks = new List<Task>();
+            _fakeOkResponse = Encoding.UTF8.GetBytes("HTTP/1.0 200\r\n\r\n");
         }
 
         public static void Terminate()
@@ -75,32 +67,39 @@ namespace Eavesdrop
                 finally
                 {
                     Monitor.Exit(_terminateLock);
-                    NativeMethods.TerminateProxy();
+                    NetSettings.Terminate();
                 }
             }
         }
         public static void Initiate(int port)
         {
-            if (IsRunning || !Monitor.TryEnter(_initiateLock))
-                return;
-            try
+            if (IsRunning) Terminate();
+            if (Monitor.TryEnter(_initiateLock))
             {
-                IsRunning = true;
+                try
+                {
+                    IsRunning = true;
+                    ListenPort = port;
 
-                ListenPort = port;
-                NativeMethods.InitiateProxy(port);
+                    string proxyServer = "http=127.0.0.1:" + port;
 
-                Task.Factory.StartNew(ReadClientRequestLoop,
-                    TaskCreationOptions.LongRunning);
+                    if (IsSslSupported)
+                        proxyServer += ";https=127.0.0.1:" + port;
+
+                    NetSettings.Initiate(
+                        proxyServer, "<-loopback>;<local>");
+
+                    Task.Factory.StartNew(ReadClientRequestLoop,
+                        TaskCreationOptions.LongRunning);
+                }
+                catch
+                {
+                    ListenPort = 0;
+                    IsRunning = false;
+                    NetSettings.Terminate();
+                }
+                finally { Monitor.Exit(_initiateLock); }
             }
-            catch
-            {
-                ListenPort = 0;
-                NativeMethods.TerminateProxy();
-
-                IsRunning = false;
-            }
-            finally { Monitor.Exit(_initiateLock); }
         }
 
         private static void ReadClientRequestLoop()
@@ -129,11 +128,7 @@ namespace Eavesdrop
 
                         _handleClientRequestTasks.Add(readRequestTask);
                     }
-                    catch
-                    {
-                        if (!IsRunning)
-                            break;
-                    }
+                    catch { /* Listener stopped. */ }
                 }
             }
             finally
