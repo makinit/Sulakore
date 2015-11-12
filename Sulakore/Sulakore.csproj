@@ -12,14 +12,16 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <AssemblyVersion>5.0.287.0</AssemblyVersion>
-    <PrimaryVersionType>AssemblyFileVersionAttribute</PrimaryVersionType>
-    <AssemblyInfoFilePath>Properties\AssemblyInfo.cs</AssemblyInfoFilePath>
+    <AssemblyVersion>5.0.310.0</AssemblyVersion>
+    <PrimaryVersionType>AssemblyVersionAttribute</PrimaryVersionType>
+    <AssemblyInfoFilePath>
+    </AssemblyInfoFilePath>
     <UpdateAssemblyVersion>True</UpdateAssemblyVersion>
-    <UpdateAssemblyFileVersion>True</UpdateAssemblyFileVersion>
+    <UpdateAssemblyFileVersion>False</UpdateAssemblyFileVersion>
     <UpdateAssemblyInfoVersion>False</UpdateAssemblyInfoVersion>
     <AssemblyVersionSettings>None.IncrementOnDemandWithReset.Increment.None</AssemblyVersionSettings>
-    <AssemblyFileVersionSettings>None.IncrementOnDemandWithReset.Increment.None</AssemblyFileVersionSettings>
+    <AssemblyFileVersionSettings>
+    </AssemblyFileVersionSettings>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -186,9 +188,10 @@
     <Compile Include="Ionic\Zlib\ZlibConstants.cs" />
     <Compile Include="Ionic\Zlib\ZlibStream.cs" />
     <Compile Include="Protocol\BigEndian.cs" />
-    <Compile Include="Protocol\Encryption\BigInteger.cs" />
+    <Compile Include="Protocol\Encryption\BigInteger2.cs" />
     <Compile Include="Protocol\Encryption\Enums\PKCSPadding.cs" />
     <Compile Include="Protocol\Encryption\HKeyExchange.cs" />
+    <Compile Include="Protocol\Encryption\HKeyExchange2.cs" />
     <Compile Include="Protocol\Encryption\Rc4.cs" />
     <Compile Include="Protocol\Encryption\RsaKey.cs" />
     <Compile Include="Protocol\Enums\HDestination.cs" />
