@@ -12,7 +12,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <AssemblyVersion>5.0.368.0</AssemblyVersion>
+    <AssemblyVersion>5.0.374.0</AssemblyVersion>
     <PrimaryVersionType>AssemblyVersionAttribute</PrimaryVersionType>
     <AssemblyInfoFilePath>
     </AssemblyInfoFilePath>
@@ -188,10 +188,10 @@
     <Compile Include="Ionic\Zlib\ZlibConstants.cs" />
     <Compile Include="Ionic\Zlib\ZlibStream.cs" />
     <Compile Include="Protocol\BigEndian.cs" />
-    <Compile Include="Protocol\Encryption\BigInteger2.cs" />
+    <Compile Include="Protocol\Encryption\BigInteger.cs" />
     <Compile Include="Protocol\Encryption\Enums\PKCSPadding.cs" />
+    <Compile Include="Protocol\Encryption\HKeyExchangeNEW.cs" />
     <Compile Include="Protocol\Encryption\HKeyExchange.cs" />
-    <Compile Include="Protocol\Encryption\HKeyExchange2.cs" />
     <Compile Include="Protocol\Encryption\Rc4.cs" />
     <Compile Include="Protocol\Encryption\RsaKey.cs" />
     <Compile Include="Protocol\Enums\HDestination.cs" />
