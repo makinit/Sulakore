@@ -25,6 +25,8 @@ namespace Sulakore.Protocol.Encryption
         { }
         public HKeyExchange2(int e, string n, string d, int bitSize = 16)
         {
+            _byteGen = new Random();
+
             DHBitSize = bitSize;
             IsInitiator = !string.IsNullOrWhiteSpace(d);
 
