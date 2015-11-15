@@ -13,35 +13,35 @@ namespace Sulakore.Protocol.Encryption
         /// <summary>
         /// Public Exponent
         /// </summary>
-        public BigInteger2 E { get; }
+        public BigInteger E { get; }
         /// <summary>
         /// Public Modulus
         /// </summary>
-        public BigInteger2 N { get; }
+        public BigInteger N { get; }
         /// <summary>
         /// Private Exponent
         /// </summary>
-        public BigInteger2 D { get; }
+        public BigInteger D { get; }
         /// <summary>
         /// Secret Prime Factor (P * Q = N)
         /// </summary>
-        public BigInteger2 P { get; }
+        public BigInteger P { get; }
         /// <summary>
         /// Secret Prime Factor (P * Q = N)
         /// </summary>
-        public BigInteger2 Q { get; }
+        public BigInteger Q { get; }
         /// <summary>
         /// D Mod (P - 1)
         /// </summary>
-        public BigInteger2 Dmp1 { get; }
+        public BigInteger Dmp1 { get; }
         /// <summary>
         /// D Mod (Q - 1)
         /// </summary>
-        public BigInteger2 Dmq1 { get; }
+        public BigInteger Dmq1 { get; }
         /// <summary>
         /// (Inverse)Q Mod P
         /// </summary>
-        public BigInteger2 Iqmp { get; }
+        public BigInteger Iqmp { get; }
         /// <summary>
         /// Gets a value that determines whether the <see cref="RsaKey"/> can encrypt data.
         /// </summary>
@@ -61,14 +61,14 @@ namespace Sulakore.Protocol.Encryption
         {
             _byteGen = new Random();
         }
-        public RsaKey(BigInteger2 e, BigInteger2 n) :
+        public RsaKey(BigInteger e, BigInteger n) :
             this(e, n, null, null, null, null, null, null)
         { }
-        public RsaKey(BigInteger2 e, BigInteger2 n, BigInteger2 d) :
+        public RsaKey(BigInteger e, BigInteger n, BigInteger d) :
             this(e, n, d, null, null, null, null, null)
         { }
-        public RsaKey(BigInteger2 e, BigInteger2 n, BigInteger2 d, BigInteger2 p,
-            BigInteger2 q, BigInteger2 dmp1, BigInteger2 dmq1, BigInteger2 iqmp)
+        public RsaKey(BigInteger e, BigInteger n, BigInteger d, BigInteger p,
+            BigInteger q, BigInteger dmp1, BigInteger dmq1, BigInteger iqmp)
         {
             E = e;
             N = n;
@@ -98,10 +98,10 @@ namespace Sulakore.Protocol.Encryption
         {
             Decrypt(DoPrivate, ref data);
         }
-        private void Decrypt(Func<BigInteger2, BigInteger2> doFunc, ref byte[] data)
+        private void Decrypt(Func<BigInteger, BigInteger> doFunc, ref byte[] data)
         {
-            var encryptedN = new BigInteger2(data);
-            BigInteger2 result = doFunc(encryptedN);
+            var encryptedN = new BigInteger(data);
+            BigInteger result = doFunc(encryptedN);
 
             byte[] padded = result.ToBytes();
             data = PKCS1Unpad(padded, BlockSize);
@@ -111,26 +111,26 @@ namespace Sulakore.Protocol.Encryption
         {
             Encrypt(DoPublic, ref data);
         }
-        private void Encrypt(Func<BigInteger2, BigInteger2> doFunc, ref byte[] data)
+        private void Encrypt(Func<BigInteger, BigInteger> doFunc, ref byte[] data)
         {
             byte[] padded = PKCS1Pad(data, BlockSize);
-            var paddedN = new BigInteger2(padded);
+            var paddedN = new BigInteger(padded);
 
             data = doFunc(paddedN).ToBytes();
         }
 
-        private BigInteger2 DoPrivate(BigInteger2 x)
+        private BigInteger DoPrivate(BigInteger x)
         {
             if (P == null && Q == null)
                 return x.ModPow(D, N);
 
-            BigInteger2 xp = (x % P).ModPow(Dmp1, P);
-            BigInteger2 xq = (x % Q).ModPow(Dmq1, Q);
+            BigInteger xp = (x % P).ModPow(Dmp1, P);
+            BigInteger xq = (x % Q).ModPow(Dmq1, Q);
 
             while (xp < xq) xp = xp + P;
             return ((((xp - xq) * (Iqmp)) % P) * Q) + xq;
         }
-        private BigInteger2 DoPublic(BigInteger2 x) => x.ModPow(E, N);
+        private BigInteger DoPublic(BigInteger x) => x.ModPow(E, N);
 
         private byte[] PKCS1Pad(byte[] data, int length)
         {
@@ -172,43 +172,43 @@ namespace Sulakore.Protocol.Encryption
 
         public static RsaKey ParsePublicKey(int e, string n)
         {
-            return new RsaKey(new BigInteger2(
-                e.ToString(), 16), new BigInteger2(n, 16));
+            return new RsaKey(new BigInteger(
+                e.ToString(), 16), new BigInteger(n, 16));
         }
         public static RsaKey Create(int exponent, int bitSize)
         {
-            BigInteger2 p, q, e = new BigInteger2(exponent.ToString(), 16);
+            BigInteger p, q, e = new BigInteger(exponent.ToString(), 16);
 
-            BigInteger2 phi, p1, q1;
+            BigInteger phi, p1, q1;
             int qs = bitSize >> 1;
             do
             {
-                do p = BigInteger2.GenPseudoPrime(bitSize - qs, 6, _byteGen);
+                do p = BigInteger.GenPseudoPrime(bitSize - qs, 6, _byteGen);
                 while ((p - 1).Gcd(e) != 1 && !p.IsProbablePrime(10));
 
-                do q = BigInteger2.GenPseudoPrime(qs, 6, _byteGen);
+                do q = BigInteger.GenPseudoPrime(qs, 6, _byteGen);
                 while ((q - 1).Gcd(e) != 1 && !q.IsProbablePrime(10) && q == p);
 
                 if (p < q)
                 {
-                    BigInteger2 tmpP = p;
+                    BigInteger tmpP = p;
                     p = q; q = tmpP;
                 }
                 phi = (p1 = (p - 1)) * (q1 = (q - 1));
             }
             while (phi.Gcd(e) != 1);
 
-            BigInteger2 n = p * q;
-            BigInteger2 d = e.ModInverse(phi);
-            BigInteger2 dmp1 = d % p1;
-            BigInteger2 dmq1 = d % q1;
-            BigInteger2 iqmp = q.ModInverse(p);
+            BigInteger n = p * q;
+            BigInteger d = e.ModInverse(phi);
+            BigInteger dmp1 = d % p1;
+            BigInteger dmq1 = d % q1;
+            BigInteger iqmp = q.ModInverse(p);
             return new RsaKey(e, n, d, p, q, dmp1, dmq1, iqmp);
         }
         public static RsaKey ParsePrivateKey(int e, string n, string d)
         {
-            return new RsaKey(new BigInteger2(e.ToString(), 16),
-                new BigInteger2(n, 16), new BigInteger2(d, 16));
+            return new RsaKey(new BigInteger(e.ToString(), 16),
+                new BigInteger(n, 16), new BigInteger(d, 16));
         }
 
         public void Dispose()

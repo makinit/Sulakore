@@ -27,7 +27,7 @@ namespace Sulakore.Protocol.Encryption
     /// <summary>
     /// Represents a large number.
     /// </summary>
-    public class BigInteger2 : IDisposable
+    public class BigInteger : IDisposable
     {
         private uint[] _data;
         private const int MAX_LENGTH = 70;
@@ -73,7 +73,7 @@ namespace Sulakore.Protocol.Encryption
         /// <summary>
         /// Initializes a new instance of the BigInteger class with the default value of 0.
         /// </summary>
-        public BigInteger2()
+        public BigInteger()
         {
             _data = new uint[MAX_LENGTH];
             DataLength = 1;
@@ -82,7 +82,7 @@ namespace Sulakore.Protocol.Encryption
         /// Initializes a new instance of the BigInteger class.
         /// </summary>
         /// <param name="value">The long value to initialize the instance with.</param>
-        public BigInteger2(long value)
+        public BigInteger(long value)
         {
             _data = new uint[MAX_LENGTH];
             long tempVal = value;
@@ -113,7 +113,7 @@ namespace Sulakore.Protocol.Encryption
         /// Initializes a new instance of the BigInteger class.
         /// </summary>
         /// <param name="value">The ulong value to initialize the instance with.</param>
-        public BigInteger2(ulong value)
+        public BigInteger(ulong value)
         {
             _data = new uint[MAX_LENGTH];
 
@@ -135,7 +135,7 @@ namespace Sulakore.Protocol.Encryption
         /// Initializes a new instance of the BigInteger class.
         /// </summary>
         /// <param name="bigInteger">The BigInteger value to initialize the instance with.</param>
-        public BigInteger2(BigInteger2 bigInteger)
+        public BigInteger(BigInteger bigInteger)
         {
             _data = new uint[MAX_LENGTH];
 
@@ -149,10 +149,10 @@ namespace Sulakore.Protocol.Encryption
         /// </summary>
         /// <param name="value">The string value to initialize the instance with the provided base.</param>
         /// <param name="radix">The int value that dictates the base of the provided System.String.</param>
-        public BigInteger2(string value, int radix)
+        public BigInteger(string value, int radix)
         {
-            BigInteger2 multiplier = new BigInteger2(1);
-            BigInteger2 result = new BigInteger2();
+            BigInteger multiplier = new BigInteger(1);
+            BigInteger result = new BigInteger();
             value = (value.ToUpper()).Trim();
             int limit = 0;
 
@@ -206,7 +206,7 @@ namespace Sulakore.Protocol.Encryption
         /// Initializes a new instance of the BigInteger class.
         /// </summary>
         /// <param name="data">The byte array value to initialize the instance with.</param>
-        public BigInteger2(byte[] data)
+        public BigInteger(byte[] data)
         {
             DataLength = data.Length >> 2;
 
@@ -241,7 +241,7 @@ namespace Sulakore.Protocol.Encryption
         /// </summary>
         /// <param name="data">The byte array value to initialize the instance with.</param>
         /// <param name="length">The int value that specifies the length to use for the provided byte array.</param>
-        public BigInteger2(byte[] data, int length)
+        public BigInteger(byte[] data, int length)
         {
             DataLength = length >> 2;
 
@@ -277,7 +277,7 @@ namespace Sulakore.Protocol.Encryption
         /// Initializes a new instance of the BigInteger class.
         /// </summary>
         /// <param name="data">The uint array value to initialize the instance with.</param>
-        public BigInteger2(uint[] data)
+        public BigInteger(uint[] data)
         {
             DataLength = data.Length;
 
@@ -293,26 +293,26 @@ namespace Sulakore.Protocol.Encryption
                 DataLength--;
         }
 
-        public static implicit operator BigInteger2(long value)
+        public static implicit operator BigInteger(long value)
         {
-            return (new BigInteger2(value));
+            return (new BigInteger(value));
         }
-        public static implicit operator BigInteger2(ulong value)
+        public static implicit operator BigInteger(ulong value)
         {
-            return (new BigInteger2(value));
+            return (new BigInteger(value));
         }
-        public static implicit operator BigInteger2(int value)
+        public static implicit operator BigInteger(int value)
         {
-            return (new BigInteger2(value));
+            return (new BigInteger(value));
         }
-        public static implicit operator BigInteger2(uint value)
+        public static implicit operator BigInteger(uint value)
         {
-            return (new BigInteger2((ulong)value));
+            return (new BigInteger((ulong)value));
         }
 
-        public static BigInteger2 operator --(BigInteger2 instance)
+        public static BigInteger operator --(BigInteger instance)
         {
-            BigInteger2 result = new BigInteger2(instance);
+            BigInteger result = new BigInteger(instance);
 
             long val;
             bool carryIn = true;
@@ -347,9 +347,9 @@ namespace Sulakore.Protocol.Encryption
 
             return result;
         }
-        public static BigInteger2 operator ++(BigInteger2 instance)
+        public static BigInteger operator ++(BigInteger instance)
         {
-            BigInteger2 result = new BigInteger2(instance);
+            BigInteger result = new BigInteger(instance);
 
             long val, carry = 1;
             int index = 0;
@@ -382,9 +382,9 @@ namespace Sulakore.Protocol.Encryption
             }
             return result;
         }
-        public static BigInteger2 operator ~(BigInteger2 instance)
+        public static BigInteger operator ~(BigInteger instance)
         {
-            BigInteger2 result = new BigInteger2(instance);
+            BigInteger result = new BigInteger(instance);
 
             for (int i = 0; i < MAX_LENGTH; i++)
                 result._data[i] = (uint)(~(instance._data[i]));
@@ -396,12 +396,12 @@ namespace Sulakore.Protocol.Encryption
 
             return result;
         }
-        public static BigInteger2 operator -(BigInteger2 instance)
+        public static BigInteger operator -(BigInteger instance)
         {
             if (instance.DataLength == 1 && instance._data[0] == 0)
-                return (new BigInteger2());
+                return (new BigInteger());
 
-            BigInteger2 result = new BigInteger2(instance);
+            BigInteger result = new BigInteger(instance);
 
             for (int i = 0; i < MAX_LENGTH; i++)
                 result._data[i] = (uint)(~(instance._data[i]));
@@ -430,10 +430,10 @@ namespace Sulakore.Protocol.Encryption
             return result;
         }
 
-        public static BigInteger2 operator /(BigInteger2 left, BigInteger2 right)
+        public static BigInteger operator /(BigInteger left, BigInteger right)
         {
-            BigInteger2 quotient = new BigInteger2();
-            BigInteger2 remainder = new BigInteger2();
+            BigInteger quotient = new BigInteger();
+            BigInteger remainder = new BigInteger();
 
             int lastPos = MAX_LENGTH - 1;
             bool divisorNeg = false, dividendNeg = false;
@@ -467,10 +467,10 @@ namespace Sulakore.Protocol.Encryption
                 return quotient;
             }
         }
-        public static BigInteger2 operator %(BigInteger2 left, BigInteger2 right)
+        public static BigInteger operator %(BigInteger left, BigInteger right)
         {
-            BigInteger2 quotient = new BigInteger2();
-            BigInteger2 remainder = new BigInteger2(left);
+            BigInteger quotient = new BigInteger();
+            BigInteger remainder = new BigInteger(left);
 
             int lastPos = MAX_LENGTH - 1;
             bool dividendNeg = false;
@@ -501,9 +501,9 @@ namespace Sulakore.Protocol.Encryption
                 return remainder;
             }
         }
-        public static BigInteger2 operator &(BigInteger2 left, BigInteger2 right)
+        public static BigInteger operator &(BigInteger left, BigInteger right)
         {
-            BigInteger2 result = new BigInteger2();
+            BigInteger result = new BigInteger();
             int len = (left.DataLength > right.DataLength) ? left.DataLength : right.DataLength;
 
             for (int i = 0; i < len; i++)
@@ -519,9 +519,9 @@ namespace Sulakore.Protocol.Encryption
 
             return result;
         }
-        public static BigInteger2 operator |(BigInteger2 left, BigInteger2 right)
+        public static BigInteger operator |(BigInteger left, BigInteger right)
         {
-            BigInteger2 result = new BigInteger2();
+            BigInteger result = new BigInteger();
             int len = (left.DataLength > right.DataLength) ? left.DataLength : right.DataLength;
 
             for (int i = 0; i < len; i++)
@@ -537,9 +537,9 @@ namespace Sulakore.Protocol.Encryption
 
             return result;
         }
-        public static BigInteger2 operator ^(BigInteger2 left, BigInteger2 right)
+        public static BigInteger operator ^(BigInteger left, BigInteger right)
         {
-            BigInteger2 result = new BigInteger2();
+            BigInteger result = new BigInteger();
             int len = (left.DataLength > right.DataLength) ? left.DataLength : right.DataLength;
 
             for (int i = 0; i < len; i++)
@@ -556,9 +556,9 @@ namespace Sulakore.Protocol.Encryption
             return result;
         }
 
-        public static BigInteger2 operator +(BigInteger2 left, BigInteger2 right)
+        public static BigInteger operator +(BigInteger left, BigInteger right)
         {
-            BigInteger2 result = new BigInteger2();
+            BigInteger result = new BigInteger();
 
             result.DataLength = (left.DataLength > right.DataLength) ? left.DataLength : right.DataLength;
 
@@ -588,9 +588,9 @@ namespace Sulakore.Protocol.Encryption
 
             return result;
         }
-        public static BigInteger2 operator -(BigInteger2 left, BigInteger2 right)
+        public static BigInteger operator -(BigInteger left, BigInteger right)
         {
-            BigInteger2 result = new BigInteger2();
+            BigInteger result = new BigInteger();
 
             result.DataLength = (left.DataLength > right.DataLength) ? left.DataLength : right.DataLength;
 
@@ -627,7 +627,7 @@ namespace Sulakore.Protocol.Encryption
 
             return result;
         }
-        public static BigInteger2 operator *(BigInteger2 left, BigInteger2 right)
+        public static BigInteger operator *(BigInteger left, BigInteger right)
         {
             int lastPos = MAX_LENGTH - 1;
             bool bi1Neg = false, bi2Neg = false;
@@ -645,7 +645,7 @@ namespace Sulakore.Protocol.Encryption
             }
             catch (Exception) { }
 
-            BigInteger2 result = new BigInteger2();
+            BigInteger result = new BigInteger();
 
             try
             {
@@ -709,9 +709,9 @@ namespace Sulakore.Protocol.Encryption
             return result;
         }
 
-        public static BigInteger2 operator <<(BigInteger2 instance, int shift)
+        public static BigInteger operator <<(BigInteger instance, int shift)
         {
-            BigInteger2 result = new BigInteger2(instance);
+            BigInteger result = new BigInteger(instance);
             result.DataLength = ShiftLeft(result._data, shift);
 
             return result;
@@ -752,9 +752,9 @@ namespace Sulakore.Protocol.Encryption
             return bufLen;
         }
 
-        public static BigInteger2 operator >>(BigInteger2 instance, int shift)
+        public static BigInteger operator >>(BigInteger instance, int shift)
         {
-            BigInteger2 result = new BigInteger2(instance);
+            BigInteger result = new BigInteger(instance);
             result.DataLength = ShiftRight(result._data, shift);
 
 
@@ -813,19 +813,19 @@ namespace Sulakore.Protocol.Encryption
             return bufLen;
         }
 
-        public static bool operator ==(BigInteger2 left, BigInteger2 right)
+        public static bool operator ==(BigInteger left, BigInteger right)
         {
             if (object.ReferenceEquals(left, right)) return true;
             if (((object)left == null) || ((object)right == null)) return false;
 
             return left.Equals(right);
         }
-        public static bool operator !=(BigInteger2 left, BigInteger2 right)
+        public static bool operator !=(BigInteger left, BigInteger right)
         {
             return !(left == right);
         }
 
-        public static bool operator >(BigInteger2 left, BigInteger2 right)
+        public static bool operator >(BigInteger left, BigInteger right)
         {
             int pos = MAX_LENGTH - 1;
 
@@ -846,7 +846,7 @@ namespace Sulakore.Protocol.Encryption
             }
             return false;
         }
-        public static bool operator <(BigInteger2 left, BigInteger2 right)
+        public static bool operator <(BigInteger left, BigInteger right)
         {
             int pos = MAX_LENGTH - 1;
 
@@ -867,16 +867,16 @@ namespace Sulakore.Protocol.Encryption
             }
             return false;
         }
-        public static bool operator >=(BigInteger2 left, BigInteger2 right)
+        public static bool operator >=(BigInteger left, BigInteger right)
         {
             return (left == right || left > right);
         }
-        public static bool operator <=(BigInteger2 left, BigInteger2 right)
+        public static bool operator <=(BigInteger left, BigInteger right)
         {
             return (left == right || left < right);
         }
 
-        private bool LucasStrongTestHelper(BigInteger2 thisVal)
+        private bool LucasStrongTestHelper(BigInteger thisVal)
         {
             long D = 5, sign = -1, dCount = 0;
             bool done = false;
@@ -894,7 +894,7 @@ namespace Sulakore.Protocol.Encryption
 
                     if (dCount == 20)
                     {
-                        BigInteger2 root = thisVal.Sqrt();
+                        BigInteger root = thisVal.Sqrt();
                         if (root * root == thisVal)
                             return false;
                     }
@@ -906,7 +906,7 @@ namespace Sulakore.Protocol.Encryption
 
             long Q = (1 - D) >> 2;
 
-            BigInteger2 p_add1 = thisVal + 1;
+            BigInteger p_add1 = thisVal + 1;
             int s = 0;
 
             for (int index = 0; index < p_add1.DataLength; index++)
@@ -925,9 +925,9 @@ namespace Sulakore.Protocol.Encryption
                 }
             }
 
-            BigInteger2 t = p_add1 >> s;
+            BigInteger t = p_add1 >> s;
 
-            BigInteger2 constant = new BigInteger2();
+            BigInteger constant = new BigInteger();
 
             int nLen = thisVal.DataLength << 1;
             constant._data[nLen] = 0x00000001;
@@ -935,7 +935,7 @@ namespace Sulakore.Protocol.Encryption
 
             constant = constant / thisVal;
 
-            BigInteger2[] lucas = LucasSequenceHelper(1, Q, t, thisVal, constant, 0);
+            BigInteger[] lucas = LucasSequenceHelper(1, Q, t, thisVal, constant, 0);
             bool isPrime = false;
 
             if ((lucas[0].DataLength == 1 && lucas[0]._data[0] == 0) ||
@@ -963,13 +963,13 @@ namespace Sulakore.Protocol.Encryption
 
             if (isPrime)
             {
-                BigInteger2 g = thisVal.Gcd(Q);
+                BigInteger g = thisVal.Gcd(Q);
                 if (g.DataLength == 1 && g._data[0] == 1)
                 {
                     if ((lucas[2]._data[MAX_LENGTH - 1] & 0x80000000) != 0)
                         lucas[2] += thisVal;
 
-                    BigInteger2 temp = (Q * BigInteger2.Jacobi(Q, thisVal)) % thisVal;
+                    BigInteger temp = (Q * BigInteger.Jacobi(Q, thisVal)) % thisVal;
                     if ((temp._data[MAX_LENGTH - 1] & 0x80000000) != 0)
                         temp += thisVal;
 
@@ -981,7 +981,7 @@ namespace Sulakore.Protocol.Encryption
             return isPrime;
         }
 
-        private static void SingleByteDivide(BigInteger2 bi1, BigInteger2 bi2, BigInteger2 outQuotient, BigInteger2 outRemainder)
+        private static void SingleByteDivide(BigInteger bi1, BigInteger bi2, BigInteger outQuotient, BigInteger outRemainder)
         {
             uint[] result = new uint[MAX_LENGTH];
             int resultPos = 0;
@@ -1032,9 +1032,9 @@ namespace Sulakore.Protocol.Encryption
             while (outRemainder.DataLength > 1 && outRemainder._data[outRemainder.DataLength - 1] == 0)
                 outRemainder.DataLength--;
         }
-        private static BigInteger2[] LucasSequenceHelper(BigInteger2 P, BigInteger2 Q, BigInteger2 k, BigInteger2 n, BigInteger2 constant, int s)
+        private static BigInteger[] LucasSequenceHelper(BigInteger P, BigInteger Q, BigInteger k, BigInteger n, BigInteger constant, int s)
         {
-            BigInteger2[] result = new BigInteger2[3];
+            BigInteger[] result = new BigInteger[3];
 
             if ((k._data[0] & 0x00000001) == 0)
                 throw (new ArgumentException("Argument k must be odd."));
@@ -1042,7 +1042,7 @@ namespace Sulakore.Protocol.Encryption
             int numbits = k.BitCount();
             uint mask = (uint)0x1 << ((numbits & 0x1F) - 1);
 
-            BigInteger2 v = 2 % n, Q_k = 1 % n,
+            BigInteger v = 2 % n, Q_k = 1 % n,
                        v1 = P % n, u1 = Q_k;
             bool flag = true;
 
@@ -1120,7 +1120,7 @@ namespace Sulakore.Protocol.Encryption
 
             return result;
         }
-        private static void MultipleByteDivide(BigInteger2 inDividend, BigInteger2 inDivisor, BigInteger2 outQuotient, BigInteger2 outRemainder)
+        private static void MultipleByteDivide(BigInteger inDividend, BigInteger inDivisor, BigInteger outQuotient, BigInteger outRemainder)
         {
             uint[] result = new uint[MAX_LENGTH];
 
@@ -1176,15 +1176,15 @@ namespace Sulakore.Protocol.Encryption
                 for (int h = 0; h < divisorLen; h++)
                     dividendPart[h] = remainder[pos - h];
 
-                BigInteger2 kk = new BigInteger2(dividendPart);
-                BigInteger2 ss = inDivisor * (long)q_hat;
+                BigInteger kk = new BigInteger(dividendPart);
+                BigInteger ss = inDivisor * (long)q_hat;
 
                 while (ss > kk)
                 {
                     q_hat--;
                     ss -= inDivisor;
                 }
-                BigInteger2 yy = kk - ss;
+                BigInteger yy = kk - ss;
 
                 for (int h = 0; h < divisorLen; h++)
                     remainder[pos - h] = yy._data[inDivisor.DataLength - h];
@@ -1237,7 +1237,7 @@ namespace Sulakore.Protocol.Encryption
             string charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             string result = "";
 
-            BigInteger2 a = this;
+            BigInteger a = this;
 
             bool negative = false;
             if ((a._data[MAX_LENGTH - 1] & 0x80000000) != 0)
@@ -1250,9 +1250,9 @@ namespace Sulakore.Protocol.Encryption
                 catch (Exception) { }
             }
 
-            BigInteger2 quotient = new BigInteger2();
-            BigInteger2 remainder = new BigInteger2();
-            BigInteger2 biRadix = new BigInteger2(radix);
+            BigInteger quotient = new BigInteger();
+            BigInteger remainder = new BigInteger();
+            BigInteger biRadix = new BigInteger(radix);
 
             if (a.DataLength == 1 && a._data[0] == 0)
                 result = "0";
@@ -1298,13 +1298,13 @@ namespace Sulakore.Protocol.Encryption
         /// <param name="exponent"></param>
         /// <param name="modulus"></param>
         /// <returns></returns>
-        public BigInteger2 ModPow(BigInteger2 exponent, BigInteger2 modulus)
+        public BigInteger ModPow(BigInteger exponent, BigInteger modulus)
         {
             if ((exponent._data[MAX_LENGTH - 1] & 0x80000000) != 0)
                 throw (new ArithmeticException("Positive exponents only."));
 
-            BigInteger2 resultNum = 1;
-            BigInteger2 tempNum;
+            BigInteger resultNum = 1;
+            BigInteger tempNum;
             bool thisNegative = false;
 
             if ((_data[MAX_LENGTH - 1] & 0x80000000) != 0)
@@ -1318,7 +1318,7 @@ namespace Sulakore.Protocol.Encryption
             if ((modulus._data[MAX_LENGTH - 1] & 0x80000000) != 0)
                 modulus = -modulus;
 
-            BigInteger2 constant = new BigInteger2();
+            BigInteger constant = new BigInteger();
 
             int i = modulus.DataLength << 1;
             constant._data[i] = 0x00000001;
@@ -1367,13 +1367,13 @@ namespace Sulakore.Protocol.Encryption
         /// <param name="n"></param>
         /// <param name="constant"></param>
         /// <returns></returns>
-        private BigInteger2 BarrettReduction(BigInteger2 x, BigInteger2 n, BigInteger2 constant)
+        private BigInteger BarrettReduction(BigInteger x, BigInteger n, BigInteger constant)
         {
             int k = n.DataLength,
                 kPlusOne = k + 1,
                 kMinusOne = k - 1;
 
-            BigInteger2 q1 = new BigInteger2();
+            BigInteger q1 = new BigInteger();
 
             for (int i = kMinusOne, j = 0; i < x.DataLength; i++, j++)
                 q1._data[j] = x._data[i];
@@ -1382,8 +1382,8 @@ namespace Sulakore.Protocol.Encryption
                 q1.DataLength = 1;
 
 
-            BigInteger2 q2 = q1 * constant;
-            BigInteger2 q3 = new BigInteger2();
+            BigInteger q2 = q1 * constant;
+            BigInteger q3 = new BigInteger();
 
             for (int i = kPlusOne, j = 0; i < q2.DataLength; i++, j++)
                 q3._data[j] = q2._data[i];
@@ -1391,13 +1391,13 @@ namespace Sulakore.Protocol.Encryption
             if (q3.DataLength <= 0)
                 q3.DataLength = 1;
 
-            BigInteger2 r1 = new BigInteger2();
+            BigInteger r1 = new BigInteger();
             int lengthToCopy = (x.DataLength > kPlusOne) ? kPlusOne : x.DataLength;
             for (int i = 0; i < lengthToCopy; i++)
                 r1._data[i] = x._data[i];
             r1.DataLength = lengthToCopy;
 
-            BigInteger2 r2 = new BigInteger2();
+            BigInteger r2 = new BigInteger();
             for (int i = 0; i < q3.DataLength; i++)
             {
                 if (q3._data[i] == 0) continue;
@@ -1423,7 +1423,7 @@ namespace Sulakore.Protocol.Encryption
             r1 -= r2;
             if ((r1._data[MAX_LENGTH - 1] & 0x80000000) != 0)
             {
-                BigInteger2 val = new BigInteger2();
+                BigInteger val = new BigInteger();
                 val._data[kPlusOne] = 0x00000001;
                 val.DataLength = kPlusOne + 1;
                 r1 += val;
@@ -1440,9 +1440,9 @@ namespace Sulakore.Protocol.Encryption
         /// </summary>
         /// <param name="bi">The BigInteger instance to use with the current instance.</param>
         /// <returns></returns>
-        public BigInteger2 Gcd(BigInteger2 bi)
+        public BigInteger Gcd(BigInteger bi)
         {
-            BigInteger2 x, y;
+            BigInteger x, y;
 
             if ((_data[MAX_LENGTH - 1] & 0x80000000) != 0)
                 x = -this;
@@ -1454,7 +1454,7 @@ namespace Sulakore.Protocol.Encryption
             else
                 y = bi;
 
-            BigInteger2 g = y;
+            BigInteger g = y;
 
             while (x.DataLength > 1 || (x.DataLength == 1 && x._data[0] != 0))
             {
@@ -1535,7 +1535,7 @@ namespace Sulakore.Protocol.Encryption
         /// <returns>true if the current instance is a strong pseudo-prime to randomly chosen bases, otherwise false if not prime.</returns>
         public bool RabinMillerTest(int confidence)
         {
-            BigInteger2 thisVal;
+            BigInteger thisVal;
             if ((_data[MAX_LENGTH - 1] & 0x80000000) != 0)
                 thisVal = -this;
             else
@@ -1552,7 +1552,7 @@ namespace Sulakore.Protocol.Encryption
             if ((thisVal._data[0] & 0x1) == 0)
                 return false;
 
-            BigInteger2 p_sub1 = thisVal - (new BigInteger2(1));
+            BigInteger p_sub1 = thisVal - (new BigInteger(1));
             int s = 0;
 
             for (int index = 0; index < p_sub1.DataLength; index++)
@@ -1571,10 +1571,10 @@ namespace Sulakore.Protocol.Encryption
                 }
             }
 
-            BigInteger2 t = p_sub1 >> s;
+            BigInteger t = p_sub1 >> s;
 
             int bits = thisVal.BitCount();
-            BigInteger2 a = new BigInteger2();
+            BigInteger a = new BigInteger();
             Random rand = new Random();
 
             for (int round = 0; round < confidence; round++)
@@ -1596,11 +1596,11 @@ namespace Sulakore.Protocol.Encryption
                         done = true;
                 }
 
-                BigInteger2 gcdTest = a.Gcd(thisVal);
+                BigInteger gcdTest = a.Gcd(thisVal);
                 if (gcdTest.DataLength == 1 && gcdTest._data[0] != 1)
                     return false;
 
-                BigInteger2 b = a.ModPow(t, thisVal);
+                BigInteger b = a.ModPow(t, thisVal);
 
                 bool result = false;
 
@@ -1631,7 +1631,7 @@ namespace Sulakore.Protocol.Encryption
         /// <returns>true if the instance has a large probability of being prime, otherwise false.</returns>
         public bool IsProbablePrime(int confidence)
         {
-            BigInteger2 thisVal;
+            BigInteger thisVal;
             if ((this._data[MAX_LENGTH - 1] & 0x80000000) != 0)
                 thisVal = -this;
             else
@@ -1639,12 +1639,12 @@ namespace Sulakore.Protocol.Encryption
 
             for (int p = 0; p < PrimesBelow2000.Length; p++)
             {
-                BigInteger2 divisor = PrimesBelow2000[p];
+                BigInteger divisor = PrimesBelow2000[p];
 
                 if (divisor >= thisVal)
                     break;
 
-                BigInteger2 resultNum = thisVal % divisor;
+                BigInteger resultNum = thisVal % divisor;
                 if (resultNum.IntValue() == 0)
                     return false;
             }
@@ -1659,7 +1659,7 @@ namespace Sulakore.Protocol.Encryption
         /// <returns>true if the instance has a large probability of being prime, otherwise false.</returns>
         public bool IsProbablePrime()
         {
-            BigInteger2 thisVal;
+            BigInteger thisVal;
             if ((this._data[MAX_LENGTH - 1] & 0x80000000) != 0)
                 thisVal = -this;
             else
@@ -1678,17 +1678,17 @@ namespace Sulakore.Protocol.Encryption
 
             for (int p = 0; p < PrimesBelow2000.Length; p++)
             {
-                BigInteger2 divisor = PrimesBelow2000[p];
+                BigInteger divisor = PrimesBelow2000[p];
 
                 if (divisor >= thisVal)
                     break;
 
-                BigInteger2 resultNum = thisVal % divisor;
+                BigInteger resultNum = thisVal % divisor;
                 if (resultNum.IntValue() == 0)
                     return false;
             }
 
-            BigInteger2 p_sub1 = thisVal - (new BigInteger2(1));
+            BigInteger p_sub1 = thisVal - (new BigInteger(1));
             int s = 0;
 
             for (int index = 0; index < p_sub1.DataLength; index++)
@@ -1707,12 +1707,12 @@ namespace Sulakore.Protocol.Encryption
                 }
             }
 
-            BigInteger2 t = p_sub1 >> s;
+            BigInteger t = p_sub1 >> s;
 
             int bits = thisVal.BitCount();
-            BigInteger2 a = 2;
+            BigInteger a = 2;
 
-            BigInteger2 b = a.ModPow(t, thisVal);
+            BigInteger b = a.ModPow(t, thisVal);
             bool result = false;
 
             if (b.DataLength == 1 && b._data[0] == 1)
@@ -1750,7 +1750,7 @@ namespace Sulakore.Protocol.Encryption
         /// <param name="a">The BigInteger value to use with the calculation.</param>
         /// <param name="b">The BigInteger value to use with the calculation.</param>
         /// <returns></returns>
-        public static int Jacobi(BigInteger2 a, BigInteger2 b)
+        public static int Jacobi(BigInteger a, BigInteger b)
         {
             if ((b._data[0] & 0x1) == 0)
                 throw (new ArgumentException("Jacobi defined only for odd integers."));
@@ -1784,7 +1784,7 @@ namespace Sulakore.Protocol.Encryption
                 }
             }
 
-            BigInteger2 a1 = a >> e;
+            BigInteger a1 = a >> e;
 
             int s = 1;
             if ((e & 0x1) != 0 && ((b._data[0] & 0x7) == 3 || (b._data[0] & 0x7) == 5))
@@ -1806,9 +1806,9 @@ namespace Sulakore.Protocol.Encryption
         /// <param name="confidence">The amount of times/iterations to check the primality of the generated number.</param>
         /// <param name="rand">The System.Random instance to extract pseudo values to contribute to the probable prime number.</param>
         /// <returns></returns>
-        public static BigInteger2 GenPseudoPrime(int bits, int confidence, Random rand)
+        public static BigInteger GenPseudoPrime(int bits, int confidence, Random rand)
         {
-            BigInteger2 result = new BigInteger2();
+            BigInteger result = new BigInteger();
             bool done = false;
 
             while (!done)
@@ -1825,25 +1825,25 @@ namespace Sulakore.Protocol.Encryption
         /// </summary>
         /// <param name="modulus">The modulus needed for the calculation.</param>
         /// <returns></returns>
-        public BigInteger2 ModInverse(BigInteger2 modulus)
+        public BigInteger ModInverse(BigInteger modulus)
         {
-            BigInteger2[] p = { 0, 1 };
-            BigInteger2[] q = new BigInteger2[2];
-            BigInteger2[] r = { 0, 0 };
+            BigInteger[] p = { 0, 1 };
+            BigInteger[] q = new BigInteger[2];
+            BigInteger[] r = { 0, 0 };
 
             int step = 0;
 
-            BigInteger2 a = modulus;
-            BigInteger2 b = this;
+            BigInteger a = modulus;
+            BigInteger b = this;
 
             while (b.DataLength > 1 || (b.DataLength == 1 && b._data[0] != 0))
             {
-                BigInteger2 quotient = new BigInteger2();
-                BigInteger2 remainder = new BigInteger2();
+                BigInteger quotient = new BigInteger();
+                BigInteger remainder = new BigInteger();
 
                 if (step > 1)
                 {
-                    BigInteger2 pval = (p[0] - (p[1] * q[0])) % modulus;
+                    BigInteger pval = (p[0] - (p[1] * q[0])) % modulus;
                     p[0] = p[1];
                     p[1] = pval;
                 }
@@ -1866,7 +1866,7 @@ namespace Sulakore.Protocol.Encryption
             if (r[0].DataLength > 1 || (r[0].DataLength == 1 && r[0]._data[0] != 1))
                 throw (new ArithmeticException("No inverse!"));
 
-            BigInteger2 result = ((p[0] - (p[1] * q[0])) % modulus);
+            BigInteger result = ((p[0] - (p[1] * q[0])) % modulus);
 
             if ((result._data[MAX_LENGTH - 1] & 0x80000000) != 0)
                 result += modulus;
@@ -1919,7 +1919,7 @@ namespace Sulakore.Protocol.Encryption
         /// Returns the square root of this instance.
         /// </summary>
         /// <returns>the square root</returns>
-        public BigInteger2 Sqrt()
+        public BigInteger Sqrt()
         {
             uint numBits = (uint)this.BitCount();
 
@@ -1933,7 +1933,7 @@ namespace Sulakore.Protocol.Encryption
 
             uint mask;
 
-            BigInteger2 result = new BigInteger2();
+            BigInteger result = new BigInteger();
             if (bitPos == 0)
                 mask = 0x80000000;
             else
@@ -1982,7 +1982,7 @@ namespace Sulakore.Protocol.Encryption
         /// <returns>true if the specified System.Object is equal to the current System.Object; otherwise, false.</returns>
         public override bool Equals(object obj)
         {
-            BigInteger2 bi = (BigInteger2)obj;
+            BigInteger bi = (BigInteger)obj;
 
             if (DataLength != bi.DataLength)
                 return false;

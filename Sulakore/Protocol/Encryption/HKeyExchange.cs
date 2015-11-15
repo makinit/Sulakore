@@ -1,116 +1,149 @@
 ﻿using System;
-using System.Numerics;
-using System.Globalization;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Sulakore.Protocol.Encryption
 {
     public class HKeyExchange : IDisposable
     {
-        protected BigInteger D { get; }
-        protected BigInteger Modulus { get; }
-        protected BigInteger Exponent { get; }
+        private string _publicKey;
+        private string _signedPrime;
+        private string _signedGenerator;
+        private readonly Random _byteGen;
 
-        protected BigInteger DHPrime { get; private set; }
-        protected BigInteger DHGenerator { get; private set; }
-
-        public RSACryptoServiceProvider RSA { get; }
-
+        public RsaKey Rsa { get; }
+        public BigInteger DhPrime { get; private set; }
+        public BigInteger DhPublic { get; private set; }
+        public BigInteger DhPrivate { get; private set; }
+        public BigInteger DhGenerator { get; private set; }
+        
+        public bool IsInitiator { get; }
         public bool IsDisposed { get; private set; }
-        public bool CanDecrypt => (D != BigInteger.Zero);
 
-        protected HKeyExchange(RSACryptoServiceProvider rsa)
+        public HKeyExchange(int e, string n)
+            : this(e, n, null)
+        { }
+        public HKeyExchange(int e, string n, string d)
         {
-            RSA = rsa;
+            _byteGen = new Random();
+            
+            IsInitiator = !string.IsNullOrWhiteSpace(d);
 
-            RSAParameters keys =
-                rsa.ExportParameters(true);
+            Rsa = IsInitiator
+                ? RsaKey.ParsePrivateKey(e, n, d)
+                : RsaKey.ParsePublicKey(e, n);
 
-            D = new BigInteger(keys.D);
-            Modulus = new BigInteger(keys.Modulus);
-            Exponent = new BigInteger(keys.Exponent);
+            if (IsInitiator)
+            {
+                do { DhPrime = BigInteger.GenPseudoPrime(212, 6, _byteGen); }
+                while (!DhPrime.IsProbablePrime());
+
+                do { DhGenerator = BigInteger.GenPseudoPrime(212, 6, _byteGen); }
+                while (DhGenerator >= DhPrime && !DhPrime.IsProbablePrime());
+
+                if (DhGenerator > DhPrime)
+                {
+                    BigInteger dhGenShell = DhGenerator;
+                    DhGenerator = DhPrime;
+                    DhPrime = dhGenShell;
+                }
+
+                DhPrivate = new BigInteger(RandomHex(30), 16);
+                DhPublic = DhGenerator.ModPow(DhPrivate, DhPrime);
+            }
         }
 
-        public HKeyExchange(int exponent, string modulus) :
-            this(exponent, modulus, string.Empty)
-        { }
-        public HKeyExchange(int exponent, string modulus, string d)
+        public string GetPublicKey()
         {
-            var keys = new RSAParameters();
+            if (!string.IsNullOrEmpty(_publicKey))
+                return _publicKey;
 
-            Exponent = new BigInteger(exponent);
-            keys.Exponent = Exponent.ToByteArray();
+            byte[] publicKeyAsBytes = Encoding.Default.GetBytes(DhPublic.ToString(10));
+            if (IsInitiator) Rsa.Sign(ref publicKeyAsBytes);
+            else Rsa.Encrypt(ref publicKeyAsBytes);
 
-            Modulus = BigInteger.Parse("0" + modulus, NumberStyles.HexNumber);
-            keys.Modulus = Modulus.ToByteArray();
-            Array.Reverse(keys.Modulus);
+            return (_publicKey = BytesToHex(publicKeyAsBytes).ToLower());
+        }
+        public string GetSignedPrime()
+        {
+            if (!IsInitiator || !string.IsNullOrEmpty(_signedPrime))
+                return _signedPrime;
 
-            if (!string.IsNullOrWhiteSpace(d))
+            byte[] primeAsBytes = Encoding.Default.GetBytes(DhPrime.ToString(10));
+            Rsa.Sign(ref primeAsBytes);
+
+            return (_signedPrime = BytesToHex(primeAsBytes).ToLower());
+        }
+        public string GetSignedGenerator()
+        {
+            if (!IsInitiator || !string.IsNullOrEmpty(_signedGenerator))
+                return _signedGenerator;
+
+            byte[] generatorAsBytes = Encoding.Default.GetBytes(DhGenerator.ToString(10));
+            Rsa.Sign(ref generatorAsBytes);
+
+            return (_signedGenerator = BytesToHex(generatorAsBytes).ToLower());
+        }
+        public byte[] GetSharedKey(string publicKey)
+        {
+            byte[] paddedPublicKeyAsBytes = HexToBytes(publicKey);
+            if (IsInitiator) Rsa.Decrypt(ref paddedPublicKeyAsBytes);
+            else Rsa.Verify(ref paddedPublicKeyAsBytes);
+
+            publicKey = Encoding.Default
+                .GetString(paddedPublicKeyAsBytes);
+
+            var unpaddedPublicKey = new BigInteger(publicKey, 10);
+            return unpaddedPublicKey.ModPow(DhPrivate, DhPrime).ToBytes();
+        }
+
+        public void DoHandshake(string signedPrime, string signedGenerator)
+        {
+            if (IsInitiator) return;
+
+            byte[] signedPrimeAsBytes = HexToBytes(signedPrime);
+            Rsa.Verify(ref signedPrimeAsBytes);
+
+            byte[] signedGeneratorAsBytes = HexToBytes(signedGenerator);
+            Rsa.Verify(ref signedGeneratorAsBytes);
+
+            DhPrime = new BigInteger(Encoding.Default.GetString(signedPrimeAsBytes), 10);
+            DhGenerator = new BigInteger(Encoding.Default.GetString(signedGeneratorAsBytes), 10);
+
+            if (DhPrime <= 2)
+                throw new Exception("Prime cannot be <= 2!\nPrime: " + DhPrime);
+
+            if (DhGenerator >= DhPrime)
             {
-                D = BigInteger.Parse("0" + d, NumberStyles.HexNumber);
-                keys.D = D.ToByteArray();
-                Array.Reverse(keys.D);
+                throw new Exception(
+                    $"Generator cannot be >= Prime!\nPrime: {DhPrime}\nGenerator: {DhGenerator}");
             }
 
-            RSA = new RSACryptoServiceProvider();
-            RSA.ImportParameters(keys);
+            DhPrivate = new BigInteger(RandomHex(30), 16);
+            DhPublic = DhGenerator.ModPow(DhPrivate, DhPrime);
         }
 
-        public virtual void DoHandshake(string signedP, string signedG)
+        public static byte[] HexToBytes(string hex)
         {
-            DHPrime = Verify(signedP);
-            DHGenerator = Verify(signedG);
-        }
-
-        protected BigInteger Verify(string value)
-        {
-            var signed = BigInteger.Parse(value, NumberStyles.HexNumber);
-            BigInteger padded = CalculatePublic(signed);
-
-            var paddedData = padded.ToByteArray();
-            Array.Reverse(paddedData);
-
-            var paddedString = Encoding.UTF8.GetString(paddedData);
-            int paddingEnd = paddedString.IndexOf('\0');
-
-            return BigInteger.Parse(paddedString.Substring(paddingEnd + 1));
-        }
-        protected void CreateDHPrimes(int keySize)
-        {
-
-        }
-        protected void CreateDHPublic(BigInteger dhPrime, BigInteger dhGenerator)
-        { }
-
-        protected byte[] HexToBytes(string value)
-        {
-            var data = new byte[value.Length / 2];
-            for (int i = 0; i < value.Length; i += 2)
-            {
-                data[i / 2] = Convert.ToByte(
-                    value.Substring(i, 2), 16);
-            }
+            int hexLength = hex.Length;
+            var data = new byte[hexLength / 2];
+            for (int i = 0; i < hexLength; i += 2)
+                data[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
             return data;
         }
-        protected string BytesToHex(byte[] value)
+        public static string BytesToHex(byte[] data)
         {
-            return BitConverter.ToString(value)
+            return BitConverter.ToString(data)
                 .Replace("-", string.Empty);
         }
-
-        public BigInteger CalculatePrivate(BigInteger value) =>
-            BigInteger.ModPow(value, D, Modulus);
-
-        public BigInteger CalculatePublic(BigInteger value) =>
-            BigInteger.ModPow(value, Exponent, Modulus);
-
-        public static HKeyExchange Create(int keySize)
+        private string RandomHex(int length = 16)
         {
-            var rsa = new RSACryptoServiceProvider(keySize);
-            rsa.ExportParameters(true);
-
-            return new HKeyExchange(rsa);
+            string hex = string.Empty;
+            for (int i = 0; i < length; i++)
+            {
+                var generated = (byte)_byteGen.Next(0, 256);
+                hex += Convert.ToString(generated, 16);
+            }
+            return hex;
         }
 
         public void Dispose()
@@ -122,7 +155,11 @@ namespace Sulakore.Protocol.Encryption
             if (IsDisposed) return;
             if (disposing)
             {
-                RSA.Dispose();
+                Rsa?.Dispose();
+                DhPrime?.Dispose();
+                DhGenerator?.Dispose();
+                DhPublic?.Dispose();
+                DhPrivate?.Dispose();
             }
             IsDisposed = true;
         }

@@ -28,9 +28,9 @@ namespace Sulakore.Communication
         /// </summary>
         public Rc4 Decrypter { get; set; }
         /// <summary>
-        /// Gets or sets the <see cref="HKeyExchange2"/> used for handling RSA encryption/decryption when exchanging the Diffie–Hellman keys.
+        /// Gets or sets the <see cref="HKeyExchange"/> used for handling RSA encryption/decryption when exchanging the Diffie–Hellman keys.
         /// </summary>
-        public HKeyExchange2 Exchange { get; set; }
+        public HKeyExchange Exchange { get; set; }
         /// <summary>
         /// Gets the <see cref="NetworkStream"/> used to send and receive data.
         /// </summary>
