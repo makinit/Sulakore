@@ -132,6 +132,11 @@ namespace Sulakore.Communication
         {
             _hostsFile = Environment.GetFolderPath(
                 Environment.SpecialFolder.System) + "\\drivers\\etc\\hosts";
+
+            if (!File.Exists(_hostsFile))
+                File.Create(_hostsFile).Dispose();
+
+            File.SetAttributes(_hostsFile, FileAttributes.Normal);
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="HConnection"/> class.
@@ -145,11 +150,6 @@ namespace Sulakore.Communication
             IncomingBlocked = new List<ushort>();
             OutgoingReplaced = new Dictionary<ushort, byte[]>();
             IncomingReplaced = new Dictionary<ushort, byte[]>();
-
-            if (!File.Exists(_hostsFile))
-                File.Create(_hostsFile).Dispose();
-
-            File.SetAttributes(_hostsFile, FileAttributes.Normal);
         }
 
         /// <summary>
