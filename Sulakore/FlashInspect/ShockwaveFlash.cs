@@ -38,7 +38,6 @@ namespace FlashInspect
         private int _frameEndPos;
         private byte[] _flashData, _frameData;
 
-        public string Location { get; }
         /// <summary>
         /// Gets the <see cref="FlashReader"/> instance containing the Shockwave Flash(SWF) binary data to be read.
         /// </summary>
@@ -47,6 +46,7 @@ namespace FlashInspect
         /// Gets the <see cref="List{T}"/> of tags that make up the content of the Shockwave Flash(SWF) file.
         /// </summary>
         public List<FlashTag> Tags { get; }
+        public virtual string Location { get; }
         /// <summary>
         /// Gets the global character dictionary that associates character ids to objects.
         /// </summary>
