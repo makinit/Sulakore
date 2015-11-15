@@ -1,5 +1,7 @@
 ﻿using System.IO;
 
+using FlashInspect.ActionScript;
+
 namespace FlashInspect.IO
 {
     /// <summary>
@@ -60,6 +62,11 @@ namespace FlashInspect.IO
             int shift = (32 - bitCount);
 
             return (result << shift) >> shift;
+        }
+
+        public OPCode ReadOP()
+        {
+            return (OPCode)ReadByte();
         }
 
         /// <summary>

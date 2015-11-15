@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text;
+using FlashInspect.ActionScript;
 
 namespace FlashInspect.IO
 {
@@ -60,6 +61,11 @@ namespace FlashInspect.IO
                     BitContainer = 0;
                 }
             }
+        }
+
+        public void Write(OPCode op)
+        {
+            Write((byte)op);
         }
 
         /// <summary>
