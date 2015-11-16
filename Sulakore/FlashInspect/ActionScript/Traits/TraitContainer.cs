@@ -21,7 +21,7 @@ namespace FlashInspect.ActionScript.Traits
             return null;
         }
 
-        protected virtual IList<ASTrait> FindTraits(TraitType traitType)
+        public virtual IList<ASTrait> FindTraits(TraitType traitType)
         {
             var asTraits = new List<ASTrait>();
             foreach (ASTrait trait in Traits)

@@ -172,18 +172,17 @@ namespace Sulakore.Protocol.Encryption
 
         public static RsaKey ParsePublicKey(int e, string n)
         {
-            return new RsaKey(new BigInteger(
-                e.ToString(), 16), new BigInteger(n, 16));
+            return new RsaKey(new BigInteger(e), new BigInteger(n, 16));
         }
-        public static RsaKey Create(int exponent, int bitSize)
+        public static RsaKey Create(int exponent, int keySize)
         {
             BigInteger p, q, e = new BigInteger(exponent.ToString(), 16);
 
             BigInteger phi, p1, q1;
-            int qs = bitSize >> 1;
+            int qs = keySize >> 1;
             do
             {
-                do p = BigInteger.GenPseudoPrime(bitSize - qs, 6, _byteGen);
+                do p = BigInteger.GenPseudoPrime(keySize - qs, 6, _byteGen);
                 while ((p - 1).Gcd(e) != 1 && !p.IsProbablePrime(10));
 
                 do q = BigInteger.GenPseudoPrime(qs, 6, _byteGen);
@@ -207,7 +206,7 @@ namespace Sulakore.Protocol.Encryption
         }
         public static RsaKey ParsePrivateKey(int e, string n, string d)
         {
-            return new RsaKey(new BigInteger(e.ToString(), 16),
+            return new RsaKey(new BigInteger(e),
                 new BigInteger(n, 16), new BigInteger(d, 16));
         }
 
