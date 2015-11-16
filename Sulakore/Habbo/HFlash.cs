@@ -19,13 +19,13 @@ namespace Sulakore.Habbo
         public override string Location { get; }
 
         /// <summary>
+        /// Gets the original exponent.
+        /// </summary>
+        public int Exponent { get; private set; }
+        /// <summary>
         /// Gets the original modulus.
         /// </summary>
         public string Modulus { get; private set; }
-        /// <summary>
-        /// Gets the original exponent.
-        /// </summary>
-        public string Exponent { get; private set; }
 
         public Dictionary<ushort, ASInstance> OutgoingTypes { get; }
         public Dictionary<ushort, ASInstance> IncomingTypes { get; }
@@ -83,9 +83,11 @@ namespace Sulakore.Habbo
             InsertEarlyReturnTrue(clientUnloader);
             return true;
         }
-        public bool ReplaceRSA(int exponent, string modulus)
+        public bool ReplaceRSAKeys(int exponent, string modulus)
         {
-            ABCFile abc = _abcFiles[_abcFiles.Count - 1];
+            ABCFile abc = _abcFiles[2];
+            string e = exponent.ToString();
+
             int modulusIndex = abc.Constants.Strings.IndexOf(modulus);
             if (modulusIndex == -1)
             {
@@ -93,7 +95,6 @@ namespace Sulakore.Habbo
                 modulusIndex = (abc.Constants.Strings.Count - 1);
             }
 
-            string e = exponent.ToString("x");
             int exponentIndex = abc.Constants.Strings.IndexOf(e);
             if (exponentIndex == -1)
             {
@@ -101,82 +102,61 @@ namespace Sulakore.Habbo
                 exponentIndex = (abc.Constants.Strings.Count - 1);
             }
 
-            int rsaStart = 0;
             ASInstance commClass = abc.FindInstanceByName("HabboCommunicationDemo");
-            ASMethod verifier = FindVerifyMethod(commClass, abc, out rsaStart);
-
-            ASCode verifierCode = verifier.Body.Code;
-            using (var inCode = new FlashReader(verifierCode.ToArray()))
-            using (var outCode = new FlashWriter(inCode.Length))
+            foreach (ASTrait trait in commClass.Traits)
             {
-                bool searchingKeys = true;
-                inCode.Position = rsaStart;
-                outCode.Write(inCode.ToArray(), 0, rsaStart);
+                if (trait.TraitType != TraitType.Method) continue;
+                var commMethod = ((MethodGetterSetterTrait)trait.Data).Method;
 
-                while (inCode.Position != inCode.Length)
+                if (commMethod.ReturnType.ObjName != "void") continue;
+                if (commMethod.Parameters.Count != 1) continue;
+
+                ASCode methodCode = commMethod.Body.Code;
+                int getlexStart = methodCode.IndexOf((byte)OPCode.GetLex);
+
+                if (getlexStart == -1) continue;
+                using (var codeReader = new FlashReader(methodCode.ToArray()))
+                using (var codeWriter = new FlashWriter(codeReader.Length))
                 {
-                    byte codeByte = inCode.ReadByte();
-                    outCode.Write(codeByte);
-
-                    if (!searchingKeys)
+                    bool searchingKeys = true;
+                    while (codeReader.Position != codeReader.Length)
                     {
-                        outCode.Write(inCode.ToArray(),
-                            inCode.Position, inCode.Length - inCode.Position);
+                        OPCode op = codeReader.ReadOP();
+                        codeWriter.Write(op);
 
-                        break;
+                        if (op != OPCode.GetLex || !searchingKeys) continue;
+                        getlexStart = (codeReader.Position - 1);
+
+                        int getlexTypeIndex = codeReader.Read7BitEncodedInt();
+                        codeWriter.Write7BitEncodedInt(getlexTypeIndex);
+
+                        int getlexSize = (codeReader.Position - getlexStart);
+                        ASMultiname getlexType = abc.Constants.Multinames[getlexTypeIndex];
+                        if (getlexType?.ObjName != "KeyObfuscator") continue;
+
+                        op = codeReader.ReadOP();
+                        codeWriter.Write(op);
+
+                        if (op != OPCode.CallProperty) continue;
+
+                        int propIndex = codeReader.Read7BitEncodedInt();
+                        int propArgCount = codeReader.Read7BitEncodedInt();
+                        codeWriter.Position -= (getlexSize + 1);
+
+                        ASMultiname propType = abc.Constants.Multinames[propIndex];
+                        int indexToPush = (modulusIndex > 0 ? modulusIndex : exponentIndex);
+
+                        codeWriter.Write((byte)OPCode.PushString);
+                        codeWriter.Write7BitEncodedInt(indexToPush);
+
+                        if (modulusIndex > 0) modulusIndex = -1;
+                        else searchingKeys = false;
                     }
-                    switch ((OPCode)codeByte)
-                    {
-                        case OPCode.GetLex:
-                        {
-                            outCode.Position--;
-                            outCode.Write(OPCode.PushString);
 
-                            int typeIndex = inCode.Read7BitEncodedInt();
-                            ASMultiname type = abc.Constants.Multinames[typeIndex];
-
-                            inCode.ReadOP();
-                            inCode.Read7BitEncodedInt();
-                            inCode.Read7BitEncodedInt();
-
-                            if (modulusIndex > 0)
-                            {
-                                outCode.Write7BitEncodedInt(modulusIndex);
-                                modulusIndex = -1;
-                            }
-                            else if (searchingKeys)
-                            {
-                                outCode.Write7BitEncodedInt(exponentIndex);
-                                searchingKeys = false;
-                            }
-                            break;
-                        }
-                        case OPCode.PushString:
-                        {
-                            int stringIndex = inCode.Read7BitEncodedInt();
-                            string value = abc.Constants.Strings[stringIndex];
-
-                            if (string.IsNullOrWhiteSpace(Modulus))
-                            {
-                                Modulus = value;
-                                outCode.Write7BitEncodedInt(modulusIndex);
-                            }
-                            else if (string.IsNullOrWhiteSpace(Exponent))
-                            {
-                                Exponent = value;
-                                outCode.Write7BitEncodedInt(exponentIndex);
-
-                                searchingKeys = false;
-                            }
-                            break;
-                        }
-                        default: continue;
-                    }
+                    methodCode.Clear();
+                    methodCode.AddRange(codeWriter.ToArray());
+                    if (!searchingKeys) return true;
                 }
-
-                verifierCode.Clear();
-                verifierCode.AddRange(outCode.ToArray());
-                if (!searchingKeys) return true;
             }
             return false;
         }
@@ -194,7 +174,7 @@ namespace Sulakore.Habbo
             {
                 while (mapReader.Position != mapReader.Length)
                 {
-                    OPCode op = mapReader.ReadOP();
+                    var op = (OPCode)mapReader.ReadByte();
                     if (op != OPCode.GetLex) continue;
 
                     int mapTypeIndex = mapReader.Read7BitEncodedInt();
@@ -202,12 +182,12 @@ namespace Sulakore.Habbo
                     bool isIncoming = (mapTypeIndex == incomingMap.NameIndex);
                     if (!isOutgoing && !isIncoming) continue;
 
-                    op = mapReader.ReadOP();
+                    op = (OPCode)mapReader.ReadByte();
                     if (op != OPCode.PushShort && op != OPCode.PushByte) continue;
 
                     var header = (ushort)mapReader.Read7BitEncodedInt();
 
-                    op = mapReader.ReadOP();
+                    op = (OPCode)mapReader.ReadByte();
                     if (op != OPCode.GetLex) continue;
 
                     int messageTypeIndex = mapReader.Read7BitEncodedInt();
@@ -225,9 +205,7 @@ namespace Sulakore.Habbo
         protected void InsertEarlyReturnTrue(ASMethod method)
         {
             ASCode code = method.Body.Code;
-            if (code[0] == (byte)OPCode.PushTrue &&
-                code[1] == (byte)OPCode.ReturnValue)
-                return;
+            if (code[0] == 0x26 && code[1] == 0x48) return;
 
             method.Body.Code.InsertInstruction(0, OPCode.PushTrue);
             method.Body.Code.InsertInstruction(1, OPCode.ReturnValue);
@@ -237,47 +215,10 @@ namespace Sulakore.Habbo
             OPCode getLocal = (local + OPCode.GetLocal_0);
 
             ASCode code = method.Body.Code;
-            if (code[0] == (byte)getLocal &&
-                code[1] == (byte)OPCode.ReturnValue)
-                return;
+            if (code[0] == (byte)getLocal && code[1] == 0x48) return;
 
             method.Body.Code.InsertInstruction(0, getLocal);
             method.Body.Code.InsertInstruction(1, OPCode.ReturnValue);
-        }
-        protected ASMethod FindVerifyMethod(ASInstance instance, ABCFile abc, out int rsaStart)
-        {
-            IList<ASTrait> methodTraits =
-                instance.FindTraits(TraitType.Method);
-
-            rsaStart = -1;
-            foreach (ASTrait trait in methodTraits)
-            {
-                ASMethod method =
-                    ((MethodGetterSetterTrait)trait.Data).Method;
-
-                if (method.ReturnType.ObjName != "void") continue;
-                if (method.Parameters.Count != 1) continue;
-
-                ASCode methodCode = method.Body.Code;
-                using (var code = new FlashReader(methodCode.ToArray()))
-                {
-                    while (code.Position != code.Length)
-                    {
-                        OPCode op = code.ReadOP();
-                        if (op != OPCode.GetLex) continue;
-
-                        int typeIndex = code.Read7BitEncodedInt();
-                        ASMultiname type = abc.Constants.Multinames[typeIndex];
-
-                        if (type.ObjName == "RSAKey")
-                        {
-                            rsaStart = code.Position;
-                            return method;
-                        }
-                    }
-                }
-            }
-            return null;
         }
 
         public override List<FlashTag> ReadTags()

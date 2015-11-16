@@ -153,7 +153,7 @@ namespace Sulakore.Communication
         }
 
         /// <summary>
-        /// Disconnects from the remote endpoint.
+        /// Disconnects all concurrent connections.
         /// </summary>
         public void Disconnect()
         {
@@ -214,47 +214,47 @@ namespace Sulakore.Communication
         {
             foreach (ushort port in ports)
             {
-                if (_listeners.ContainsKey(port)) continue;
-                _listeners.Add(port, new TcpListener(IPAddress.Any, port));
-            }
+                if (!_listeners.ContainsKey(port))
+                {
+                    _listeners.Add(port,
+                        new TcpListener(IPAddress.Any, port));
+                }
 
+            }
             var interceptionTasks = new List<Task>(_listeners.Count);
             foreach (TcpListener listener in _listeners.Values)
                 interceptionTasks.Add(InterceptClientAsync(listener));
 
-            while (interceptionTasks.Count > 0 && !IsConnected)
-            {
-                Task completedInterception =
-                    await Task.WhenAny(interceptionTasks);
-
-                interceptionTasks.Remove(completedInterception);
-            }
+            Task completedInterception =
+                await Task.WhenAny(interceptionTasks);
 
             foreach (TcpListener listener in _listeners.Values)
                 listener.Stop();
         }
         private async Task InterceptClientAsync(TcpListener listener)
         {
+            var port = (ushort)(
+                (IPEndPoint)listener.LocalEndpoint).Port;
+
             try
             {
                 listener.Start();
+                await Task.Yield();
+
                 while (!IsConnected)
                 {
                     Socket localSocket = await listener.AcceptSocketAsync()
                         .ConfigureAwait(false);
 
                     Task interceptDataTask =
-                        InterceptClientDataAsync(localSocket, listener);
+                        InterceptClientDataAsync(localSocket, port);
                 }
             }
-            catch (SocketException) { /* Listener already started on same endpoint. */ }
             catch (ObjectDisposedException) { /* Listener stopped. */ }
+            finally { listener.Stop(); }
         }
-        private async Task InterceptClientDataAsync(Socket client, TcpListener listener)
+        private async Task InterceptClientDataAsync(Socket client, ushort port)
         {
-            var port = (ushort)(
-                (IPEndPoint)listener.LocalEndpoint).Port;
-
             var local = new HNode(client);
             var remote = await HNode.ConnectAsync(Addresses[0], port)
                 .ConfigureAwait(false);
@@ -278,7 +278,6 @@ namespace Sulakore.Communication
                 if (buffer[0] == 64) throw new Exception("Base64/VL64 protocol not supported.");
                 if (BigEndian.ToUInt16(buffer, 4) == Outgoing.CLIENT_CONNECT)
                 {
-                    listener.Stop();
                     IsConnected = true;
 
                     Port = port;
@@ -371,11 +370,7 @@ namespace Sulakore.Communication
                 .ConfigureAwait(false);
 
             if (packet == null) Disconnect();
-            else
-            {
-                try { HandleOutgoing(packet, ++TotalOutgoing); }
-                catch { Disconnect(); }
-            }
+            else HandleOutgoing(packet, ++TotalOutgoing);
         }
         private void HandleOutgoing(byte[] data, int count)
         {
@@ -406,11 +401,7 @@ namespace Sulakore.Communication
                 .ConfigureAwait(false);
 
             if (packet == null) Disconnect();
-            else
-            {
-                try { HandleIncoming(packet, ++TotalIncoming); }
-                catch { Disconnect(); }
-            }
+            else HandleIncoming(packet, ++TotalIncoming);
         }
         private void HandleIncoming(byte[] data, int count)
         {

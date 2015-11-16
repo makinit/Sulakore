@@ -2,15 +2,12 @@
 using System.IO;
 using System.Collections.Generic;
 
-using Ionic.Zlib;
-
 using FlashInspect.IO;
 using FlashInspect.Tags;
 using FlashInspect.Records;
 using FlashInspect.Dictionary;
 
-using SevenZip;
-using SevenZip.Compression.LZMA;
+using Ionic.Zlib;
 
 namespace FlashInspect
 {
@@ -283,23 +280,25 @@ namespace FlashInspect
                     throw new InvalidOperationException(
                         "Invalid compression/decompression standard was specified: " + standard);
                 }
+
                 case CompressionStandard.ZLIB:
                 {
                     if (isCompressing) body = ZlibStream.CompressBuffer(flashBody);
                     if (!isCompressing) body = ZlibStream.UncompressBuffer(flashBody);
                     break;
                 }
+
                 case CompressionStandard.LZMA:
                 {
-                    if (isCompressing) body = LZMA.CompressBuffer(flashBody);
-                    if (!isCompressing) body = LZMA.DecompressBuffer(flashBody, (int)FileLength - 8);
-                    break;
+                    throw new NotSupportedException(
+                        "The following compression/decompression standard is not supported: " + standard);
                 }
             }
 
             var buffer = new byte[8 + body.Length];
             Buffer.BlockCopy(flashHeader, 0, buffer, 0, 8);
             Buffer.BlockCopy(body, 0, buffer, 8, body.Length);
+
             return buffer;
         }
 
