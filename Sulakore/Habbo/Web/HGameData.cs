@@ -96,9 +96,18 @@ namespace Sulakore.Habbo.Web
 
             try
             {
-                string movieUrl = isSwfObject ?
-                    source.GetChild(".embedSWF(", ',') :
-                    source.GetChild("<param name=\"movie\" value=\"", '"');
+                string movieUrl = string.Empty;
+                if (!isSwfObject)
+                {
+                    string dataParam = "data=\"";
+                    string movieParam = "<param name=\"movie\" value=\"";
+
+                    movieUrl = (source.GetChild((source.Contains(
+                        movieParam) ? movieParam : dataParam), '"'));
+
+                    movieUrl = $"\"{movieUrl}\"";
+                }
+                else movieUrl = source.GetChild(".embedSWF(", ',');
 
                 char charBegin = movieUrl[0];
                 bool isFieldName = (charBegin != '\"' && charBegin != '\'');
@@ -133,10 +142,9 @@ namespace Sulakore.Habbo.Web
                         segments.Length - 2 : 0;
 
                     MovieName = segments[buildSegmentIndex];
+
                     if (buildSegmentIndex == 0)
-                    {
                         MovieName = MovieName.GetParent(".swf");
-                    }
                 }
             }
             catch { }
@@ -187,6 +195,9 @@ namespace Sulakore.Habbo.Web
                 }
                 variables = parsedVariables;
             }
+
+            if (!variables.Contains("&amp;"))
+                variables = variables.Replace("&", "&amp;");
 
             string[] valuePairs = variables
                 .Split(_flashValuesSeparator, StringSplitOptions.RemoveEmptyEntries);
