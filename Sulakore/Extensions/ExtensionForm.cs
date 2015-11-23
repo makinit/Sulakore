@@ -11,6 +11,8 @@ namespace Sulakore.Extensions
 {
     public class ExtensionForm : Form
     {
+        private readonly Contractor _contractor;
+
         /// <summary>
         /// Gets the MD5 hash of the file that contains the assembly data of this extension.
         /// </summary>
@@ -50,7 +52,7 @@ namespace Sulakore.Extensions
         /// Gets the <see cref="HGameData"/> of the <see cref="ExtensionForm"/> assembly.
         /// </summary>
         [Browsable(false)]
-        public HGameData GameData { get; }
+        public HGameData GameData => _contractor?.GameData;
         /// <summary>
         /// Gets the assembly's <see cref="System.Version"/> of the <see cref="ExtensionForm"/>.
         /// </summary>
@@ -65,12 +67,12 @@ namespace Sulakore.Extensions
         /// Gets the <see cref="HHotel"/> object that represents the hotel currently connected to.
         /// </summary>
         [Browsable(false)]
-        public HHotel Hotel { get; }
+        public HHotel Hotel => _contractor?.Hotel ?? HHotel.Unknown;
         /// <summary>
         /// Gets the <see cref="IHConnection"/> instance used for blocking, replacing, sending, and intercepting data.
         /// </summary>
         [Browsable(false)]
-        public IHConnection Connection { get; }
+        public IHConnection Connection => _contractor?.Connection;
 
         public ExtensionForm()
         {
@@ -82,10 +84,9 @@ namespace Sulakore.Extensions
 
             if (IsInstalled = (extensionInfo != null))
             {
+                _contractor = extensionInfo.Contractor;
+
                 Hash = extensionInfo.Hash;
-                Hotel = extensionInfo.Hotel;
-                GameData = extensionInfo.GameData;
-                Connection = extensionInfo.Connection;
                 FileLocation = extensionInfo.FileLocation;
 
                 var fileInfo = FileVersionInfo.GetVersionInfo(FileLocation);

@@ -6,30 +6,134 @@ namespace FlashInspect.ActionScript.Traits
     {
         public abstract List<ASTrait> Traits { get; }
 
-        public ASMethod FindMethod(string methodName, string returnType)
+        public SlotConstantTrait FindSlot(string name)
         {
-            IList<ASTrait> methodTraits = FindTraits(TraitType.Method);
-            foreach (ASTrait methodTrait in methodTraits)
+            return FindSlot(name, "*");
+        }
+        public SlotConstantTrait FindSlot(string name, string typeName)
+        {
+            var slotTraits = FindTraits<SlotConstantTrait>(TraitType.Slot);
+            foreach (SlotConstantTrait slotTrait in slotTraits)
             {
-                if (methodName != "*" && methodTrait.Name.ObjName != methodName) continue;
+                if (name != "*" &&
+                    name != slotTrait.ObjName)
+                    continue;
 
-                var asMethod = ((MethodGetterSetterTrait)methodTrait.Data).Method;
-                if (returnType != "*" && asMethod.ReturnType.ObjName != returnType) continue;
+                if (typeName != "*" &&
+                    slotTrait.Type.ObjName == typeName)
+                    continue;
 
-                return asMethod;
+                return slotTrait;
             }
             return null;
         }
 
-        public virtual IList<ASTrait> FindTraits(TraitType traitType)
+        public SlotConstantTrait FindConstant(string name)
         {
-            var asTraits = new List<ASTrait>();
+            return FindConstant(name, "*");
+        }
+        public SlotConstantTrait FindConstant(string name, string typeName)
+        {
+            var constTraits = FindTraits<SlotConstantTrait>(TraitType.Constant);
+            foreach (SlotConstantTrait constTrait in constTraits)
+            {
+                if (name != "*" &&
+                    name != constTrait.ObjName)
+                    continue;
+
+                if (typeName != "*" &&
+                    typeName != constTrait.Type.ObjName)
+                    continue;
+
+                return constTrait;
+            }
+            return null;
+        }
+
+        public MethodGetterSetterTrait FindMethod(string name)
+        {
+            return FindMethod(name, "*");
+        }
+        public MethodGetterSetterTrait FindMethod(string name, string returnTypeName)
+        {
+            var methodTraits = FindTraits<MethodGetterSetterTrait>(TraitType.Method);
+            foreach (MethodGetterSetterTrait methodTrait in methodTraits)
+            {
+                if (name != "*" &&
+                    name != methodTrait.ObjName)
+                    continue;
+
+                if (returnTypeName != "*" &&
+                    returnTypeName != methodTrait.Method.ReturnType.ObjName)
+                    continue;
+
+                return methodTrait;
+            }
+            return null;
+        }
+
+        public MethodGetterSetterTrait FindGetter(string name)
+        {
+            return FindGetter(name, "*");
+        }
+        public MethodGetterSetterTrait FindGetter(string name, string returnTypeName)
+        {
+            var getterTraits = FindTraits<MethodGetterSetterTrait>(TraitType.Getter);
+            foreach (MethodGetterSetterTrait getterTrait in getterTraits)
+            {
+                if (name != "*" &&
+                    name != getterTrait.ObjName)
+                    continue;
+
+                if (returnTypeName != "*" &&
+                    returnTypeName != getterTrait.Method.ReturnType.ObjName)
+                    continue;
+
+                return getterTrait;
+            }
+            return null;
+        }
+
+        public MethodGetterSetterTrait FindSetter(string name)
+        {
+            return FindSetter(name, "*");
+        }
+        public MethodGetterSetterTrait FindSetter(string name, string paramTypeName)
+        {
+            var setterTraits = FindTraits<MethodGetterSetterTrait>(TraitType.Setter);
+            foreach (MethodGetterSetterTrait setterTrait in setterTraits)
+            {
+                if (name != "*" &&
+                    name != setterTrait.ObjName)
+                    continue;
+
+                if (paramTypeName != "*" &&
+                    paramTypeName != setterTrait.Method.Parameters[0].Type.ObjName)
+                    continue;
+
+                return setterTrait;
+            }
+            return null;
+        }
+
+        public List<T> FindTraits<T>() where T : ITrait
+        {
+            return FindTraits<T>((TraitType)(-1));
+        }
+        public List<T> FindTraits<T>(TraitType traitType) where T : ITrait
+        {
+            var traits = new List<T>();
             foreach (ASTrait trait in Traits)
             {
-                if (trait.TraitType != traitType) continue;
-                asTraits.Add(trait);
+                if (!(trait.Data is T)) continue;
+
+                if ((int)traitType == -1 ||
+                    trait.TraitType == traitType)
+                {
+                    traits.Add((T)trait.Data);
+                }
             }
-            return asTraits;
+            return traits;
         }
     }
 }

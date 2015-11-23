@@ -60,9 +60,5 @@ namespace FlashInspect.ActionScript.Traits
                 return abc.ToArray();
             }
         }
-        public string ToAS3String()
-        {
-            return "";
-        }
     }
 }

@@ -252,7 +252,7 @@ namespace Eavesdrop
                             responseCommand.GetChild("Content-Length: ", '\r');
 
                         responseCommand = responseCommand.Replace(
-                            contentLengthChild + "\r", responseArgs.Payload.Length + "\r");
+                            contentLengthChild + "\r", (responseArgs.Payload?.Length ?? 0) + "\r");
                     }
 
                     byte[] responseCommandPayload = Encoding.ASCII.GetBytes(responseCommand);

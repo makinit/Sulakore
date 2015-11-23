@@ -45,6 +45,81 @@ namespace Sulakore.Habbo
             Location = Path.GetFullPath(path);
         }
 
+        public bool InjectIncomingLogger()
+        {
+            return false;
+        }
+        public bool InjectOutgoingLogger()
+        {
+            ABCFile abc = _abcFiles[2];
+
+            ASInstance evaWireFormat = abc.FindInstanceByName("EvaWireFormat");
+            if (evaWireFormat == null) return false;
+
+            ASMethod encodeMethod = evaWireFormat.FindMethod("encode", "ByteArray")?.Method;
+            if (encodeMethod == null) return false;
+
+            string logFuncName = "FlashExternalInterface.logDebug";
+            int outLogTitleIndex = abc.Constants.Strings.IndexOf(logFuncName);
+            if (outLogTitleIndex == -1)
+            {
+                abc.Constants.Strings.Add(logFuncName);
+                outLogTitleIndex = (abc.Constants.Strings.Count - 1);
+            }
+
+            int callNameIndex = 0;
+            int externalInterfaceIndex = 0;
+            for (int i = 1; i < abc.Constants.Multinames.Count; i++)
+            {
+                ASMultiname multiname = abc.Constants.Multinames[i];
+                switch (multiname.ObjName)
+                {
+                    case "call":
+                    callNameIndex = i;
+                    break;
+
+                    case "ExternalInterface":
+                    externalInterfaceIndex = i;
+                    break;
+                }
+
+                if (callNameIndex != 0 &&
+                    externalInterfaceIndex != 0)
+                    break;
+            }
+
+            ASCode encodeCode = encodeMethod.Body.Code;
+            int pushScopeIndex = encodeCode.IndexOf((byte)OPCode.PushScope);
+
+            encodeMethod.Body.MaxStack = 4;
+            encodeMethod.Body.LocalCount = 9;
+            encodeMethod.Body.InitialScopeDepth = 9;
+            encodeMethod.Body.MaxScopeDepth = 10;
+
+            using (var outCode = new FlashWriter())
+            {
+                outCode.Write(OPCode.GetLex);
+                outCode.Write7BitEncodedInt(externalInterfaceIndex);
+
+                // "OutgoingLog"
+                outCode.Write(OPCode.PushString);
+                outCode.Write7BitEncodedInt(outLogTitleIndex);
+
+                // int(param1) - Header
+                outCode.Write(OPCode.GetLocal_1);
+
+                // Array(param2) - Objects
+                //outCode.Write(OPCode.GetLocal_2);
+
+                outCode.Write(OPCode.CallPropVoid);
+                outCode.Write7BitEncodedInt(callNameIndex);
+                outCode.Write7BitEncodedInt(2);
+
+                encodeCode.InsertRange(6, outCode.ToArray());
+            }
+            return true;
+        }
+
         public bool DisableClientEncryption()
         {
             ASInstance rc4 = _abcFiles[2].FindInstanceByName("RC4");
@@ -67,13 +142,13 @@ namespace Sulakore.Habbo
         }
         public bool RemoveLocalUseRestrictions()
         {
-            ASMethod clientUnloader = _abcFiles[0].Classes[0].FindMethod("*", "Boolean");
+            ASMethod clientUnloader = _abcFiles[0].Classes[0].FindMethod("*", "Boolean")?.Method;
             if (clientUnloader == null) return false;
 
             ASClass habbo = _abcFiles[1].FindClassByName("Habbo");
             if (habbo == null) return false;
 
-            ASMethod domainChecker = habbo.FindMethod("isValidHabboDomain", "Boolean");
+            ASMethod domainChecker = habbo.FindMethod("isValidHabboDomain", "Boolean")?.Method;
             if (domainChecker == null) return false;
 
             if (domainChecker.Parameters.Count != 1) return false;
@@ -205,7 +280,8 @@ namespace Sulakore.Habbo
                     op = mapReader.ReadOP();
                     if (op != OPCode.PushShort && op != OPCode.PushByte) continue;
 
-                    var header = (ushort)mapReader.Read7BitEncodedInt();
+                    var header = (ushort)mapReader
+                        .Read7BitEncodedInt();
 
                     op = mapReader.ReadOP();
                     if (op != OPCode.GetLex) continue;
@@ -246,14 +322,13 @@ namespace Sulakore.Habbo
         }
         protected ASMethod FindVerifyMethod(ASInstance instance, ABCFile abc, out int rsaStart)
         {
-            IList<ASTrait> methodTraits =
-                instance.FindTraits(TraitType.Method);
+            List<MethodGetterSetterTrait> methodTraits =
+                instance.FindTraits<MethodGetterSetterTrait>(TraitType.Method);
 
             rsaStart = -1;
-            foreach (ASTrait trait in methodTraits)
+            foreach (MethodGetterSetterTrait mgsTrait in methodTraits)
             {
-                ASMethod method =
-                    ((MethodGetterSetterTrait)trait.Data).Method;
+                ASMethod method = mgsTrait.Method;
 
                 if (method.ReturnType.ObjName != "void") continue;
                 if (method.Parameters.Count != 1) continue;

@@ -143,7 +143,7 @@ namespace Sulakore.Extensions
             if (extensionFormType != null)
             {
                 var extensionInfo = new ExtensionInfo(
-                    installedExtensionPath, hash, GameData, Hotel, Connection);
+                    installedExtensionPath, hash, this);
 
                 _extensionInfo.Add(fileAssembly, extensionInfo);
                 _initialExtensionPaths.Add(fileAssembly, Path.GetDirectoryName(path));
@@ -163,8 +163,7 @@ namespace Sulakore.Extensions
                 if (File.Exists(installedExtensionPath))
                     File.Delete(installedExtensionPath);
 
-                throw new Exception(
-                    $"The given assembly is not a valid {nameof(ExtensionForm)}.");
+                return null;
             }
         }
 
@@ -258,13 +257,17 @@ namespace Sulakore.Extensions
         }
         private Type GetExtensionFormType(Assembly fileAssembly)
         {
-            Type[] assemblyTypes = fileAssembly.GetTypes();
-            foreach (Type assemblyType in assemblyTypes)
+            try
             {
-                if (assemblyType.IsInterface || assemblyType.IsAbstract) continue;
-                if (assemblyType.BaseType == typeof(ExtensionForm)) return assemblyType;
+                Type[] assemblyTypes = fileAssembly.GetTypes();
+                foreach (Type assemblyType in assemblyTypes)
+                {
+                    if (assemblyType.IsInterface || assemblyType.IsAbstract) continue;
+                    if (assemblyType.BaseType == typeof(ExtensionForm)) return assemblyType;
+                }
+                return null;
             }
-            return null;
+            catch (ReflectionTypeLoadException e) { return null; }
         }
 
         private static FileSystemInfo GetDependency(string path, string dependencyName)
