@@ -59,7 +59,7 @@ namespace Sulakore.Habbo
             ASMethod encodeMethod = evaWireFormat.FindMethod("encode", "ByteArray")?.Method;
             if (encodeMethod == null) return false;
 
-            string logFuncName = "FlashExternalInterface.logDebug";
+            string logFuncName = "OutgoingLog";
             int outLogTitleIndex = abc.Constants.Strings.IndexOf(logFuncName);
             if (outLogTitleIndex == -1)
             {
@@ -109,11 +109,11 @@ namespace Sulakore.Habbo
                 outCode.Write(OPCode.GetLocal_1);
 
                 // Array(param2) - Objects
-                //outCode.Write(OPCode.GetLocal_2);
+                outCode.Write(OPCode.GetLocal_2);
 
                 outCode.Write(OPCode.CallPropVoid);
                 outCode.Write7BitEncodedInt(callNameIndex);
-                outCode.Write7BitEncodedInt(2);
+                outCode.Write7BitEncodedInt(3);
 
                 encodeCode.InsertRange(6, outCode.ToArray());
             }
