@@ -212,9 +212,9 @@ namespace Sulakore.Communication
             if (_outAttaches.ContainsKey(header))
                 _outAttaches.Remove(header);
         }
-        public void OutAttach(ushort header, Action<InterceptedEventArgs> callback)
+        public void OutAttach<T>(ushort header, Action<T> callback) where T : InterceptedEventArgs
         {
-            _outAttaches[header] = callback;
+            _outAttaches[header] = (Action<InterceptedEventArgs>)callback;
         }
 
         public void InDetach()
@@ -226,9 +226,9 @@ namespace Sulakore.Communication
             if (_inAttaches.ContainsKey(header))
                 _inAttaches.Remove(header);
         }
-        public void InAttach(ushort header, Action<InterceptedEventArgs> callback)
+        public void InAttach<T>(ushort header, Action<T> callback) where T : InterceptedEventArgs
         {
-            _inAttaches[header] = callback;
+            _inAttaches[header] = (Action<InterceptedEventArgs>)callback;
         }
 
         public void HandleOutgoing(InterceptedEventArgs e)
