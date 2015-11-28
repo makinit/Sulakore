@@ -344,7 +344,7 @@ namespace Sulakore.Habbo
                         int typeIndex = code.Read7BitEncodedInt();
                         ASMultiname type = abc.Constants.Multinames[typeIndex];
 
-                        if (type.ObjName == "RSAKey")
+                        if (type?.ObjName == "RSAKey")
                         {
                             rsaStart = code.Position;
                             return method;
