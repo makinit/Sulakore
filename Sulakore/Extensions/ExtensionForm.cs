@@ -96,7 +96,7 @@ namespace Sulakore.Extensions
                 Creator = fileInfo.CompanyName;
             }
         }
-
+        
         protected virtual void OnDisposed()
         { }
         protected override void OnShown(EventArgs e)
