@@ -139,6 +139,7 @@ namespace Sulakore.Extensions
             Assembly fileAssembly = Assembly.Load(rawFile);
             InstallDependenciesFrom(path, fileAssembly);
 
+            ExtensionForm extension = null;
             Type extensionFormType = GetExtensionFormType(fileAssembly);
             if (extensionFormType != null)
             {
@@ -148,23 +149,28 @@ namespace Sulakore.Extensions
                 _extensionInfo.Add(fileAssembly, extensionInfo);
                 _initialExtensionPaths.Add(fileAssembly, Path.GetDirectoryName(path));
 
-                ExtensionForm extension = Initialize(extensionFormType);
+                extension = Initialize(extensionFormType);
+                if (extension != null)
+                {
+                    var extensionAction = extension.IsRunning ?
+                        ExtensionActionType.Opened : ExtensionActionType.Installed;
 
-                var extensionAction = extension.IsRunning ?
-                    ExtensionActionType.Opened : ExtensionActionType.Installed;
-
-                OnExtensionAction(new ExtensionActionEventArgs(
-                    extension, extensionAction));
-
-                return extension;
+                    OnExtensionAction(new ExtensionActionEventArgs(
+                        extension, extensionAction));
+                }
+                else
+                {
+                    _extensionInfo.Remove(fileAssembly);
+                    _initialExtensionPaths.Remove(fileAssembly);
+                }
             }
-            else
+
+            if (extension == null &&
+                File.Exists(installedExtensionPath))
             {
-                if (File.Exists(installedExtensionPath))
-                    File.Delete(installedExtensionPath);
-
-                return null;
+                File.Delete(installedExtensionPath);
             }
+            return extension;
         }
 
         private ExtensionForm Initialize(Type extensionType)
@@ -181,6 +187,7 @@ namespace Sulakore.Extensions
 
                 return extension;
             }
+            catch { /* Failed to create extension instance. */ return null; }
             finally { AppDomain.CurrentDomain.AssemblyResolve -= AssemblyResolve; }
         }
         public virtual ExtensionForm Initialize(ExtensionForm extension)
