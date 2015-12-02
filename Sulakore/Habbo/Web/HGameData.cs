@@ -5,6 +5,8 @@ using System.Text.RegularExpressions;
 
 namespace Sulakore.Habbo.Web
 {
+    /* Spaghetti code galore up in here. */
+    // TODO: Re-do all of this, again, someday, within the next decade, hopefully.
     public class HGameData : Dictionary<string, string>
     {
         private static readonly string _clientLoaderFormat;
@@ -13,28 +15,17 @@ namespace Sulakore.Habbo.Web
 
         public string Host
         {
-            get
-            {
-                if (!ContainsKey("connection.info.host"))
-                    Add("connection.info.host", "");
-
-                return this["connection.info.host"];
-            }
+            get { return this["connection.info.host"]; }
             set { this["connection.info.host"] = value; }
         }
         public string Port
         {
-            get
-            {
-                if (!ContainsKey("connection.info.port"))
-                    Add("connection.info.port", "0");
-
-                return this["connection.info.port"];
-            }
+            get { return this["connection.info.port"]; }
             set { this["connection.info.port"] = value; }
         }
 
         public string BaseUrl { get; set; }
+        public string UniqueId { get; set; }
         public string MovieUrl { get; set; }
         public string MovieName { get; set; }
 
@@ -81,6 +72,9 @@ namespace Sulakore.Habbo.Web
         }
         public HGameData(string source)
         {
+            this["connection.info.host"] = string.Empty;
+            this["connection.info.port"] = string.Empty;
+
             Match flashVarsMatch =
                 _flashVarsSingleLineMatcher.Match(source);
 
