@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Net.Sockets;
 using System.Net.Security;
+using System.Globalization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Security.Authentication;
@@ -325,7 +326,7 @@ namespace Eavesdrop
                     case "user-agent": request.UserAgent = values[1]; break;
                     case "content-type": request.ContentType = values[1]; break;
                     case "content-length": request.ContentLength = long.Parse(values[1]); break;
-                    case "if-modified-since": request.IfModifiedSince = DateTime.Parse(values[1].Split(';')[0]); break;
+                    case "if-modified-since": request.IfModifiedSince = DateTime.Parse(values[1].Split(';')[0], CultureInfo.InvariantCulture); break;
 
                     default: request.Headers[values[0]] = values[1]; break;
                 }
