@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Threading.Tasks;
 
 using Sulakore.Habbo;
@@ -24,9 +25,10 @@ namespace Sulakore.Communication
 
             int x = Packet.ReadInteger();
             int y = Packet.ReadInteger();
-
             Direction = (HDirection)Packet.ReadInteger();
-            Tile = new HPoint(x, y, double.Parse(Packet.ReadString()));
+
+            Tile = new HPoint(x, y,
+                double.Parse(Packet.ReadString(), CultureInfo.InvariantCulture));
 
             Packet.ReadString();
             Packet.ReadInteger();

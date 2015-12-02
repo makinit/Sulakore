@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Globalization;
+using System.Collections.Generic;
 
 using Sulakore.Protocol;
 
@@ -86,7 +87,9 @@ namespace Sulakore.Habbo
                 int index = packet.ReadInteger();
                 int x = packet.ReadInteger();
                 int y = packet.ReadInteger();
-                double z = double.Parse(packet.ReadString());
+
+                var z = double.Parse(
+                    packet.ReadString(), CultureInfo.InvariantCulture);
 
                 packet.ReadInteger();
                 int type = packet.ReadInteger();
@@ -143,7 +146,6 @@ namespace Sulakore.Habbo
 
                 entityList.Add(entity);
             }
-
             return entityList;
         }
 

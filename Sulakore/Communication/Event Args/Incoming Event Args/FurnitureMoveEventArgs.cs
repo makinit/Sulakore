@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Threading.Tasks;
 
 using Sulakore.Habbo;
@@ -22,9 +23,10 @@ namespace Sulakore.Communication
 
             int x = packet.ReadInteger();
             int y = packet.ReadInteger();
-
             Direction = (HDirection)packet.ReadInteger();
-            Tile = new HPoint(x, y, double.Parse(packet.ReadString()));
+
+            Tile = new HPoint(x, y,
+                double.Parse(packet.ReadString(), CultureInfo.InvariantCulture));
 
             // TODO: Find the chunks before OwnerId and read them.
             OwnerId = packet.ReadInteger(packet.Length - 6);

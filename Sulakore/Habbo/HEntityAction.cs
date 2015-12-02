@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Collections.Generic;
 
 using Sulakore.Protocol;
@@ -94,7 +95,8 @@ namespace Sulakore.Habbo
                 int index = packet.ReadInteger();
                 int x = packet.ReadInteger();
                 int y = packet.ReadInteger();
-                double z = double.Parse(packet.ReadString());
+                var z = double.Parse(packet.ReadString(), CultureInfo.InvariantCulture);
+
                 var headDirection = (HDirection)packet.ReadInteger();
                 var bodyDirection = (HDirection)packet.ReadInteger();
 
@@ -113,8 +115,9 @@ namespace Sulakore.Habbo
                 foreach (string actionInfo in actionData)
                 {
                     string[] actionValues = actionInfo.Split(' ');
-                    if (actionValues.Length < 2 || string.IsNullOrWhiteSpace(actionValues[0]))
-                        continue;
+
+                    if (actionValues.Length < 2) continue;
+                    if (string.IsNullOrWhiteSpace(actionValues[0])) continue;
 
                     #region Switch Statement: actionValues[]
                     switch (actionValues[0])
@@ -131,7 +134,7 @@ namespace Sulakore.Habbo
                             {
                                 movingToX = int.Parse(movingToValues[0]);
                                 movingToY = int.Parse(movingToValues[1]);
-                                movingToZ = double.Parse(movingToValues[2]);
+                                movingToZ = double.Parse(movingToValues[2], CultureInfo.InvariantCulture);
                             }
                             action = HAction.Move;
                             break;

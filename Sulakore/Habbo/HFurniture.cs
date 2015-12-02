@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Globalization;
+using System.Collections.Generic;
 
 using Sulakore.Protocol;
 
@@ -49,7 +50,7 @@ namespace Sulakore.Habbo
                 int x = packet.ReadInteger();
                 int y = packet.ReadInteger();
                 var direction = (HDirection)packet.ReadInteger();
-                double z = double.Parse(packet.ReadString());
+                var z = double.Parse(packet.ReadString(), CultureInfo.InvariantCulture);
 
                 packet.ReadString();
                 packet.ReadInteger();
@@ -135,7 +136,6 @@ namespace Sulakore.Habbo
 
                 furnitureList.Add(furniture);
             }
-
             return furnitureList;
         }
 
