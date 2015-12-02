@@ -371,6 +371,7 @@ namespace Sulakore.Communication
         protected virtual void OnGameEvent<T>(EventHandler<T> handler, T arguments, InterceptedEventArgs e) where T : InterceptedEventArgs
         {
             try { handler?.Invoke(this, arguments); }
+            catch { /* Swallow all exceptions. */ }
             finally
             {
                 e.IsBlocked = arguments.IsBlocked;
