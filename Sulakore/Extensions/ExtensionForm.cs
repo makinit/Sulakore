@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using System.ComponentModel;
 
 using Sulakore.Habbo.Web;
+using Sulakore.Protocol;
 using Sulakore.Communication;
 
 namespace Sulakore.Extensions
@@ -13,6 +14,11 @@ namespace Sulakore.Extensions
     {
         private readonly Contractor _contractor;
 
+        /// <summary>
+        /// Gets or sets a value that determines whether this extension is to communicate with the contractor using TCP if <see cref="IsInstalled"/> is <c>false</c>.
+        /// </summary>
+        [Browsable(false)]
+        public virtual bool IsExternal { get; }
         /// <summary>
         /// Gets the MD5 hash of the file that contains the assembly data of this extension.
         /// </summary>
@@ -95,8 +101,22 @@ namespace Sulakore.Extensions
                 Description = fileInfo.Comments;
                 Creator = fileInfo.CompanyName;
             }
+            else if (IsExternal)
+            {
+                _contractor = new Contractor();
+                var externalContractor = HNode.ConnectAsync("127.0.0.1", 8787).Result;
+
+                byte[] initializationData = externalContractor
+                    .ReceiveWireMessageAsync().Result;
+
+                var initializationMessage = new HMessage(initializationData);
+                _contractor.Hotel = (HHotel)initializationMessage.ReadShort();
+                _contractor.GameData = new HGameData(initializationMessage.ReadString());
+                _contractor.GameData.UniqueId = initializationMessage.ReadString();
+                _contractor.Connection = new ExtensionBridge(externalContractor);
+            }
         }
-        
+
         protected virtual void OnDisposed()
         { }
         protected override void OnShown(EventArgs e)
