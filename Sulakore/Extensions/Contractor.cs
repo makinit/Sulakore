@@ -28,7 +28,7 @@ namespace Sulakore.Extensions
 
         public HHotel Hotel { get; set; }
         public HGameData GameData { get; set; }
-        public HConnection Connection { get; set; }
+        public IHConnection Connection { get; set; }
 
         public int Count => _extensions.Count;
         public ExtensionForm this[int index] => _extensions[index];
@@ -274,7 +274,7 @@ namespace Sulakore.Extensions
                 }
                 return null;
             }
-            catch (ReflectionTypeLoadException e) { return null; }
+            catch (ReflectionTypeLoadException) { return null; }
         }
 
         private static FileSystemInfo GetDependency(string path, string dependencyName)
