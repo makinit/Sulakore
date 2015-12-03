@@ -86,7 +86,7 @@ namespace Sulakore.Communication
 
                 return length;
             }
-            catch (ObjectDisposedException) { return 0; }
+            catch { return 0; }
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace Sulakore.Communication
 
                 return length;
             }
-            catch (ObjectDisposedException) { return 0; }
+            catch { return 0; }
         }
 
         /// <summary>
