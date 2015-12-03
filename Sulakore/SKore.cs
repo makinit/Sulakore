@@ -69,9 +69,9 @@ namespace Sulakore
             return user.UniqueId;
         }
         /// <summary>
-        /// Returns the <seealso cref="HProfile"/> from <see cref="HHotel.Com"/> associated with the given unique identifier in an asynchronous operation.
+        /// Returns the <seealso cref="HProfile"/> from <see cref="HHotel.Com"/> associated with the given name in an asynchronous operation.
         /// </summary>
-        /// <param name="name">The unique identifier of the player you wish to retrieve the <see cref="HProfile"/> from.</param>
+        /// <param name="name">The name of the player you wish to retrieve the <see cref="HProfile"/> from.</param>
         public static async Task<HProfile> GetProfileAsync(string name, HHotel hotel)
         {
             if (hotel.IsLegacy())
@@ -85,6 +85,14 @@ namespace Sulakore
             }
 
             string uniqueId = _uniqueIds[hotel][name];
+            return await GetProfileByUniqueId(uniqueId, hotel);
+        }
+        /// <summary>
+        /// Returns the <seealso cref="HProfile"/> from <see cref="HHotel.Com"/> associated with the given unique identifier in an asynchronous operation.
+        /// </summary>
+        /// <param name="uniqueId">The unique identifier of the player you wish to retrieve the <see cref="HProfile"/> from.</param>
+        public static async Task<HProfile> GetProfileByUniqueId(string uniqueId, HHotel hotel)
+        {
             string profileJson = await _hRequest.DownloadStringAsync(
                 string.Format(PROFILE_API_FORMAT, hotel.ToUrl(true), uniqueId)).ConfigureAwait(false);
 

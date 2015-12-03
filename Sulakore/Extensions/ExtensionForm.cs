@@ -111,9 +111,11 @@ namespace Sulakore.Extensions
 
                 var initializationMessage = new HMessage(initializationData);
                 _contractor.Hotel = (HHotel)initializationMessage.ReadShort();
+
                 _contractor.GameData = new HGameData(initializationMessage.ReadString());
                 _contractor.GameData.UniqueId = initializationMessage.ReadString();
-                _contractor.Connection = new ExtensionBridge(externalContractor);
+
+                _contractor.Connection = new ExtensionBridge(externalContractor, Triggers);
             }
         }
 
