@@ -12,14 +12,14 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <AssemblyVersion>5.0.512.0</AssemblyVersion>
+    <AssemblyVersion>5.1.0.0</AssemblyVersion>
     <PrimaryVersionType>AssemblyVersionAttribute</PrimaryVersionType>
     <AssemblyInfoFilePath>
     </AssemblyInfoFilePath>
     <UpdateAssemblyVersion>True</UpdateAssemblyVersion>
     <UpdateAssemblyFileVersion>False</UpdateAssemblyFileVersion>
     <UpdateAssemblyInfoVersion>False</UpdateAssemblyInfoVersion>
-    <AssemblyVersionSettings>None.IncrementOnDemandWithReset.Increment.None</AssemblyVersionSettings>
+    <AssemblyVersionSettings>None.IncrementOnDemand.None.None</AssemblyVersionSettings>
     <AssemblyFileVersionSettings>
     </AssemblyFileVersionSettings>
   </PropertyGroup>
@@ -108,6 +108,7 @@
     <Compile Include="Extensions\Enums\ExtensionActionType.cs" />
     <Compile Include="Extensions\Event Args\ExtensionActionEventArgs.cs" />
     <Compile Include="Extensions\Contractor.cs" />
+    <Compile Include="Extensions\ExtensionBridge.cs" />
     <Compile Include="Extensions\ExtensionInfo.cs" />
     <Compile Include="Extensions\ExtensionForm.cs">
       <SubType>Form</SubType>
