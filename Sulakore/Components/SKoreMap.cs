@@ -49,7 +49,13 @@ namespace Sulakore.Components
         public Color VoidColor
         {
             get { return _voidColor; }
-            set { _voidColor = value; Invalidate(); }
+            set
+            {
+                _voidColor = value;
+                _markers['x'] = value;
+
+                Invalidate();
+            }
         }
 
         public SKoreMap()
@@ -240,8 +246,7 @@ namespace Sulakore.Components
             RectangleF region = GetTileRegion(e.X, e.Y);
             OnTileAction(region, tileAction, e);
         }
-        protected virtual void OnTileAction(RectangleF region,
-            Action<TileEventArgs> tileAction, MouseEventArgs e)
+        protected virtual void OnTileAction(RectangleF region, Action<TileEventArgs> tileAction, MouseEventArgs e)
         {
             if (!region.IsEmpty)
             {
