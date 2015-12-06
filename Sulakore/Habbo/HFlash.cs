@@ -120,6 +120,50 @@ namespace Sulakore.Habbo
             return true;
         }
 
+        public bool SanitizeExpirationDateCheck()
+        {
+            ABCFile abc = _abcFiles[2];
+            ASInstance windowContext = abc.FindInstanceByName("WindowContext");
+            if (windowContext == null) return false;
+
+            bool sanitizedData = false;
+            ASCode ctorCode = windowContext.Constructor.Body.Code;
+            using (var inCode = new FlashReader(ctorCode.ToArray()))
+            using (var outCode = new FlashWriter(ctorCode.Count))
+            {
+                while (inCode.Position != inCode.Length)
+                {
+                    OPCode op = inCode.ReadOP();
+                    outCode.Write(op);
+
+                    if (op != OPCode.GetProperty) continue;
+                    int propIndex = inCode.Read7BitEncodedInt();
+                    outCode.Write7BitEncodedInt(propIndex);
+
+                    ASMultiname propName = abc.Constants.Multinames[propIndex];
+                    if (propName.ObjName != "time") continue;
+
+                    op = inCode.ReadOP();
+                    outCode.Write(op);
+
+                    if (op != OPCode.PushDouble) continue;
+                    int doubleIndex = inCode.Read7BitEncodedInt();
+
+                    int largeDoubleIndex = abc.Constants
+                        .Doubles.IndexOf(double.MaxValue);
+                    if (largeDoubleIndex == -1)
+                    {
+                        abc.Constants.Doubles.Add(double.MaxValue);
+                        largeDoubleIndex = abc.Constants.Doubles.Count - 1;
+                    }
+                    outCode.Write7BitEncodedInt(largeDoubleIndex);
+                    sanitizedData = true;
+                }
+                ctorCode.Clear();
+                ctorCode.AddRange(outCode.ToArray());
+            }
+            return sanitizedData;
+        }
         public bool DisableClientEncryption()
         {
             ASInstance rc4 = _abcFiles[2].FindInstanceByName("RC4");

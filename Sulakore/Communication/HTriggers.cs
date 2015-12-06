@@ -172,7 +172,7 @@ namespace Sulakore.Communication
 
         protected IDictionary<ushort, Action<InterceptedEventArgs>> InDetected { get; }
         protected IDictionary<ushort, Action<InterceptedEventArgs>> OutDetected { get; }
-
+        
         /// <summary>
         /// Gets or sets a value that determines whether to begin identifying outgoing events.
         /// </summary>
@@ -261,7 +261,7 @@ namespace Sulakore.Communication
                         {
                             OutDetected[e.Packet.Header](e);
                         }
-                        else if (OutDetected.ContainsKey(previous.Header))
+                        else if (OutDetected.ContainsKey(previous.Header) && !previousDetected)
                         {
                             var args = new InterceptedEventArgs(null, e.Step - 1, previous);
                             OutDetected[previous.Header](args);
@@ -273,7 +273,7 @@ namespace Sulakore.Communication
             {
                 e.Packet.Position = 0;
 
-                if (DetectOutgoing && !ignoreCurrent)
+                if (DetectOutgoing)
                     _outPrevious.Push(e.Packet);
             }
         }
@@ -352,6 +352,7 @@ namespace Sulakore.Communication
             else if (current.Length >= 35)
             {
                 if (TryHandleEntityAction(current, previous)) return true;
+                if (TryHandleFurnitureMove(current, previous)) return true;
             }
 
             return InDetected.ContainsKey(current.Header) ||
@@ -418,15 +419,19 @@ namespace Sulakore.Communication
         }
         private bool TryHandleHostRaiseSign(HMessage current, HMessage previous)
         {
-            bool isHostRaiseSign = false;
-            if (current.CanReadString(22) && current.ReadString(22) == "sign")
-            {
-                OutgoingDetected.RaiseSign = previous.Header;
-                OutDetected[previous.Header] = RaiseOnHostRaiseSign;
+            if (previous.Length != 6) return false;
+            if (previous.ReadInteger(0) > 18) return false;
 
-                isHostRaiseSign = true;
-            }
-            return isHostRaiseSign;
+            if (!current.CanReadString(22)) return false;
+            if (current.ReadString(22) != "sign") return false;
+
+            OutgoingDetected.RaiseSign = previous.Header;
+            OutDetected[previous.Header] = RaiseOnHostRaiseSign;
+            return true;
+        }
+        private bool TryHandleFurnitureMove(HMessage current, HMessage previous)
+        {
+            return true;
         }
         private bool TryHandlePlayerKickHost(HMessage current, HMessage previous)
         {

@@ -126,8 +126,10 @@ namespace Sulakore.Protocol.Encryption
         {
             int hexLength = hex.Length;
             var data = new byte[hexLength / 2];
+
             for (int i = 0; i < hexLength; i += 2)
                 data[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+
             return data;
         }
         public static string BytesToHex(byte[] data)

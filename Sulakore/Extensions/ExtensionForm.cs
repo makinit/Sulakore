@@ -115,7 +115,7 @@ namespace Sulakore.Extensions
                 _contractor.GameData = new HGameData(initializationMessage.ReadString());
                 _contractor.GameData.UniqueId = initializationMessage.ReadString();
 
-                _contractor.Connection = new ExtensionBridge(externalContractor, Triggers);
+                _contractor.Connection = new ExtensionBridge(externalContractor, this);
             }
         }
 

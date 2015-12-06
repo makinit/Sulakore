@@ -9,7 +9,7 @@ namespace Sulakore.Extensions
 {
     public class ExtensionBridge : IHConnection
     {
-        private readonly HTriggers _triggers;
+        private readonly ExtensionForm _extension;
         private readonly HNode _externalContractor;
 
         public event EventHandler<EventArgs> Connected;
@@ -49,8 +49,9 @@ namespace Sulakore.Extensions
         public int TotalIncoming { get; private set; }
         public int TotalOutgoing { get; private set; }
 
-        public ExtensionBridge(HNode externalContractor)
+        public ExtensionBridge(HNode externalContractor, ExtensionForm extension)
         {
+            _extension = extension;
             _externalContractor = externalContractor;
 
             OutgoingBlocked = new List<ushort>();
@@ -60,11 +61,6 @@ namespace Sulakore.Extensions
 
             RequestInformationAsync().Wait();
             Task readTask = ReadMessageAsync();
-        }
-        public ExtensionBridge(HNode externalContractor, HTriggers triggers) :
-            this(externalContractor)
-        {
-            _triggers = triggers;
         }
 
         private async Task ReadMessageAsync()
@@ -97,12 +93,12 @@ namespace Sulakore.Extensions
             Task readTask = ReadMessageAsync(); // Keep reading.
             if (destination == HDestination.Server)
             {
-                _triggers.HandleOutgoing(args);
+                _extension.Triggers.HandleOutgoing(args);
                 OnDataOutgoing(args);
             }
             else
             {
-                _triggers.HandleIncoming(args);
+                _extension.Triggers.HandleIncoming(args);
                 OnDataIncoming(args);
             }
         }
