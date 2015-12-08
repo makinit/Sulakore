@@ -113,7 +113,7 @@ namespace Eavesdrop
                 _listener.Start();
                 while (IsRunning)
                 {
-                    if (_handleClientRequestTasks.Count >= 2)
+                    if (_handleClientRequestTasks.Count >= 4)
                     {
                         Task.WaitAny(_handleClientRequestTasks.ToArray(), 500);
                         _handleClientRequestTasks.RemoveAll(t => t.IsCompleted);
