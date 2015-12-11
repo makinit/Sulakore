@@ -172,7 +172,7 @@ namespace Sulakore.Communication
 
         protected IDictionary<ushort, Action<InterceptedEventArgs>> InDetected { get; }
         protected IDictionary<ushort, Action<InterceptedEventArgs>> OutDetected { get; }
-        
+
         /// <summary>
         /// Gets or sets a value that determines whether to begin identifying outgoing events.
         /// </summary>
@@ -431,7 +431,7 @@ namespace Sulakore.Communication
         }
         private bool TryHandleFurnitureMove(HMessage current, HMessage previous)
         {
-            return true;
+            return false;
         }
         private bool TryHandlePlayerKickHost(HMessage current, HMessage previous)
         {
