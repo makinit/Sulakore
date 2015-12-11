@@ -2,7 +2,6 @@
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace Sulakore.Habbo.Web
 {
@@ -105,7 +104,6 @@ namespace Sulakore.Habbo.Web
             {
                 response = (HttpWebResponse)e.Response;
             }
-
             try
             {
                 Cookies.SetCookies(request.RequestUri,
