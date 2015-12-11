@@ -14,13 +14,12 @@ namespace Sulakore
     {
         private const string USER_API_FORMAT = "{0}/api/public/users?name={1}";
         private const string PROFILE_API_FORMAT = "{0}/api/public/users/{1}/profile";
+        public const string ChromeAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.80 Safari/537.36";
 
         private static readonly HRequest _hRequest;
         private static readonly Array _randomThemes;
         private static readonly Random _randomSignGen, _randomThemeGen;
         private static readonly IDictionary<HHotel, IDictionary<string, string>> _uniqueIds;
-
-        public const string ChromeAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.80 Safari/537.36";
 
         static SKore()
         {
@@ -32,14 +31,12 @@ namespace Sulakore
         }
 
         /// <summary>
-        /// Returns the <seealso cref="HUser"/> from <see cref="HHotel.Com"/> associated with the given name in an asynchronous operation.
+        /// Returns the user's basic information associated with the given name using the specified <see cref="HHotel"/> in an asynchronous operation.
         /// </summary>
-        /// <param name="name">The name of the player you wish to retrieve the <seealso cref="HUser"/> from.</param>
+        /// <param name="name">The name of the user.</param>
+        /// <param name="hotel">The hotel where the target user is from.</param>
         public static async Task<HUser> GetUserAsync(string name, HHotel hotel)
         {
-            if (hotel.IsLegacy())
-                throw new Exception("User API not available for: " + hotel.ToUrl(true));
-
             string userJson = await _hRequest.DownloadStringAsync(
                 string.Format(USER_API_FORMAT, hotel.ToUrl(true), name)).ConfigureAwait(false);
 
@@ -52,9 +49,10 @@ namespace Sulakore
             return user;
         }
         /// <summary>
-        /// Returns the unique identifier from <seealso cref="HHotel.Com"/> associated with the given name in an asynchronous operation.
+        /// Returns the user's unique identifier associated with the given name using the specified <see cref="HHotel"/> in an asynchronous operation.
         /// </summary>
-        /// <param name="name">The name of the player you wish to retrieve the unique identifier from.</param>
+        /// <param name="name">The name of the user.</param>
+        /// <param name="hotel">The hotel where the target user is from.</param>
         public static async Task<string> GetUniqueIdAsync(string name, HHotel hotel)
         {
             if (_uniqueIds.ContainsKey(hotel) &&
@@ -69,28 +67,20 @@ namespace Sulakore
             return user.UniqueId;
         }
         /// <summary>
-        /// Returns the <seealso cref="HProfile"/> from <see cref="HHotel.Com"/> associated with the given name in an asynchronous operation.
+        /// Returns the user's public profile information associated with the given name using the specified <see cref="HHotel"/> in an asynchronous operation.
         /// </summary>
-        /// <param name="name">The name of the player you wish to retrieve the <see cref="HProfile"/> from.</param>
+        /// <param name="name">The name of the user.</param>
+        /// <param name="hotel">The hotel where the target user is from.</param>
         public static async Task<HProfile> GetProfileAsync(string name, HHotel hotel)
         {
-            if (hotel.IsLegacy())
-                throw new Exception("Profile API not available for: " + hotel.ToUrl(true));
-
-            if (!_uniqueIds.ContainsKey(hotel) ||
-                !_uniqueIds[hotel].ContainsKey(name))
-            {
-                HUser user = await GetUserAsync(
-                    name, hotel).ConfigureAwait(false);
-            }
-
-            string uniqueId = _uniqueIds[hotel][name];
+            string uniqueId = await GetUniqueIdAsync(name, hotel).ConfigureAwait(false);
             return await GetProfileByUniqueId(uniqueId, hotel);
         }
         /// <summary>
-        /// Returns the <seealso cref="HProfile"/> from <see cref="HHotel.Com"/> associated with the given unique identifier in an asynchronous operation.
+        /// Returns the user's public profile information associated with the given unique indentifier using the specified <see cref="HHotel"/> in an asynchronous operation.
         /// </summary>
-        /// <param name="uniqueId">The unique identifier of the player you wish to retrieve the <see cref="HProfile"/> from.</param>
+        /// <param name="uniqueId">The unique identifier of the user.</param>
+        /// <param name="hotel">The hotel where the target user is from.</param>
         public static async Task<HProfile> GetProfileByUniqueId(string uniqueId, HHotel hotel)
         {
             string profileJson = await _hRequest.DownloadStringAsync(
@@ -144,20 +134,6 @@ namespace Sulakore
                 .GetValue(randomIndex);
         }
 
-        public static bool IsLegacy(this HHotel hotel)
-        {
-            switch (hotel)
-            {
-                case HHotel.It:
-                case HHotel.Fr:
-                case HHotel.Fi:
-                case HHotel.De:
-                case HHotel.Com:
-                case HHotel.ComTr: return false;
-
-                default: return true;
-            }
-        }
         /// <summary>
         /// Returns the domain associated with the specified <see cref="HHotel"/>.
         /// </summary>
