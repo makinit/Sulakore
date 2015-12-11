@@ -125,25 +125,36 @@ namespace Sulakore.Components
 
         public void FocusAdd(ListViewItem item)
         {
+            Add(item);
+            item.Selected = true;
+        }
+        public ListViewItem FocusAdd(params object[] items)
+        {
+            ListViewItem item = Add(items);
+            item.Selected = true;
+
+            return item;
+        }
+
+        public void Add(ListViewItem item)
+        {
             Focus();
             Items.Add(item);
 
-            item.Selected = true;
-
             if (!SuppressItemSelectedEvent)
-                OnItemSelected(new ListViewItemSelectionChangedEventArgs(item, item.Index, true));
+                OnItemSelected(new ListViewItemSelectionChangedEventArgs(item, item.IndentCount, true));
 
-            EnsureVisible(item.Index);
+            item.EnsureVisible();
         }
-        public ListViewItem FocusAdd(params object[] items)
+        public ListViewItem Add(params object[] items)
         {
             string[] stringItems = items
                 .Select(i => i.ToString()).ToArray();
 
-            var listViewItem = new ListViewItem(stringItems);
-            FocusAdd(listViewItem);
+            var item = new ListViewItem(stringItems);
+            Add(item);
 
-            return listViewItem;
+            return item;
         }
 
         public ListViewItem GetSelectedItem()
