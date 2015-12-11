@@ -89,6 +89,41 @@ namespace Sulakore.Habbo.Web
             _hotelUri = new Uri(Hotel.ToUrl(true));
         }
 
+        public async Task<bool> LoginAsync()
+        {
+            try
+            {
+                IsAuthenticated = false;
+                byte[] postData = Encoding.UTF8.GetBytes(
+                    $"{{\"email\":\"{Email}\",\"password\":\"{Password}\"}}");
+
+                var request = (HttpWebRequest)WebRequest.Create(
+                    _hotelUri.OriginalString + "/api/public/authentication/login");
+
+                request.ContentType = "application/json;charset=UTF-8";
+                string body = await Requester.DownloadStringAsync(
+                    request, postData).ConfigureAwait(false);
+
+                if (!string.IsNullOrWhiteSpace(body) &&
+                    !body.Equals("{\"message\":\"invalid-captcha\",\"captcha\":true}"))
+                {
+                    IsAuthenticated = true;
+                    User = HUser.Create(body);
+                }
+            }
+            catch { IsAuthenticated = false; }
+            return IsAuthenticated;
+        }
+        public async Task<bool> LoginAsync(IWebProxy proxy)
+        {
+            try
+            {
+                Requester.Proxy = proxy;
+                return await LoginAsync().ConfigureAwait(false);
+            }
+            finally { Requester.Proxy = null; }
+        }
+
         public void Disconnect()
         {
             if (IsConnected && Monitor.TryEnter(_disconnectLock))
@@ -132,30 +167,6 @@ namespace Sulakore.Habbo.Web
             OnConnected(EventArgs.Empty);
 
             IsReading = true;
-        }
-        public async Task<bool> LoginAsync()
-        {
-            try
-            {
-                IsAuthenticated = false;
-                byte[] postData = Encoding.UTF8.GetBytes(
-                    $"{{\"email\":\"{Email}\",\"password\":\"{Password}\"}}");
-
-                var request = (HttpWebRequest)WebRequest.Create(
-                    _hotelUri.OriginalString + "/api/public/authentication/login");
-
-                request.ContentType = "application/json;charset=UTF-8";
-                string body = await Requester.DownloadStringAsync(
-                    request, postData).ConfigureAwait(false);
-
-                if (!string.IsNullOrWhiteSpace(body))
-                {
-                    IsAuthenticated = true;
-                    User = HUser.Create(body);
-                }
-            }
-            catch { IsAuthenticated = false; }
-            return IsAuthenticated;
         }
         public async Task<HGameData> GetGameDataAsync()
         {
