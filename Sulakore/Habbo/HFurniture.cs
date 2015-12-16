@@ -55,75 +55,8 @@ namespace Sulakore.Habbo
                 packet.ReadString();
                 packet.ReadInteger();
 
-                int categoryId = (packet.ReadInteger() & 0xFF);
-                #region Switch Statement: categoryId
-                switch (categoryId)
-                {
-                    case 0:
-                    {
-                        packet.ReadString();
-                        break;
-                    }
-                    case 1:
-                    {
-                        int count = packet.ReadInteger();
-                        for (int j = 0; j < count; j++)
-                        {
-                            packet.ReadString();
-                            packet.ReadString();
-                        }
-                        break;
-                    }
-                    case 2:
-                    {
-                        int count = packet.ReadInteger();
-                        for (int j = 0; j < count; j++)
-                        {
-                            packet.ReadString();
-                        }
-                        break;
-                    }
-                    case 3:
-                    {
-                        packet.ReadString();
-                        packet.ReadInteger();
-                        break;
-                    }
-                    case 5:
-                    {
-                        int count = packet.ReadInteger();
-                        for (int j = 0; j < count; j++)
-                        {
-                            packet.ReadInteger();
-                        }
-                        break;
-                    }
-                    case 6:
-                    {
-                        packet.ReadString();
-                        packet.ReadInteger();
-                        packet.ReadInteger();
-
-                        int count = packet.ReadInteger();
-                        for (int j = 0; j < count; j++)
-                        {
-                            int subCount = packet.ReadInteger();
-                            for (int k = 0; k < subCount; k++)
-                            {
-                                packet.ReadString();
-                            }
-                        }
-                        break;
-                    }
-                    case 7:
-                    {
-                        packet.ReadString();
-                        packet.ReadInteger();
-                        packet.ReadInteger();
-                        break;
-                    }
-                }
-                #endregion
+                int category = packet.ReadInteger();
+                HStuffData.ReadStuffData(category, packet);
 
                 packet.ReadInteger();
                 packet.ReadInteger();
