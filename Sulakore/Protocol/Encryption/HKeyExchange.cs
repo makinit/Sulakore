@@ -29,11 +29,11 @@ namespace Sulakore.Protocol.Encryption
         public BigInteger PrivateExponent { get; }
         public RSACryptoServiceProvider RSA { get; }
 
-        protected BigInteger DHPublic { get; private set; }
-        protected BigInteger DHPrivate { get; private set; }
+        public BigInteger DHPublic { get; private set; }
+        public BigInteger DHPrivate { get; private set; }
 
         public BigInteger DHPrime { get; private set; }
-        protected BigInteger DHGenerator { get; private set; }
+        public BigInteger DHGenerator { get; private set; }
 
         public bool IsDisposed { get; private set; }
         public bool CanDecrypt => (PrivateExponent != BigInteger.Zero);
