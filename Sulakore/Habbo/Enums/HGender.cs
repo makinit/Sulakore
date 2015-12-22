@@ -6,9 +6,9 @@
     public enum HGender
     {
         /// <summary>
-        /// Represents an unidentified player gender.
+        /// Represents a unisex player.
         /// </summary>
-        Unknown = 0,
+        Unisex = 'U',
         /// <summary>
         /// Represents a male player.
         /// </summary>

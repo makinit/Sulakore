@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace Sulakore.Communication
 {
@@ -13,16 +12,11 @@ namespace Sulakore.Communication
 
         ushort Port { get; }
         string Host { get; }
-        string[] Addresses { get; }
-
-        IList<ushort> OutgoingBlocked { get; }
-        IList<ushort> IncomingBlocked { get; }
-        IDictionary<ushort, byte[]> OutgoingReplaced { get; }
-        IDictionary<ushort, byte[]> IncomingReplaced { get; }
+        string Address { get; }
 
         int TotalOutgoing { get; }
         int TotalIncoming { get; }
-
+        
         Task<int> SendToServerAsync(byte[] data);
         Task<int> SendToServerAsync(ushort header, params object[] chunks);
 

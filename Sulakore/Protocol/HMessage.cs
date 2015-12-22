@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Text;
+using System.Diagnostics;
 using System.Collections.Generic;
 
 namespace Sulakore.Protocol
 {
+    [DebuggerDisplay("Header: {Header}, Length: {Length} | {ToString()}")]
     public sealed class HMessage
     {
         private readonly List<byte> _body;
@@ -237,6 +239,16 @@ namespace Sulakore.Protocol
 
             if (readable >= (stringLength + 2))
                 RemoveBytes(stringLength + 2, position);
+        }
+
+        public void ReplaceString(string value)
+        {
+            ReplaceString(value, _position);
+        }
+        public void ReplaceString(string value, int position)
+        {
+            RemoveString(position);
+            WriteString(value, position);
         }
 
         public void WriteString(string value)

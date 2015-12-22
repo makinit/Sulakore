@@ -35,7 +35,6 @@ namespace Sulakore.Extensions
 
         static Contractor()
         {
-            // We need to find another way.
             AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
 
             _extensionsDirectory = new DirectoryInfo("Extensions");
@@ -286,8 +285,11 @@ namespace Sulakore.Extensions
             if (!_dependenciesDirectory.Exists)
                 _dependenciesDirectory.Create();
 
-            Dictionary<string, AssemblyName> fileReferences = fileAssembly
-                .GetReferencedAssemblies().ToDictionary(an => an.Name);
+            AssemblyName[] references = fileAssembly.GetReferencedAssemblies();
+            var fileReferences = new Dictionary<string, AssemblyName>(references.Length);
+
+            foreach (AssemblyName reference in references)
+                fileReferences[reference.Name] = reference;
 
             string[] loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies()
                 .Select(a => a.GetName().Name).ToArray();

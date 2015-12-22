@@ -94,7 +94,7 @@ namespace Sulakore.Habbo
                 packet.ReadInteger();
                 int type = packet.ReadInteger();
 
-                HGender gender = HGender.Unknown;
+                HGender gender = HGender.Unisex;
                 string favoriteGroup = string.Empty;
                 #region Switch Statement: type
                 switch (type)

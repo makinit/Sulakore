@@ -38,13 +38,7 @@ namespace Sulakore.Extensions
 
         public ushort Port { get; private set; }
         public string Host { get; private set; }
-        public string[] Addresses { get; private set; }
-
-        public IList<ushort> IncomingBlocked { get; }
-        public IDictionary<ushort, byte[]> IncomingReplaced { get; }
-
-        public IList<ushort> OutgoingBlocked { get; }
-        public IDictionary<ushort, byte[]> OutgoingReplaced { get; }
+        public string Address { get; private set; }
 
         public int TotalIncoming { get; private set; }
         public int TotalOutgoing { get; private set; }
@@ -54,36 +48,26 @@ namespace Sulakore.Extensions
             _extension = extension;
             _externalContractor = externalContractor;
 
-            OutgoingBlocked = new List<ushort>();
-            IncomingBlocked = new List<ushort>();
-            OutgoingReplaced = new Dictionary<ushort, byte[]>();
-            IncomingReplaced = new Dictionary<ushort, byte[]>();
-
             RequestInformationAsync().Wait();
             Task readTask = ReadMessageAsync();
         }
 
         private async Task ReadMessageAsync()
         {
-            byte[] readData = await _externalContractor
-                .ReceiveWireMessageAsync().ConfigureAwait(false);
+            HMessage readMessage = await _externalContractor
+                .ReceiveAsync().ConfigureAwait(false);
 
-            var readMessage = new HMessage(readData);
             var destination = (HDestination)readMessage.Header;
             HandleMessage(readMessage.ReadBytes(readMessage.Length - 2), destination);
         }
         public async Task RequestInformationAsync()
         {
-            byte[] connectionData = await _externalContractor
-                .ReceiveWireMessageAsync().ConfigureAwait(false);
+            HMessage connectionMessage = await _externalContractor
+                .ReceiveAsync().ConfigureAwait(false);
 
-            var connectionMessage = new HMessage(connectionData);
             Port = connectionMessage.ReadShort();
             Host = connectionMessage.ReadString();
-
-            Addresses = new string[connectionMessage.ReadInteger()];
-            for (int i = 0; i < Addresses.Length; i++)
-                Addresses[0] = connectionMessage.ReadString();
+            Address = connectionMessage.ReadString();
         }
         private void HandleMessage(byte[] data, HDestination destination)
         {

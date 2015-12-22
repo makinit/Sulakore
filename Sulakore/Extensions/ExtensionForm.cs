@@ -105,11 +105,8 @@ namespace Sulakore.Extensions
             {
                 _contractor = new Contractor();
                 var externalContractor = HNode.ConnectAsync("127.0.0.1", 8787).Result;
-
-                byte[] initializationData = externalContractor
-                    .ReceiveWireMessageAsync().Result;
-
-                var initializationMessage = new HMessage(initializationData);
+                
+                HMessage initializationMessage = externalContractor.ReceiveAsync().Result;
                 _contractor.Hotel = (HHotel)initializationMessage.ReadShort();
 
                 _contractor.GameData = new HGameData(initializationMessage.ReadString());

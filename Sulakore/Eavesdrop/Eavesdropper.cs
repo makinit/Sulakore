@@ -185,6 +185,7 @@ namespace Eavesdrop
                 {
                     clientStream.Write(requestArgs.ResponsePayload,
                         0, requestArgs.ResponsePayload.Length);
+
                     return;
                 }
 
@@ -230,13 +231,12 @@ namespace Eavesdrop
                     string responseCommand = response.Headers.ToString();
 
                     var hResponse = (response as HttpWebResponse);
-                    if (hResponse != null)
+                    if (hResponse != null && !responseArgs.IsResponseOK)
                     {
                         responseCommand = $"HTTP/{hResponse.ProtocolVersion} {(int)hResponse.StatusCode} " +
                             $"{hResponse.StatusDescription}\r\n{responseCommand}";
                     }
-                    else
-                        responseCommand = "HTTP/1.1 200 OK\r\n" + responseCommand;
+                    else responseCommand = "HTTP/1.1 200 OK\r\n" + responseCommand;
 
                     string responseCookies = FormatResponseCookies(response);
                     if (!string.IsNullOrWhiteSpace(responseCookies))

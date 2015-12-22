@@ -81,9 +81,18 @@ namespace Sulakore.Communication
         /// </summary>
         public string Host { get; private set; }
         /// <summary>
-        /// Gets an array of strings containing the Internet Protocol(IP) addresses resolved from the Host.
+        /// Gets the IP address of the remote endpoint.
         /// </summary>
-        public string[] Addresses { get; private set; }
+        public string Address { get; private set; }
+
+        /// <summary>
+        /// Gets the total amount of packets the remote <see cref="HNode"/> has been sent from local.
+        /// </summary>
+        public int TotalOutgoing { get; private set; }
+        /// <summary>
+        /// Gets the total amount of packets the local <see cref="HNode"/> received from remote.
+        /// </summary>
+        public int TotalIncoming { get; private set; }
 
         /// <summary>
         /// Gets the <see cref="HNode"/> representing the local connection.
@@ -102,31 +111,6 @@ namespace Sulakore.Communication
         /// Gets a value that determines whether the <see cref="HConnection"/> has established a connection with the game.
         /// </summary>
         public bool IsConnected { get; private set; }
-        /// <summary>
-        /// Gets the <see cref="IList{T}"/> that contains the headers of outgoing packets to block.
-        /// </summary>
-        public IList<ushort> OutgoingBlocked { get; }
-        /// <summary>
-        /// Gets the <see cref="IList{T}"/> that contains the headers of incoming packets to block.
-        /// </summary>
-        public IList<ushort> IncomingBlocked { get; }
-        /// <summary>
-        /// Gets the <see cref="IDictionary{TKey, TValue}"/> that contains the replacement data for an outgoing packet determined by the header.
-        /// </summary>
-        public IDictionary<ushort, byte[]> OutgoingReplaced { get; }
-        /// <summary>
-        /// Gets the <see cref="IDictionary{TKey, TValue}"/> that contains the replacement data for an incoming packet determined by the header.
-        /// </summary>
-        public IDictionary<ushort, byte[]> IncomingReplaced { get; }
-
-        /// <summary>
-        /// Gets the total amount of packets the remote <see cref="HNode"/> has been sent from local.
-        /// </summary>
-        public int TotalOutgoing { get; private set; }
-        /// <summary>
-        /// Gets the total amount of packets the local <see cref="HNode"/> received from remote.
-        /// </summary>
-        public int TotalIncoming { get; private set; }
 
         static HConnection()
         {
@@ -145,11 +129,6 @@ namespace Sulakore.Communication
         {
             _disconnectLock = new object();
             _listeners = new Dictionary<ushort, TcpListener>();
-
-            OutgoingBlocked = new List<ushort>();
-            IncomingBlocked = new List<ushort>();
-            OutgoingReplaced = new Dictionary<ushort, byte[]>();
-            IncomingReplaced = new Dictionary<ushort, byte[]>();
         }
 
         /// <summary>
@@ -162,10 +141,7 @@ namespace Sulakore.Communication
                 try
                 {
                     TcpListener[] listeners = _listeners.Values.ToArray();
-                    foreach (TcpListener listener in listeners)
-                    {
-                        listener.Stop();
-                    }
+                    foreach (TcpListener listener in listeners) listener.Stop();
 
                     Local?.Dispose();
                     Remote?.Dispose();
@@ -183,7 +159,6 @@ namespace Sulakore.Communication
                     RestoreHosts();
                 }
             }
-            else return;
         }
         /// <summary>
         /// Intercepts the attempted connection on the specified port(s), and establishes a connection with the host in an asynchronous operation.
@@ -196,125 +171,91 @@ namespace Sulakore.Communication
             Disconnect();
             Host = host.Split(':')[0];
 
-            IPAddress[] hostAddresses = await Dns.GetHostAddressesAsync(
-                Host).ConfigureAwait(false);
+            Address = (await Dns.GetHostAddressesAsync(
+                Host).ConfigureAwait(false))[0].ToString();
 
-            IList<string> hosts = hostAddresses.Select(
-                ip => ip.ToString()).Distinct().ToList();
-
-            hosts.Add(Host);
-            Addresses = hosts.ToArray();
-            WriteHosts(Addresses);
-
-            await InterceptClientAsync(ports)
-                .ConfigureAwait(false);
+            WriteHosts(Host);
+            await InterceptClientAsync(ports).ConfigureAwait(false);
         }
 
+        private async Task InterceptClientAsync(ushort port)
+        {
+            try
+            {
+                TcpListener listener = _listeners[port];
+                listener.Start();
+
+                while (!IsConnected)
+                {
+                    Socket client = await listener
+                        .AcceptSocketAsync().ConfigureAwait(false);
+
+                    var local = new HNode(client);
+                    var remote = Remote ?? (await HNode.ConnectAsync(
+                        Address, port).ConfigureAwait(false));
+
+                    await InterceptClientDataAsync(local,
+                        remote, port).ConfigureAwait(false);
+                }
+            }
+            catch { /* Swallow exceptions. */ }
+        }
         private async Task InterceptClientAsync(ushort[] ports)
         {
+            var interceptionTasks = new List<Task>(ports.Length);
             foreach (ushort port in ports)
             {
-                if (_listeners.ContainsKey(port)) continue;
-                _listeners.Add(port, new TcpListener(IPAddress.Any, port));
-            }
+                if (!_listeners.ContainsKey(port))
+                    _listeners.Add(port, new TcpListener(IPAddress.Any, port));
 
-            var interceptionTasks = new List<Task>(_listeners.Count);
-            foreach (TcpListener listener in _listeners.Values)
-                interceptionTasks.Add(InterceptClientAsync(listener));
+                interceptionTasks.Add(InterceptClientAsync(port));
+            }
 
             while (interceptionTasks.Count > 0 && !IsConnected)
             {
-                Task completedInterception =
-                    await Task.WhenAny(interceptionTasks);
+                Task completedInterception = await Task.WhenAny(
+                    interceptionTasks).ConfigureAwait(false);
 
                 interceptionTasks.Remove(completedInterception);
             }
 
-            foreach (TcpListener listener in _listeners.Values)
-                listener.Stop();
+            foreach (TcpListener listener in _listeners.Values) listener.Stop();
+            if (!IsConnected) Disconnect();
         }
-        private async Task InterceptClientAsync(TcpListener listener)
+        private async Task InterceptClientDataAsync(HNode local, HNode remote, ushort port)
         {
             try
             {
-                listener.Start();
-                while (!IsConnected)
+                byte[] buffer = await local.PeekAsync(6)
+                    .ConfigureAwait(false);
+
+                if (buffer == null || buffer.Length < 4)
                 {
-                    Socket localSocket = await listener.AcceptSocketAsync()
-                        .ConfigureAwait(false);
-
-                    Task interceptDataTask =
-                        InterceptClientDataAsync(localSocket, listener);
+                    Remote = remote;
+                    return;
                 }
-            }
-            catch (SocketException) { /* Listener already started on same endpoint. */ }
-            catch (ObjectDisposedException) { /* Listener stopped. */ }
-        }
-        private async Task InterceptClientDataAsync(Socket client, TcpListener listener)
-        {
-            var port = (ushort)(
-                (IPEndPoint)listener.LocalEndpoint).Port;
-
-            var local = new HNode(client);
-            var remote = await HNode.ConnectAsync(Addresses[0], port)
-                .ConfigureAwait(false);
-
-            try
-            {
-                var buffer = new byte[1024];
-                int length = await local.ReceiveAsync(
-                    buffer, 0, 6).ConfigureAwait(false);
-
-                if (length < 1)
-                {
-                    local.Dispose();
-                    local = new HNode(await _listeners[port]
-                        .AcceptSocketAsync().ConfigureAwait(false));
-
-                    length = await local.ReceiveAsync(
-                        buffer, 0, 6).ConfigureAwait(false);
-                }
-
-                if (buffer[0] == 64) throw new Exception("Base64/VL64 protocol not supported.");
                 if (BigEndian.ToUInt16(buffer, 4) == Outgoing.CLIENT_CONNECT)
                 {
-                    listener.Stop();
-                    IsConnected = true;
-
                     Port = port;
                     Local = local;
                     Remote = remote;
 
-                    byte[] packet = new byte[BigEndian.ToInt32(buffer, 0) + 4];
-                    Buffer.BlockCopy(buffer, 0, packet, 0, 6);
-
-                    length = await Local.ReceiveAsync(packet, 6, packet.Length - 6)
-                        .ConfigureAwait(false);
-
+                    IsConnected = true;
                     OnConnected(EventArgs.Empty);
-                    HandleOutgoing(packet, ++TotalOutgoing);
 
-                    Task readInTask = ReadIncomingAsync();
+                    Task readOutgoingTask = ReadOutgoingAsync();
+                    Task readIncomingTask = ReadIncomingAsync();
                 }
                 else
                 {
-                    length += await local.ReceiveAsync(buffer, length, buffer.Length - length)
-                        .ConfigureAwait(false);
+                    buffer = await local.ReceiveAsync(1024).ConfigureAwait(false);
+                    await remote.SendAsync(buffer).ConfigureAwait(false);
 
-                    await remote.SendAsync(buffer, 0, length)
-                        .ConfigureAwait(false);
-
-                    length = await remote.ReceiveAsync(buffer, 0, buffer.Length)
-                        .ConfigureAwait(false);
-
-                    await local.SendAsync(buffer, 0, length)
-                        .ConfigureAwait(false);
-
-                    // Send empty data to local socket.
-                    await local.SendAsync(buffer, 0, 0)
-                        .ConfigureAwait(false);
+                    buffer = await remote.ReceiveAsync(1024).ConfigureAwait(false);
+                    await local.SendAsync(buffer).ConfigureAwait(false);
                 }
             }
+            catch { /* Swallow all exceptions. */ }
             finally
             {
                 if (Local != local)
@@ -367,33 +308,33 @@ namespace Sulakore.Communication
 
         private async Task ReadOutgoingAsync()
         {
-            byte[] packet = await Local.ReceiveWireMessageAsync()
+            HMessage packet = await Local.ReceiveAsync()
                 .ConfigureAwait(false);
 
             if (packet == null) Disconnect();
             else
             {
+                packet.Destination = HDestination.Server;
                 try { HandleOutgoing(packet, ++TotalOutgoing); }
                 catch { Disconnect(); }
             }
         }
-        private void HandleOutgoing(byte[] data, int count)
+        private void HandleOutgoing(HMessage packet, int count)
         {
-            var args = new InterceptedEventArgs(ReadOutgoingAsync,
-                count, new HMessage(data, HDestination.Server));
-
-            if (OutgoingReplaced.ContainsKey(args.Packet.Header))
-            {
-                ushort header = args.Packet.Header;
-                args.Replacement = new HMessage(OutgoingReplaced[header], HDestination.Server);
-            }
-
-            args.IsBlocked = OutgoingBlocked.Contains(args.Replacement.Header);
+            var args = new InterceptedEventArgs(ReadOutgoingAsync, count, packet);
             OnDataOutgoing(args);
 
             if (!args.IsBlocked)
+            {
                 SendToServerAsync(args.Replacement.ToBytes()).Wait();
-
+                var executeTaskList = new List<Task<int>>(args.Executions.Count);
+                for (int i = 0; i < args.Executions.Count; i++)
+                {
+                    executeTaskList.Add(
+                        SendToServerAsync(args.Executions[i].ToBytes()));
+                }
+                Task.WhenAll(executeTaskList).Wait();
+            }
             if (!args.WasContinued)
             {
                 Task readOutTask = ReadOutgoingAsync();
@@ -402,32 +343,33 @@ namespace Sulakore.Communication
 
         private async Task ReadIncomingAsync()
         {
-            byte[] packet = await Remote.ReceiveWireMessageAsync()
+            HMessage packet = await Remote.ReceiveAsync()
                 .ConfigureAwait(false);
 
             if (packet == null) Disconnect();
             else
             {
+                packet.Destination = HDestination.Client;
                 try { HandleIncoming(packet, ++TotalIncoming); }
                 catch { Disconnect(); }
             }
         }
-        private void HandleIncoming(byte[] data, int count)
+        private void HandleIncoming(HMessage packet, int count)
         {
-            var args = new InterceptedEventArgs(ReadIncomingAsync,
-                count, new HMessage(data, HDestination.Client));
-
-            if (IncomingReplaced.ContainsKey(args.Packet.Header))
-            {
-                ushort header = args.Packet.Header;
-                args.Replacement = new HMessage(IncomingReplaced[header], HDestination.Client);
-            }
-
-            args.IsBlocked = IncomingBlocked.Contains(args.Replacement.Header);
+            var args = new InterceptedEventArgs(ReadIncomingAsync, count, packet);
             OnDataIncoming(args);
 
             if (!args.IsBlocked)
+            {
                 SendToClientAsync(args.Replacement.ToBytes()).Wait();
+                var executeTaskList = new List<Task<int>>(args.Executions.Count);
+                for (int i = 0; i < args.Executions.Count; i++)
+                {
+                    executeTaskList.Add(
+                        SendToClientAsync(args.Executions[i].ToBytes()));
+                }
+                Task.WhenAll(executeTaskList).Wait();
+            }
 
             if (!args.WasContinued)
             {

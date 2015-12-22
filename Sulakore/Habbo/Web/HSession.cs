@@ -193,17 +193,15 @@ namespace Sulakore.Habbo.Web
 
         private async Task ReadIncomingAsync()
         {
-            byte[] packet = await Remote.ReceiveWireMessageAsync()
-                .ConfigureAwait(false);
+            HMessage packet = await Remote.ReceiveAsync().ConfigureAwait(false);
+            packet.Destination = HDestination.Client;
 
             if (packet == null) Disconnect();
             else HandleIncoming(packet, ++TotalIncoming);
         }
-        private void HandleIncoming(byte[] data, int count)
+        private void HandleIncoming(HMessage packet, int count)
         {
-            var args = new InterceptedEventArgs(ReadIncomingAsync,
-                count, new HMessage(data, HDestination.Client));
-
+            var args = new InterceptedEventArgs(ReadIncomingAsync, count, packet);
             Triggers.HandleIncoming(args);
             OnDataIncoming(args);
 

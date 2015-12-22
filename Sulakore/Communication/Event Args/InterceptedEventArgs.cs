@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 using Sulakore.Protocol;
 
@@ -45,6 +46,10 @@ namespace Sulakore.Communication
         /// Gets or sets a value that determines whether the data should be blocked.
         /// </summary>
         public bool IsBlocked { get; set; }
+        /// <summary>
+        /// Gets a list of data that will be sent to the destination after this intercepted data has been processed first.
+        /// </summary>
+        public List<HMessage> Executions { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InterceptedEventArgs"/> class.
@@ -54,12 +59,16 @@ namespace Sulakore.Communication
         /// <param name="packet">The intercepted data to read/write from.</param>
         public InterceptedEventArgs(Func<Task> continuation, int step, HMessage packet)
         {
+            Executions = new List<HMessage>();
+
             Continuation = continuation;
             IsAsyncCapable = (Continuation != null);
 
             Step = step;
             Packet = packet;
-            Replacement = new HMessage(packet.ToBytes(), packet.Destination);
+
+            Replacement = new HMessage(
+                packet.ToBytes(), packet.Destination);
         }
 
         /// <summary>

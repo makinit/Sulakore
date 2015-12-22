@@ -13,6 +13,13 @@ namespace Sulakore.Components
         private readonly SetTextCallback _setText;
         private delegate void SetTextCallback(string text);
 
+        [DefaultValue(typeof(Color), "White")]
+        public override Color BackColor
+        {
+            get { return base.BackColor; }
+            set { base.BackColor = value; }
+        }
+
         private int _borderWidth = 2;
         [DefaultValue(2)]
         public int BorderWidth
@@ -56,6 +63,8 @@ namespace Sulakore.Components
             SetStyle((ControlStyles)2050, true);
             DoubleBuffered = true;
 
+            BackColor = Color.White;
+
             _setText = new SetTextCallback(SetText);
             _animateTimer = new System.Timers.Timer(_animationInterval);
             _animateTimer.SynchronizingObject = this;
@@ -97,13 +106,13 @@ namespace Sulakore.Components
         }
         protected override void OnPaint(PaintEventArgs e)
         {
-            e.Graphics.Clear(Color.White);
+            e.Graphics.Clear(BackColor);
             if (DisplayBoundary)
             {
-                using (var solidBrush = new SolidBrush(Skin))
+                using (var brush = new SolidBrush(Skin))
                 {
-                    e.Graphics.FillRectangle(solidBrush, 0, 0, BorderWidth, Height);
-                    e.Graphics.FillRectangle(solidBrush, Width - BorderWidth, 0, BorderWidth, Height);
+                    e.Graphics.FillRectangle(brush, 0, 0, BorderWidth, Height);
+                    e.Graphics.FillRectangle(brush, Width - BorderWidth, 0, BorderWidth, Height);
                 }
             }
             base.OnPaint(e);
