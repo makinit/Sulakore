@@ -64,6 +64,15 @@ namespace FlashInspect.IO
             return (result << shift) >> shift;
         }
 
+        public uint ReadS24()
+        {
+            var value = (uint)(ReadByte() + (ReadByte() << 8) + (ReadByte() << 16));
+
+            if ((value >> 23) == 1)
+                value |= 0xff000000;
+
+            return value;
+        }
         public OPCode ReadOP()
         {
             return (OPCode)ReadByte();

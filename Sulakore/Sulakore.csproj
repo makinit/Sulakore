@@ -96,6 +96,7 @@
     <Compile Include="Components\SKoreButton.cs" />
     <Compile Include="Components\SKoreConstructView.cs" />
     <Compile Include="Components\SKoreExtensionView.cs" />
+    <Compile Include="Components\SKoreInjectionMenu.cs" />
     <Compile Include="Components\SKoreLabel.cs" />
     <Compile Include="Components\SKoreListView.cs" />
     <Compile Include="Components\SKoreMap.cs" />

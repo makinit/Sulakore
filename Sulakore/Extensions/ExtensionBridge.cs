@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 using Sulakore.Protocol;
 using Sulakore.Communication;
@@ -100,13 +99,13 @@ namespace Sulakore.Extensions
 
         public Task<int> SendToServerAsync(byte[] data)
         {
-            var inMessage = new HMessage(1, data);
-            return _externalContractor.SendAsync(inMessage.ToBytes());
+            var outMessage = new HMessage(1, data);
+            return _externalContractor.SendAsync(outMessage.ToBytes());
         }
         public Task<int> SendToServerAsync(ushort header, params object[] chunks)
         {
-            var inMessage = new HMessage(1, HMessage.Construct(header, chunks));
-            return _externalContractor.SendAsync(inMessage.ToBytes());
+            var outMessage = new HMessage(1, HMessage.Construct(header, chunks));
+            return _externalContractor.SendAsync(outMessage.ToBytes());
         }
     }
 }

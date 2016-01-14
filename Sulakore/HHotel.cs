@@ -6,10 +6,6 @@
     public enum HHotel
     {
         /// <summary>
-        /// Represents an unidentified hotel.
-        /// </summary>
-        Unknown = -1,
-        /// <summary>
         /// Represents http://www.Habbo.com (Global).
         /// </summary>
         Com = 0,

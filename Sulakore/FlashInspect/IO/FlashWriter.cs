@@ -63,7 +63,7 @@ namespace FlashInspect.IO
             }
         }
 
-        public virtual void Write(OPCode op)
+        public virtual void WriteOP(OPCode op)
         {
             Write((byte)op);
         }

@@ -33,6 +33,45 @@ namespace FlashInspect.ActionScript
             Multinames = new List<ASMultiname>();
         }
 
+        public int PushByte(byte value)
+        {
+            return PushInteger(value);
+        }
+        public int PushInteger(int value)
+        {
+            return PushValue(Integers, value);
+        }
+        public int PushUInteger(uint value)
+        {
+            return PushValue(UIntegers, value);
+        }
+        public int PushDouble(double value)
+        {
+            return PushValue(Doubles, value);
+        }
+        public int PushString(string value)
+        {
+            return PushValue(Strings, value);
+        }
+        public virtual int PushValue<T>(List<T> valueList, T value)
+        {
+            int valueIndex = valueList.IndexOf(value);
+            if (valueIndex == -1)
+            {
+                valueList.Add(value);
+                valueIndex = (valueList.Count - 1);
+            }
+            return valueIndex;
+        }
+
+        public int FindMultinameIndex(string name)
+        {
+            for (int i = 1; i < Multinames.Count; i++)
+                if (Multinames[i].ObjName == name) return i;
+
+            return -1;
+        }
+
         public void ReadConstants()
         {
             Integers.Capacity = _reader.Read7BitEncodedInt();

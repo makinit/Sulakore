@@ -4,8 +4,8 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using System.ComponentModel;
 
-using Sulakore.Habbo.Web;
 using Sulakore.Protocol;
+using Sulakore.Habbo.Web;
 using Sulakore.Communication;
 
 namespace Sulakore.Extensions
@@ -73,7 +73,7 @@ namespace Sulakore.Extensions
         /// Gets the <see cref="HHotel"/> object that represents the hotel currently connected to.
         /// </summary>
         [Browsable(false)]
-        public HHotel Hotel => _contractor?.Hotel ?? HHotel.Unknown;
+        public HHotel Hotel => _contractor?.Hotel ?? HHotel.Com;
         /// <summary>
         /// Gets the <see cref="IHConnection"/> instance used for blocking, replacing, sending, and intercepting data.
         /// </summary>

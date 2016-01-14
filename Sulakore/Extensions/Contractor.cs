@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 
@@ -11,7 +10,7 @@ using Sulakore.Communication;
 
 namespace Sulakore.Extensions
 {
-    public class Contractor : IReadOnlyList<ExtensionForm>, IList
+    public class Contractor
     {
         private readonly List<ExtensionForm> _extensions;
         private readonly IDictionary<string, ExtensionForm> _extensionHash;
@@ -25,23 +24,25 @@ namespace Sulakore.Extensions
         {
             ExtensionAction?.Invoke(this, e);
         }
+        private void RaiseOnExtensionAction(ExtensionForm extension, ExtensionActionType action)
+        {
+            if (ExtensionAction != null)
+            {
+                OnExtensionAction(
+                    new ExtensionActionEventArgs(extension, action));
+            }
+        }
 
         public HHotel Hotel { get; set; }
         public HGameData GameData { get; set; }
         public IHConnection Connection { get; set; }
-
-        public int Count => _extensions.Count;
-        public ExtensionForm this[int index] => _extensions[index];
+        public IReadOnlyList<ExtensionForm> Extensions => _extensions;
 
         static Contractor()
         {
-            AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
-
             _extensionsDirectory = new DirectoryInfo("Extensions");
+            _extensionInfo = new Dictionary<Assembly, ExtensionInfo>();
             _dependenciesDirectory = new DirectoryInfo("Extensions\\Dependencies");
-
-            _extensionInfo =
-                new Dictionary<Assembly, ExtensionInfo>();
         }
         public Contractor()
         {
@@ -60,7 +61,7 @@ namespace Sulakore.Extensions
         }
         protected virtual void HandleInterception(bool isOutgoing, InterceptedEventArgs e)
         {
-            if (Count < 1) return;
+            if (Extensions.Count < 1) return;
 
             ExtensionForm[] extensions = _extensions.ToArray();
             foreach (ExtensionForm extension in extensions)
@@ -77,11 +78,11 @@ namespace Sulakore.Extensions
             if (!_extensionsDirectory.Exists)
                 _extensionsDirectory.Create();
 
-            IEnumerable<FileSystemInfo> extensions =
+            IEnumerable<FileSystemInfo> filteredFiles =
                 _extensionsDirectory.EnumerateFileSystemInfos()
                 .Where(f => f.Extension == ".dll" || f.Extension == ".exe");
 
-            LoadExtensions(extensions);
+            LoadExtensions(filteredFiles);
         }
         protected virtual void LoadExtensions(IEnumerable<FileSystemInfo> extensions)
         {
@@ -100,13 +101,17 @@ namespace Sulakore.Extensions
                 ExtensionForm extensionForm = _extensionHash[hash];
                 if (!extensionForm.IsDisposed)
                 {
-                    OnExtensionAction(new ExtensionActionEventArgs(
-                        extensionForm, ExtensionActionType.Reinstalled));
+                    RaiseOnExtensionAction(extensionForm,
+                        ExtensionActionType.Reinstalled);
                 }
-                else extensionForm = Initialize(extensionForm);
-                return extensionForm;
+                return Initialize(extensionForm);
             }
             return Install(path, hash);
+        }
+        public ExtensionForm FindExtension(string hash)
+        {
+            return _extensionHash.ContainsKey(hash) ?
+                _extensionHash[hash] : null;
         }
         public virtual void Uninstall(ExtensionForm extension)
         {
@@ -183,7 +188,6 @@ namespace Sulakore.Extensions
 
                 _extensions.Add(extension);
                 _extensionHash[extension.Hash] = extension;
-
                 return extension;
             }
             catch { /* Failed to create extension instance. */ return null; }
@@ -204,17 +208,15 @@ namespace Sulakore.Extensions
         private void ExtensionShown(object sender, EventArgs e)
         {
             var extension = (ExtensionForm)sender;
-
-            OnExtensionAction(new ExtensionActionEventArgs(
-                extension, ExtensionActionType.Opened));
+            RaiseOnExtensionAction(extension, ExtensionActionType.Opened);
         }
         private void ExtensionDisposed(object sender, EventArgs e)
         {
             var extension = (ExtensionForm)sender;
             try
             {
-                OnExtensionAction(new ExtensionActionEventArgs(
-                    extension, ExtensionActionType.Closed));
+                RaiseOnExtensionAction(
+                    extension, ExtensionActionType.Closed);
             }
             finally
             {
@@ -347,47 +349,5 @@ namespace Sulakore.Extensions
             return _extensionInfo.ContainsKey(extensionAssembly) ?
                     _extensionInfo[extensionAssembly] : null;
         }
-
-        #region IList Implementation
-        object IList.this[int index]
-        {
-            get { return ((IList)_extensions)[index]; }
-            set { ((IList)_extensions)[index] = value; }
-        }
-        public object SyncRoot => ((IList)_extensions).SyncRoot;
-        public bool IsReadOnly => ((IList)_extensions).IsReadOnly;
-        public bool IsFixedSize => ((IList)_extensions).IsFixedSize;
-        public bool IsSynchronized => ((IList)_extensions).IsSynchronized;
-
-        public void Clear() =>
-            _extensions.Clear();
-
-        public void RemoveAt(int index) =>
-            _extensions.RemoveAt(index);
-
-        public int Add(object value) =>
-            ((IList)_extensions).Add(value);
-
-        public void Remove(object value) =>
-            ((IList)_extensions).Remove(value);
-
-        public bool Contains(object value) =>
-            ((IList)_extensions).Contains(value);
-
-        public int IndexOf(object value) =>
-            ((IList)_extensions).IndexOf(value);
-
-        public void CopyTo(Array array, int index) =>
-            ((IList)_extensions).CopyTo(array, index);
-
-        public void Insert(int index, object value) =>
-            ((IList)_extensions).Insert(index, value);
-
-        public IEnumerator<ExtensionForm> GetEnumerator() =>
-            ((IReadOnlyList<ExtensionForm>)_extensions).GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() =>
-             ((IReadOnlyList<ExtensionForm>)_extensions).GetEnumerator();
-        #endregion
     }
 }

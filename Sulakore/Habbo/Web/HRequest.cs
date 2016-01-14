@@ -63,7 +63,7 @@ namespace Sulakore.Habbo.Web
                 request).ConfigureAwait(false));
         }
 
-        private void UpdateCookies(string jScriptBody, HttpWebRequest request)
+        protected void UpdateCookies(string jScriptBody, HttpWebRequest request)
         {
             int setCookieIndex = -1;
             while ((setCookieIndex = jScriptBody.IndexOf("setCookie('")) != -1)
@@ -109,6 +109,7 @@ namespace Sulakore.Habbo.Web
                 Cookies.SetCookies(request.RequestUri,
                     response.Headers["Set-Cookie"] ?? string.Empty);
 
+                // contains(text/html)
                 string body = string.Empty;
                 using (Stream responseStream = response.GetResponseStream())
                 using (var bodyStream = new StreamReader(responseStream))

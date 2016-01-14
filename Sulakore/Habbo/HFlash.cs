@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 
 using FlashInspect;
@@ -16,8 +17,6 @@ namespace Sulakore.Habbo
         private readonly IList<ABCFile> _abcFiles;
         private readonly IList<DefineBinaryDataTag> _binTags;
 
-        public override string Location { get; }
-
         /// <summary>
         /// Gets the original modulus.
         /// </summary>
@@ -30,8 +29,8 @@ namespace Sulakore.Habbo
         public Dictionary<ushort, ASInstance> OutgoingTypes { get; }
         public Dictionary<ushort, ASInstance> IncomingTypes { get; }
 
-        public HFlash(byte[] data) :
-            base(data)
+        public HFlash(byte[] data)
+            : base(data)
         {
             _abcFiles = new List<ABCFile>();
             _binTags = new List<DefineBinaryDataTag>();
@@ -39,12 +38,55 @@ namespace Sulakore.Habbo
             OutgoingTypes = new Dictionary<ushort, ASInstance>();
             IncomingTypes = new Dictionary<ushort, ASInstance>();
         }
-        public HFlash(string path) :
-            this(File.ReadAllBytes(path))
+        public HFlash(string path)
+            : this(File.ReadAllBytes(path))
         {
             Location = Path.GetFullPath(path);
         }
 
+        public bool FindMessageInstances()
+        {
+            ABCFile abc = _abcFiles[2];
+            ASClass habboMessages = abc.FindClassByName("HabboMessages");
+            if (habboMessages == null || habboMessages.Traits.Count < 2) return false;
+
+            ASTrait incomingMap = habboMessages.Traits[0];
+            ASTrait outgoingMap = habboMessages.Traits[1];
+
+            using (var mapReader = new FlashReader(
+                habboMessages.Constructor.Body.Code.ToArray()))
+            {
+                while (mapReader.Position != mapReader.Length)
+                {
+                    OPCode op = mapReader.ReadOP();
+                    if (op != OPCode.GetLex) continue;
+
+                    int mapTypeIndex = mapReader.Read7BitEncodedInt();
+                    bool isOutgoing = (mapTypeIndex == outgoingMap.NameIndex);
+                    bool isIncoming = (mapTypeIndex == incomingMap.NameIndex);
+                    if (!isOutgoing && !isIncoming) continue;
+
+                    op = mapReader.ReadOP();
+                    if (op != OPCode.PushShort && op != OPCode.PushByte) continue;
+
+                    var header = (ushort)mapReader
+                        .Read7BitEncodedInt();
+
+                    op = mapReader.ReadOP();
+                    if (op != OPCode.GetLex) continue;
+
+                    int messageTypeIndex = mapReader.Read7BitEncodedInt();
+                    ASMultiname messageType = abc.Constants.Multinames[messageTypeIndex];
+                    ASInstance messageInstance = abc.FindInstanceByName(messageType.ObjName);
+
+                    if (isOutgoing) OutgoingTypes[header] = messageInstance;
+                    else if (isIncoming) IncomingTypes[header] = messageInstance;
+                }
+            }
+
+            return (OutgoingTypes.Count > 0 &&
+                IncomingTypes.Count > 0);
+        }
         public bool InjectIncomingLogger()
         {
             return false;
@@ -98,20 +140,20 @@ namespace Sulakore.Habbo
 
             using (var outCode = new FlashWriter())
             {
-                outCode.Write(OPCode.GetLex);
+                outCode.WriteOP(OPCode.GetLex);
                 outCode.Write7BitEncodedInt(externalInterfaceIndex);
 
                 // "OutgoingLog"
-                outCode.Write(OPCode.PushString);
+                outCode.WriteOP(OPCode.PushString);
                 outCode.Write7BitEncodedInt(outLogTitleIndex);
 
                 // int(param1) - Header
-                outCode.Write(OPCode.GetLocal_1);
+                outCode.WriteOP(OPCode.GetLocal_1);
 
                 // Array(param2) - Objects
-                outCode.Write(OPCode.GetLocal_2);
+                outCode.WriteOP(OPCode.GetLocal_2);
 
-                outCode.Write(OPCode.CallPropVoid);
+                outCode.WriteOP(OPCode.CallPropVoid);
                 outCode.Write7BitEncodedInt(callNameIndex);
                 outCode.Write7BitEncodedInt(3);
 
@@ -120,49 +162,68 @@ namespace Sulakore.Habbo
             return true;
         }
 
-        public bool SanitizeExpirationDateCheck()
+        public bool BypassRemoteHostCheck()
         {
             ABCFile abc = _abcFiles[2];
-            ASInstance windowContext = abc.FindInstanceByName("WindowContext");
-            if (windowContext == null) return false;
+            ASInstance commManager = abc.FindInstanceByName("HabboCommunicationManager");
+            if (commManager == null) return false;
 
-            bool sanitizedData = false;
-            ASCode ctorCode = windowContext.Constructor.Body.Code;
-            using (var inCode = new FlashReader(ctorCode.ToArray()))
-            using (var outCode = new FlashWriter(ctorCode.Count))
+            // The "host" value is always the first slot, for now.
+            string hostValueSlotName = commManager.FindTraits<SlotConstantTrait>(TraitType.Slot)
+                .Where(t => t.Type.ObjName == "String").ToArray()[0].ObjName;
+
+            ASMethod initComponent = commManager.FindMethod("initComponent", "void").Method;
+            if (initComponent == null) return false;
+
+            ASCode initCode = initComponent.Body.Code;
+            using (var inCode = new FlashReader(initCode.ToArray()))
+            using (var outCode = new FlashWriter(inCode.Length))
             {
+                int hostSlotIndex = abc.Constants.FindMultinameIndex(hostValueSlotName);
                 while (inCode.Position != inCode.Length)
                 {
                     OPCode op = inCode.ReadOP();
-                    outCode.Write(op);
-
-                    if (op != OPCode.GetProperty) continue;
-                    int propIndex = inCode.Read7BitEncodedInt();
-                    outCode.Write7BitEncodedInt(propIndex);
-
-                    ASMultiname propName = abc.Constants.Multinames[propIndex];
-                    if (propName.ObjName != "time") continue;
+                    outCode.WriteOP(op);
+                    if (op != OPCode.GetLocal_0) continue;
 
                     op = inCode.ReadOP();
-                    outCode.Write(op);
+                    outCode.WriteOP(op);
+                    if (op != OPCode.CallPropVoid) continue;
 
-                    if (op != OPCode.PushDouble) continue;
-                    int doubleIndex = inCode.Read7BitEncodedInt();
+                    int callPropVoidIndex = inCode.Read7BitEncodedInt();
+                    outCode.Write7BitEncodedInt(callPropVoidIndex);
 
-                    int largeDoubleIndex = abc.Constants
-                        .Doubles.IndexOf(double.MaxValue);
-                    if (largeDoubleIndex == -1)
-                    {
-                        abc.Constants.Doubles.Add(double.MaxValue);
-                        largeDoubleIndex = abc.Constants.Doubles.Count - 1;
-                    }
-                    outCode.Write7BitEncodedInt(largeDoubleIndex);
-                    sanitizedData = true;
+                    int callPropVoidArgCount = inCode.Read7BitEncodedInt();
+                    outCode.Write7BitEncodedInt(callPropVoidArgCount);
+
+                    if (callPropVoidArgCount != 0) continue;
+
+                    int getPropertyNameIndex = abc.Constants
+                        .FindMultinameIndex("getProperty");
+
+                    outCode.WriteOP(OPCode.GetLocal_0);
+                    outCode.WriteOP(OPCode.FindPropStrict);
+                    outCode.Write7BitEncodedInt(getPropertyNameIndex);
+
+                    outCode.WriteOP(OPCode.PushString);
+                    outCode.Write7BitEncodedInt(abc.Constants.PushString("connection.info.host"));
+
+                    outCode.WriteOP(OPCode.CallProperty);
+                    outCode.Write7BitEncodedInt(getPropertyNameIndex);
+                    outCode.Write7BitEncodedInt(1);
+
+                    outCode.WriteOP(OPCode.InitProperty);
+                    outCode.Write7BitEncodedInt(hostSlotIndex);
+
+                    outCode.Write(inCode.ToArray(),
+                        inCode.Position, inCode.Length - inCode.Position);
+
+                    initCode.Clear();
+                    initCode.AddRange(outCode.ToArray());
+                    return true;
                 }
-                ctorCode.Clear();
-                ctorCode.AddRange(outCode.ToArray());
             }
-            return sanitizedData;
+            return false;
         }
         public bool DisableClientEncryption()
         {
@@ -201,6 +262,38 @@ namespace Sulakore.Habbo
             InsertEarlyReturnTrue(domainChecker);
             InsertEarlyReturnTrue(clientUnloader);
             return true;
+        }
+        public bool DisableExpirationDateCheck()
+        {
+            ABCFile abc = _abcFiles[2];
+            ASInstance windowContext = abc.FindInstanceByName("WindowContext");
+            if (windowContext == null) return false;
+
+            ASCode methodCode = windowContext.Constructor.Body.Code;
+            using (var inCode = new FlashReader(methodCode.ToArray()))
+            using (var outCode = new FlashWriter(methodCode.Count))
+            {
+                int setLocal11Itterations = 0;
+                while (inCode.Position != inCode.Length)
+                {
+                    OPCode op = inCode.ReadOP();
+                    outCode.WriteOP(op);
+                    if (op != OPCode.SetLocal) continue;
+
+                    int setLocalIndex = inCode.Read7BitEncodedInt();
+                    outCode.Write7BitEncodedInt(setLocalIndex);
+                    if (setLocalIndex != 11 || (++setLocal11Itterations != 2)) continue;
+
+                    outCode.WriteOP(OPCode.ReturnVoid);
+                    outCode.Write(inCode.ToArray(), inCode.Position,
+                        inCode.Length - inCode.Position);
+
+                    methodCode.Clear();
+                    methodCode.AddRange(outCode.ToArray());
+                    return true;
+                }
+            }
+            return false;
         }
         public bool ReplaceRSA(int exponent, string modulus)
         {
@@ -249,7 +342,7 @@ namespace Sulakore.Habbo
                         case OPCode.GetLex:
                         {
                             outCode.Position--;
-                            outCode.Write(OPCode.PushString);
+                            outCode.WriteOP(OPCode.PushString);
 
                             int typeIndex = inCode.Read7BitEncodedInt();
                             ASMultiname type = abc.Constants.Multinames[typeIndex];
@@ -300,48 +393,6 @@ namespace Sulakore.Habbo
             return false;
         }
 
-        protected bool TryExtractMessages(ABCFile abc)
-        {
-            ASClass habboMessages = abc.FindClassByName("HabboMessages");
-            if (habboMessages == null || habboMessages.Traits.Count < 2) return false;
-
-            ASTrait incomingMap = habboMessages.Traits[0];
-            ASTrait outgoingMap = habboMessages.Traits[1];
-
-            using (var mapReader = new FlashReader(
-                habboMessages.Constructor.Body.Code.ToArray()))
-            {
-                while (mapReader.Position != mapReader.Length)
-                {
-                    OPCode op = mapReader.ReadOP();
-                    if (op != OPCode.GetLex) continue;
-
-                    int mapTypeIndex = mapReader.Read7BitEncodedInt();
-                    bool isOutgoing = (mapTypeIndex == outgoingMap.NameIndex);
-                    bool isIncoming = (mapTypeIndex == incomingMap.NameIndex);
-                    if (!isOutgoing && !isIncoming) continue;
-
-                    op = mapReader.ReadOP();
-                    if (op != OPCode.PushShort && op != OPCode.PushByte) continue;
-
-                    var header = (ushort)mapReader
-                        .Read7BitEncodedInt();
-
-                    op = mapReader.ReadOP();
-                    if (op != OPCode.GetLex) continue;
-
-                    int messageTypeIndex = mapReader.Read7BitEncodedInt();
-                    ASMultiname messageType = abc.Constants.Multinames[messageTypeIndex];
-                    ASInstance messageInstance = abc.FindInstanceByName(messageType.ObjName);
-
-                    if (isOutgoing) OutgoingTypes[header] = messageInstance;
-                    else if (isIncoming) IncomingTypes[header] = messageInstance;
-                }
-            }
-
-            return (OutgoingTypes.Count > 0 &&
-                IncomingTypes.Count > 0);
-        }
         protected void InsertEarlyReturnTrue(ASMethod method)
         {
             ASCode code = method.Body.Code;
@@ -417,16 +468,8 @@ namespace Sulakore.Habbo
             switch (tag.Header.TagType)
             {
                 case FlashTagType.DoABC:
-                {
-                    var abcTag = (DoABCTag)tag;
-                    ABCFile abc = abcTag.ABC;
-
-                    if (abcTag.Name == "frame2")
-                        TryExtractMessages(abc);
-
-                    _abcFiles.Add(abc);
-                    break;
-                }
+                _abcFiles.Add(((DoABCTag)tag).ABC);
+                break;
 
                 case FlashTagType.DefineBinaryData:
                 _binTags.Add((DefineBinaryDataTag)tag);

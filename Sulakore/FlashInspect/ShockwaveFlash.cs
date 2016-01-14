@@ -49,11 +49,11 @@ namespace FlashInspect
         /// Gets the <see cref="List{T}"/> of tags that make up the content of the Shockwave Flash(SWF) file.
         /// </summary>
         public List<FlashTag> Tags { get; }
-        public virtual string Location { get; }
         /// <summary>
         /// Gets the global character dictionary that associates character ids to objects.
         /// </summary>
         public FlashDictionary Dictionary { get; }
+        public string Location { get; set; }
         /// <summary>
         /// Gets or sets the <see cref="CompressionStandard"/> value that will be used to determine the compresison method used when <see cref="Compress"/> is invoked.
         /// </summary>

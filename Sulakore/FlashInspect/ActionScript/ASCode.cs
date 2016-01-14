@@ -42,7 +42,7 @@ namespace FlashInspect.ActionScript
             InsertInstruction(index,
                 OPCode.PushString, To7BitEncodedInt(valueIndex));
         }
-        
+
         public void AddInstruction(OPCode operation, params byte[] arguments)
         {
             InsertInstruction(Count, operation, arguments);

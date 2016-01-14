@@ -14,7 +14,7 @@ namespace Sulakore
     {
         private const string USER_API_FORMAT = "{0}/api/public/users?name={1}";
         private const string PROFILE_API_FORMAT = "{0}/api/public/users/{1}/profile";
-        public const string ChromeAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.80 Safari/537.36";
+        public const string ChromeAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36";
 
         private static readonly HRequest _hRequest;
         private static readonly Array _randomThemes;
@@ -74,14 +74,14 @@ namespace Sulakore
         public static async Task<HProfile> GetProfileAsync(string name, HHotel hotel)
         {
             string uniqueId = await GetUniqueIdAsync(name, hotel).ConfigureAwait(false);
-            return await GetProfileByUniqueId(uniqueId, hotel);
+            return await GetProfileByUniqueIdAsync(uniqueId, hotel);
         }
         /// <summary>
         /// Returns the user's public profile information associated with the given unique indentifier using the specified <see cref="HHotel"/> in an asynchronous operation.
         /// </summary>
         /// <param name="uniqueId">The unique identifier of the user.</param>
         /// <param name="hotel">The hotel where the target user is from.</param>
-        public static async Task<HProfile> GetProfileByUniqueId(string uniqueId, HHotel hotel)
+        public static async Task<HProfile> GetProfileByUniqueIdAsync(string uniqueId, HHotel hotel)
         {
             string profileJson = await _hRequest.DownloadStringAsync(
                 string.Format(PROFILE_API_FORMAT, hotel.ToUrl(true), uniqueId)).ConfigureAwait(false);
@@ -178,7 +178,7 @@ namespace Sulakore
         /// <returns></returns>
         public static HHotel ToHotel(string host)
         {
-            HHotel hotel = HHotel.Unknown;
+            HHotel hotel = HHotel.Com;
             string identifier = host.GetChild("game-", '.')
                 .Replace("us", "com");
 

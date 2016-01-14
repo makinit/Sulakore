@@ -40,7 +40,7 @@ namespace Sulakore.Habbo.Web
         public long SessionLogId { get; set; }
 
         [DataMember(Name = "loginLogId", EmitDefaultValue = false)]
-        public long LoginLodId { get; set; }
+        public long LoginLogId { get; set; }
 
         [DataMember(Name = "email", EmitDefaultValue = false)]
         public string Email { get; set; }
