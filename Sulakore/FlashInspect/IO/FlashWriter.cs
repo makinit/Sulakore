@@ -43,6 +43,21 @@ namespace FlashInspect.IO
             _flashMemory = (MemoryStream)BaseStream;
         }
 
+        public void WriteS24(int value)
+        {
+            var byteValue = (byte)(value & 0xff);
+            Write(byteValue);
+
+            value >>= 8;
+
+            byteValue = (byte)(value & 0xff);
+            Write(byteValue);
+
+            value >>= 8;
+
+            byteValue = (byte)(value & 0xff);
+            Write(byteValue);
+        }
         public void WriteSB(int bitCount, int value)
         {
             WriteUB(bitCount, value);

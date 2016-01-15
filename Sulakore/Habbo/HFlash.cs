@@ -218,6 +218,14 @@ namespace Sulakore.Habbo
                     outCode.Write(inCode.ToArray(),
                         inCode.Position, inCode.Length - inCode.Position);
 
+                    do op = inCode.ReadOP();
+                    while (op != OPCode.CallPropVoid);
+
+                    callPropVoidIndex = inCode.Read7BitEncodedInt();
+                    ASMultiname callPropVoidName = abc.Constants.Multinames[callPropVoidIndex];
+                    ASMethod connectMethod = commManager.FindMethod(callPropVoidName.ObjName, "void").Method;
+                    RemoveHostSuffix(abc, connectMethod);
+
                     initCode.Clear();
                     initCode.AddRange(outCode.ToArray());
                     return true;
@@ -225,6 +233,52 @@ namespace Sulakore.Habbo
             }
             return false;
         }
+        protected void RemoveHostSuffix(ABCFile abc, ASMethod connectMethod)
+        {
+            ASCode connectCode = connectMethod.Body.Code;
+            using (var inCode = new FlashReader(connectCode.ToArray()))
+            using (var outCode = new FlashWriter(inCode.Length))
+            {
+                int ifNeCount = 0;
+                while (inCode.Position != inCode.Length)
+                {
+                    OPCode op = inCode.ReadOP();
+                    outCode.WriteOP(op);
+                    if (op == OPCode.IfNe && ++ifNeCount == 2)
+                    {
+                        var iFNeJumpCount = (int)inCode.ReadS24();
+                        outCode.WriteS24(iFNeJumpCount + 6);
+                        continue;
+                    }
+                    else if (op != OPCode.PushInt) continue;
+
+                    int pushIntIndex = inCode.Read7BitEncodedInt();
+                    int integerValue = abc.Constants.Integers[pushIntIndex];
+                    switch (integerValue)
+                    {
+                        case 65244:
+                        case 65185:
+                        case 65191:
+                        case 65189:
+                        case 65188:
+                        case 65174:
+                        case 65238:
+                        case 65184:
+                        case 65171:
+                        case 65172:
+                        {
+                            pushIntIndex = abc.Constants.PushInteger(65290);
+                            break;
+                        }
+                    }
+                    outCode.Write7BitEncodedInt(pushIntIndex);
+                }
+                connectCode.Clear();
+                connectCode.AddRange(outCode.ToArray());
+            }
+            RemoveDeadFalseConditions(connectCode);
+        }
+
         public bool DisableClientEncryption()
         {
             ASInstance rc4 = _abcFiles[2].FindInstanceByName("RC4");
@@ -393,6 +447,40 @@ namespace Sulakore.Habbo
             return false;
         }
 
+        protected void RemoveDeadFalseConditions(ASCode code)
+        {
+            using (var inCode = new FlashReader(code.ToArray()))
+            using (var outCode = new FlashWriter(inCode.Length))
+            {
+                while (inCode.Position != inCode.Length)
+                {
+                    OPCode op = inCode.ReadOP();
+                    if (op != OPCode.PushFalse)
+                    {
+                        outCode.WriteOP(op);
+                        continue;
+                    }
+                    op = inCode.ReadOP();
+                    if (op != OPCode.PushFalse)
+                    {
+                        outCode.WriteOP(OPCode.PushFalse);
+                        outCode.WriteOP(op);
+                        continue;
+                    }
+                    op = inCode.ReadOP();
+                    if (op != OPCode.IfNe)
+                    {
+                        outCode.WriteOP(OPCode.PushFalse);
+                        outCode.WriteOP(OPCode.PushFalse);
+                        outCode.WriteOP(op);
+                        continue;
+                    }
+                    else inCode.ReadS24();
+                }
+                code.Clear();
+                code.AddRange(outCode.ToArray());
+            }
+        }
         protected void InsertEarlyReturnTrue(ASMethod method)
         {
             ASCode code = method.Body.Code;
