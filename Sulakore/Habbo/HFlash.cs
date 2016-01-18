@@ -281,7 +281,7 @@ namespace Sulakore.Habbo
 
         public bool DisableClientEncryption()
         {
-            ASInstance rc4 = _abcFiles[2].FindInstanceByName("RC4");
+            ASInstance rc4 = _abcFiles[2].FindInstanceByName("ArcFour");
             if (rc4 == null) return false;
 
             int modifyCount = 0;
