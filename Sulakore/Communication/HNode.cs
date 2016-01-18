@@ -126,7 +126,7 @@ namespace Sulakore.Communication
 
         public static async Task<HNode> ListenAsync(int port)
         {
-            var listener = new TcpListener(IPAddress.Loopback, port);
+            var listener = new TcpListener(IPAddress.Any, port);
             try
             {
                 listener.Start();
