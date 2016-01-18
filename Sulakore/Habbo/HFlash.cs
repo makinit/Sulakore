@@ -304,13 +304,13 @@ namespace Sulakore.Habbo
             ASMethod clientUnloader = _abcFiles[0].Classes[0].FindMethod("*", "Boolean")?.Method;
             if (clientUnloader == null) return false;
 
-            ASClass habbo = _abcFiles[1].FindClassByName("Habbo");
+            ASInstance habbo = _abcFiles[1].FindInstanceByName("Habbo");
             if (habbo == null) return false;
 
-            ASMethod domainChecker = habbo.FindMethod("isValidHabboDomain", "Boolean")?.Method;
+            ASMethod domainChecker = habbo.FindMethod("*", "Boolean")?.Method;
             if (domainChecker == null) return false;
 
-            if (domainChecker.Parameters.Count != 1) return false;
+            if (domainChecker.Parameters.Count != 2) return false;
             if (domainChecker.Parameters[0].Type.ObjName != "String") return false;
 
             InsertEarlyReturnTrue(domainChecker);
