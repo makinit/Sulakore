@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Collections.Generic;
 
 using FlashInspect.ActionScript;
 
@@ -78,8 +79,120 @@ namespace FlashInspect.IO
             return (OPCode)ReadByte();
         }
 
+        public object[] ReadValues(OPCode op)
+        {
+            var values = new List<object>();
+            switch (op)
+            {
+                case OPCode.AsType:
+                case OPCode.Call:
+                case OPCode.Coerce:
+                case OPCode.Construct:
+                case OPCode.ConstructSuper:
+                case OPCode.DebugFile:
+                case OPCode.DebugLine:
+                case OPCode.DecLocal:
+                case OPCode.DecLocal_i:
+                case OPCode.DeleteProperty:
+                case OPCode.Dxns:
+                case OPCode.FindProperty:
+                case OPCode.FindPropStrict:
+                case OPCode.GetDescendants:
+                case OPCode.GetGlobalSlot:
+                case OPCode.GetLex:
+                case OPCode.GetLocal:
+                case OPCode.GetProperty:
+                case OPCode.GetScopeObject:
+                case OPCode.GetSlot:
+                case OPCode.GetSuper:
+                case OPCode.IncLocal:
+                case OPCode.IncLocal_i:
+                case OPCode.InitProperty:
+                case OPCode.IsType:
+                case OPCode.Kill:
+                case OPCode.NewArray:
+                case OPCode.NewCatch:
+                case OPCode.NewClass:
+                case OPCode.NewFunction:
+                case OPCode.NewObject:
+                case OPCode.PushDouble:
+                case OPCode.PushInt:
+                case OPCode.PushNamespace:
+                case OPCode.PushShort:
+                case OPCode.PushString:
+                case OPCode.PushUInt:
+                case OPCode.SetLocal:
+                case OPCode.SetGlobalSlot:
+                case OPCode.SetProperty:
+                case OPCode.SetSlot:
+                case OPCode.SetSuper:
+                values.Add(Read7BitEncodedInt());
+                break;
+
+                case OPCode.CallMethod:
+                case OPCode.CallProperty:
+                case OPCode.CallPropLex:
+                case OPCode.CallPropVoid:
+                case OPCode.CallStatic:
+                case OPCode.CallSuper:
+                case OPCode.CallSuperVoid:
+                case OPCode.ConstructProp:
+                values.Add(Read7BitEncodedInt());
+                values.Add(Read7BitEncodedInt());
+                break;
+
+                case OPCode.Debug:
+                values.Add(ReadByte());
+                values.Add(Read7BitEncodedInt());
+                values.Add(ReadByte());
+                values.Add(Read7BitEncodedInt());
+                break;
+
+                case OPCode.HasNext2:
+                values.Add(ReadUInt32());
+                values.Add(ReadUInt32());
+                break;
+
+                case OPCode.IfEq:
+                case OPCode.IfFalse:
+                case OPCode.IfGe:
+                case OPCode.IfGt:
+                case OPCode.IfLe:
+                case OPCode.IfLt:
+                case OPCode.IfNGe:
+                case OPCode.IfNGt:
+                case OPCode.IfNLe:
+                case OPCode.IfNLt:
+                case OPCode.IfNe:
+                case OPCode.IfStrictEq:
+                case OPCode.IfStrictNE:
+                case OPCode.IfTrue:
+                case OPCode.Jump:
+                values.Add(ReadS24());
+                break;
+
+                case OPCode.LoopUpSwitch:
+                {
+                    values.Add(ReadS24());
+
+                    int caseCount = (Read7BitEncodedInt() + 1);
+                    values.Add(caseCount - 1);
+
+                    for (int i = 0; i < caseCount; i++)
+                        values.Add(ReadS24());
+
+                    break;
+                }
+
+                case OPCode.PushByte:
+                values.Add(ReadByte());
+                break;
+            }
+            return values.ToArray();
+        }
+
         /// <summary>
-        /// Reads in a 32-bit signed integer in compressed format.
+        /// Reads a 32-bit signed integer in compressed format.
         /// </summary>
         /// <returns>A 32-bit signed integer in compressed format.</returns>
         public new int Read7BitEncodedInt()
