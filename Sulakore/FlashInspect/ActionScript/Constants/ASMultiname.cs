@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 
 using FlashInspect.IO;
 using FlashInspect.ActionScript.Multinames;
 
 namespace FlashInspect.ActionScript.Constants
 {
+    [DebuggerDisplay("{ObjName} | MultinameType: {MultinameType}")]
     public class ASMultiname
     {
         private readonly ASConstants _constants;
