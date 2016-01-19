@@ -15,7 +15,7 @@ namespace FlashInspect.ActionScript
 
         public ITrait Data { get; set; }
         public TraitType TraitType => Data.TraitType;
-        
+
         public ASMultiname Name
         {
             get { return _abc.Constants.Multinames[NameIndex]; }
