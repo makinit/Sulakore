@@ -47,7 +47,6 @@ namespace FlashInspect.ActionScript
             Traits = new List<ASTrait>();
             InterfaceIndices = new List<int>();
         }
-
         public ASInstance(ABCFile abc, FlashReader reader)
         {
             _abc = abc;
