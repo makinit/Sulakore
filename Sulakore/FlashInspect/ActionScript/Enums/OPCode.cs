@@ -3,7 +3,7 @@
     /// <summary>
     /// Indicates an operation code for the AVM2 to utilize.
     /// </summary>
-    public enum OPCode
+    public enum OPCode : byte
     {
         /// <summary>
         /// Add two values.
