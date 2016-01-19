@@ -1,6 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+
+using SevenZip;
 
 using Ionic.Zlib;
 
@@ -9,8 +13,8 @@ using FlashInspect.Tags;
 using FlashInspect.Records;
 using FlashInspect.Dictionary;
 
-using SevenZip;
-using SevenZip.Compression.LZMA;
+using FlashInspect.ActionScript;
+using FlashInspect.ActionScript.Traits;
 
 namespace FlashInspect
 {
@@ -199,6 +203,111 @@ namespace FlashInspect
                 }
             }
             return Tags;
+        }
+
+        public string GenerateHash(ASInstance instance)
+        {
+            using (var md5 = MD5.Create())
+            {
+                return BitConverter.ToString(
+                    md5.ComputeHash(GenerateHashData(instance)))
+                    .Replace("-", string.Empty).ToLower();
+            }
+        }
+        protected virtual byte[] GenerateHashData(ASInstance instance)
+        {
+            using (var binStream = new MemoryStream())
+            using (var binWriter = new BinaryWriter(binStream, Encoding.UTF8, true))
+            {
+                binWriter.Write("INSTANCE");
+                binWriter.Write(instance.InterfaceIndices.Count);
+
+                binWriter.Write("TRAITS");
+                WriteTraits(binWriter, instance.Traits);
+
+                binWriter.Write("CONSTRUCTOR");
+                WriteMethod(binWriter, instance.Constructor);
+
+                binWriter.Close();
+                return binStream.ToArray();
+            }
+        }
+
+        private void WriteMethod(BinaryWriter writer, ASMethod method)
+        {
+            ASMethodBody body = method.Body;
+            writer.Write(body.Traits.Count);
+            writer.Write(body.Exceptions.Count);
+            writer.Write(body.MaxStack);
+            writer.Write(body.LocalCount);
+            writer.Write(body.MaxScopeDepth);
+            writer.Write(body.InitialScopeDepth);
+            writer.Write(body.Method.Parameters.Count);
+
+            foreach (ASParameter parameter in body.Method.Parameters)
+            {
+                switch (parameter.Type.ObjName)
+                {
+                    case "int":
+                    case "Class":
+                    case "Array":
+                    case "String":
+                    case "Boolean":
+                    case "Function":
+                    {
+                        writer.Write(parameter.Type.ObjName);
+                        break;
+                    }
+                }
+
+                writer.Write(parameter.IsOptional);
+                if (parameter.IsOptional)
+                    writer.Write((byte)parameter.ValueType);
+            }
+
+            ASCode code = body.Code;
+            writer.Write("OPERATIONS");
+            using (var inCode = new FlashReader(code.ToArray()))
+            {
+                string instructions = string.Empty;
+                while (inCode.Position != inCode.Length)
+                {
+                    OPCode op = inCode.ReadOP();
+                    inCode.ReadValues(op);
+
+                    instructions += (op + "\r\n");
+                    writer.Write((byte)op);
+                }
+            }
+        }
+        private void WriteTraits(BinaryWriter writer, IList<ASTrait> traits)
+        {
+            writer.Write(traits.Count);
+            foreach (ASTrait trait in traits)
+            {
+                writer.Write((byte)trait.TraitType);
+                switch (trait.TraitType)
+                {
+                    case TraitType.Method:
+                    case TraitType.Getter:
+                    case TraitType.Setter:
+                    {
+                        var msg = (MethodGetterSetterTrait)trait.Data;
+                        writer.Write(msg.DispId);
+                        WriteMethod(writer, msg.Method);
+                        break;
+                    }
+
+                    case TraitType.Slot:
+                    case TraitType.Constant:
+                    {
+                        var sc = (SlotConstantTrait)trait.Data;
+                        writer.Write(sc.SlotId);
+                        writer.Write((byte)sc.ValueType);
+                        break;
+                    }
+                }
+            }
         }
 
         protected virtual FlashTag ReadTag(FlashReader reader, TagRecord header)
