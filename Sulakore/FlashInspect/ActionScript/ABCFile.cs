@@ -67,6 +67,7 @@ namespace FlashInspect.ActionScript
             int instanceIndex = FindClassInstanceByName(instanceName);
             return instanceIndex < 0 ? null : Instances[instanceIndex];
         }
+
         protected int FindClassInstanceByName(string name)
         {
             if (string.IsNullOrEmpty(name)) return -1;
