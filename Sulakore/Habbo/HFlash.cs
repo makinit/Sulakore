@@ -1,6 +1,8 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 
 using FlashInspect;
 using FlashInspect.IO;
@@ -69,8 +71,12 @@ namespace Sulakore.Habbo
                     op = mapReader.ReadOP();
                     if (op != OPCode.PushShort && op != OPCode.PushByte) continue;
 
-                    var header = (ushort)mapReader
-                        .Read7BitEncodedInt();
+                    ushort header = 0;
+                    if (op == OPCode.PushByte)
+                    {
+                        header = mapReader.ReadByte();
+                    }
+                    else header = (ushort)mapReader.Read7BitEncodedInt();
 
                     op = mapReader.ReadOP();
                     if (op != OPCode.GetLex) continue;
@@ -491,7 +497,7 @@ namespace Sulakore.Habbo
             method.Body.Code.InsertInstruction(0, OPCode.PushTrue);
             method.Body.Code.InsertInstruction(1, OPCode.ReturnValue);
         }
-        protected void InsertEarlyReturnLocal(ASMethod method, int local)
+        protected void InsertEarlyReturnLocal(ASMethod method, byte local)
         {
             OPCode getLocal = (local + OPCode.GetLocal_0);
 
@@ -564,6 +570,58 @@ namespace Sulakore.Habbo
                 break;
             }
             return tag;
+        }
+
+        public string GenerateHash(ASInstance instance, bool isOutgoing)
+        {
+            using (var md5 = MD5.Create())
+            {
+                return BitConverter.ToString(
+                    md5.ComputeHash(GenerateHashData(instance, isOutgoing)))
+                    .Replace("-", string.Empty).ToLower();
+            }
+        }
+        protected virtual byte[] GenerateHashData(ASInstance instance, bool isOutgoing)
+        {
+            using (var binStream = new MemoryStream())
+            using (var binWriter = new BinaryWriter(binStream))
+            {
+                binWriter.Write(GenerateHashData(instance));
+                if (!isOutgoing)
+                {
+                    ASMethod constructor = instance.Constructor;
+                    ASCode ctorCode = constructor.Body.Code;
+
+                    if (constructor.Parameters.Count < 2)
+                    {
+                        using (var inCode = new FlashReader(ctorCode.ToArray()))
+                        {
+                            while (inCode.Position != inCode.Length)
+                            {
+                                OPCode op = inCode.ReadOP();
+                                object[] values = inCode.ReadValues(op);
+
+                                if (op == OPCode.GetLex)
+                                {
+                                    ASMultiname classParamTypeName = _abcFiles[2]
+                                        .Constants.Multinames[(int)values[0]];
+
+                                    ASInstance inMsgParser = _abcFiles[2]
+                                        .FindInstanceByName(classParamTypeName.ObjName);
+
+                                    if (inCode.ReadOP() == OPCode.ConstructSuper)
+                                        binWriter.Write(GenerateHashData(inMsgParser));
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                binWriter.Close();
+                return binStream.ToArray();
+            }
         }
     }
 }
