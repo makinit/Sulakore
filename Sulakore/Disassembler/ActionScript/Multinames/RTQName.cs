@@ -26,6 +26,7 @@ namespace Sulakore.Disassembler.ActionScript.Multinames
             MultinameType = multinameType;
         }
         public RTQName(ABCFile abc, FlashReader reader, ConstantType multinameType)
+            : this(abc, multinameType)
         {
             ObjNameIndex = reader.Read7BitEncodedInt();
         }
