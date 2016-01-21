@@ -530,23 +530,20 @@ namespace Sulakore.Habbo
 
                                 if (op == OPCode.GetLex)
                                 {
-                                    ASMultiname classParamTypeName = _abcFiles[2]
-                                        .Constants.Multinames[(int)values[0]];
+                                    ASMultiname classParamTypeName = constructor
+                                        .ABC.Constants.Multinames[(int)values[0]];
 
-                                    ASInstance inMsgParser = _abcFiles[2]
-                                        .FindInstanceByName(classParamTypeName.ObjName);
+                                    ASInstance inMsgParser = constructor
+                                        .ABC.FindInstanceByName(classParamTypeName.ObjName);
 
                                     if (inCode.ReadOP() == OPCode.ConstructSuper)
+                                    {
                                         binWriter.Write(GenerateHashData(inMsgParser));
-
+                                    }
                                     break;
                                 }
                             }
                         }
-                    }
-                    else
-                    {
-                        string parserSlotObjName = GetParserSlotObjName(instance);
                     }
                 }
 
