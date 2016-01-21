@@ -4,13 +4,13 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 
-using FlashInspect;
-using FlashInspect.IO;
-using FlashInspect.Tags;
-using FlashInspect.Records;
-using FlashInspect.ActionScript;
-using FlashInspect.ActionScript.Traits;
-using FlashInspect.ActionScript.Constants;
+using Sulakore.Disassembler;
+using Sulakore.Disassembler.IO;
+using Sulakore.Disassembler.Tags;
+using Sulakore.Disassembler.Records;
+using Sulakore.Disassembler.ActionScript;
+using Sulakore.Disassembler.ActionScript.Traits;
+using Sulakore.Disassembler.ActionScript.Constants;
 
 namespace Sulakore.Habbo
 {
@@ -56,7 +56,7 @@ namespace Sulakore.Habbo
             ASTrait outgoingMap = habboMessages.Traits[1];
 
             using (var mapReader = new FlashReader(
-                habboMessages.Constructor.Body.Code.ToArray()))
+                habboMessages.Constructor.Body.Bytecode.ToArray()))
             {
                 while (mapReader.Position != mapReader.Length)
                 {
@@ -64,8 +64,8 @@ namespace Sulakore.Habbo
                     if (op != OPCode.GetLex) continue;
 
                     int mapTypeIndex = mapReader.Read7BitEncodedInt();
-                    bool isOutgoing = (mapTypeIndex == outgoingMap.NameIndex);
-                    bool isIncoming = (mapTypeIndex == incomingMap.NameIndex);
+                    bool isOutgoing = (mapTypeIndex == outgoingMap.TypeIndex);
+                    bool isIncoming = (mapTypeIndex == incomingMap.TypeIndex);
                     if (!isOutgoing && !isIncoming) continue;
 
                     op = mapReader.ReadOP();
@@ -99,73 +99,7 @@ namespace Sulakore.Habbo
         }
         public bool InjectOutgoingLogger()
         {
-            ABCFile abc = _abcFiles[2];
-
-            ASInstance evaWireFormat = abc.FindInstanceByName("EvaWireFormat");
-            if (evaWireFormat == null) return false;
-
-            ASMethod encodeMethod = evaWireFormat.FindMethod("encode", "ByteArray")?.Method;
-            if (encodeMethod == null) return false;
-
-            string logFuncName = "OutgoingLog";
-            int outLogTitleIndex = abc.Constants.Strings.IndexOf(logFuncName);
-            if (outLogTitleIndex == -1)
-            {
-                abc.Constants.Strings.Add(logFuncName);
-                outLogTitleIndex = (abc.Constants.Strings.Count - 1);
-            }
-
-            int callNameIndex = 0;
-            int externalInterfaceIndex = 0;
-            for (int i = 1; i < abc.Constants.Multinames.Count; i++)
-            {
-                ASMultiname multiname = abc.Constants.Multinames[i];
-                switch (multiname.ObjName)
-                {
-                    case "call":
-                    callNameIndex = i;
-                    break;
-
-                    case "ExternalInterface":
-                    externalInterfaceIndex = i;
-                    break;
-                }
-
-                if (callNameIndex != 0 &&
-                    externalInterfaceIndex != 0)
-                    break;
-            }
-
-            ASCode encodeCode = encodeMethod.Body.Code;
-            int pushScopeIndex = encodeCode.IndexOf((byte)OPCode.PushScope);
-
-            encodeMethod.Body.MaxStack = 4;
-            encodeMethod.Body.LocalCount = 9;
-            encodeMethod.Body.InitialScopeDepth = 9;
-            encodeMethod.Body.MaxScopeDepth = 10;
-
-            using (var outCode = new FlashWriter())
-            {
-                outCode.WriteOP(OPCode.GetLex);
-                outCode.Write7BitEncodedInt(externalInterfaceIndex);
-
-                // "OutgoingLog"
-                outCode.WriteOP(OPCode.PushString);
-                outCode.Write7BitEncodedInt(outLogTitleIndex);
-
-                // int(param1) - Header
-                outCode.WriteOP(OPCode.GetLocal_1);
-
-                // Array(param2) - Objects
-                outCode.WriteOP(OPCode.GetLocal_2);
-
-                outCode.WriteOP(OPCode.CallPropVoid);
-                outCode.Write7BitEncodedInt(callNameIndex);
-                outCode.Write7BitEncodedInt(3);
-
-                encodeCode.InsertRange(6, outCode.ToArray());
-            }
-            return true;
+            return false;
         }
 
         public bool BypassRemoteHostCheck()
@@ -181,11 +115,10 @@ namespace Sulakore.Habbo
             ASMethod initComponent = commManager.FindMethod("initComponent", "void").Method;
             if (initComponent == null) return false;
 
-            ASCode initCode = initComponent.Body.Code;
-            using (var inCode = new FlashReader(initCode.ToArray()))
+            using (var inCode = new FlashReader(initComponent.Body.Bytecode))
             using (var outCode = new FlashWriter(inCode.Length))
             {
-                int hostSlotIndex = abc.Constants.FindMultinameIndex(hostValueSlotName);
+                int hostSlotIndex = abc.Constants.IndexOfMultiname(hostValueSlotName);
                 while (inCode.Position != inCode.Length)
                 {
                     OPCode op = inCode.ReadOP();
@@ -205,14 +138,14 @@ namespace Sulakore.Habbo
                     if (callPropVoidArgCount != 0) continue;
 
                     int getPropertyNameIndex = abc.Constants
-                        .FindMultinameIndex("getProperty");
+                        .IndexOfMultiname("getProperty");
 
                     outCode.WriteOP(OPCode.GetLocal_0);
                     outCode.WriteOP(OPCode.FindPropStrict);
                     outCode.Write7BitEncodedInt(getPropertyNameIndex);
 
                     outCode.WriteOP(OPCode.PushString);
-                    outCode.Write7BitEncodedInt(abc.Constants.PushString("connection.info.host"));
+                    outCode.Write7BitEncodedInt(abc.Constants.AddString("connection.info.host"));
 
                     outCode.WriteOP(OPCode.CallProperty);
                     outCode.Write7BitEncodedInt(getPropertyNameIndex);
@@ -232,8 +165,7 @@ namespace Sulakore.Habbo
                     ASMethod connectMethod = commManager.FindMethod(callPropVoidName.ObjName, "void").Method;
                     RemoveHostSuffix(abc, connectMethod);
 
-                    initCode.Clear();
-                    initCode.AddRange(outCode.ToArray());
+                    initComponent.Body.Bytecode = outCode.ToArray();
                     return true;
                 }
             }
@@ -241,8 +173,7 @@ namespace Sulakore.Habbo
         }
         protected void RemoveHostSuffix(ABCFile abc, ASMethod connectMethod)
         {
-            ASCode connectCode = connectMethod.Body.Code;
-            using (var inCode = new FlashReader(connectCode.ToArray()))
+            using (var inCode = new FlashReader(connectMethod.Body.Bytecode))
             using (var outCode = new FlashWriter(inCode.Length))
             {
                 int ifNeCount = 0;
@@ -273,16 +204,15 @@ namespace Sulakore.Habbo
                         case 65171:
                         case 65172:
                         {
-                            pushIntIndex = abc.Constants.PushInteger(65290);
+                            pushIntIndex = abc.Constants.AddInteger(65290);
                             break;
                         }
                     }
                     outCode.Write7BitEncodedInt(pushIntIndex);
                 }
-                connectCode.Clear();
-                connectCode.AddRange(outCode.ToArray());
+                connectMethod.Body.Bytecode = outCode.ToArray();
             }
-            RemoveDeadFalseConditions(connectCode);
+            RemoveDeadFalseConditions(connectMethod.Body);
         }
 
         public bool DisableClientEncryption()
@@ -329,9 +259,8 @@ namespace Sulakore.Habbo
             ASInstance windowContext = abc.FindInstanceByName("WindowContext");
             if (windowContext == null) return false;
 
-            ASCode methodCode = windowContext.Constructor.Body.Code;
-            using (var inCode = new FlashReader(methodCode.ToArray()))
-            using (var outCode = new FlashWriter(methodCode.Count))
+            using (var inCode = new FlashReader(windowContext.Constructor.Body.Bytecode))
+            using (var outCode = new FlashWriter())
             {
                 int setLocal11Itterations = 0;
                 while (inCode.Position != inCode.Length)
@@ -348,8 +277,7 @@ namespace Sulakore.Habbo
                     outCode.Write(inCode.ToArray(), inCode.Position,
                         inCode.Length - inCode.Position);
 
-                    methodCode.Clear();
-                    methodCode.AddRange(outCode.ToArray());
+                    windowContext.Constructor.Body.Bytecode = outCode.ToArray();
                     return true;
                 }
             }
@@ -358,27 +286,16 @@ namespace Sulakore.Habbo
         public bool ReplaceRSA(int exponent, string modulus)
         {
             ABCFile abc = _abcFiles[_abcFiles.Count - 1];
-            int modulusIndex = abc.Constants.Strings.IndexOf(modulus);
-            if (modulusIndex == -1)
-            {
-                abc.Constants.Strings.Add(modulus);
-                modulusIndex = (abc.Constants.Strings.Count - 1);
-            }
+            int modulusIndex = abc.Constants.AddString(modulus);
 
-            string e = exponent.ToString("x");
-            int exponentIndex = abc.Constants.Strings.IndexOf(e);
-            if (exponentIndex == -1)
-            {
-                abc.Constants.Strings.Add(e);
-                exponentIndex = (abc.Constants.Strings.Count - 1);
-            }
+            int exponentIndex = abc.Constants
+                .AddString(exponent.ToString("x"));
 
             int rsaStart = 0;
             ASInstance commClass = abc.FindInstanceByName("HabboCommunicationDemo");
             ASMethod verifier = FindVerifyMethod(commClass, abc, out rsaStart);
 
-            ASCode verifierCode = verifier.Body.Code;
-            using (var inCode = new FlashReader(verifierCode.ToArray()))
+            using (var inCode = new FlashReader(verifier.Body.Bytecode))
             using (var outCode = new FlashWriter(inCode.Length))
             {
                 bool searchingKeys = true;
@@ -446,16 +363,15 @@ namespace Sulakore.Habbo
                     }
                 }
 
-                verifierCode.Clear();
-                verifierCode.AddRange(outCode.ToArray());
+                verifier.Body.Bytecode = outCode.ToArray();
                 if (!searchingKeys) return true;
             }
             return false;
         }
 
-        protected void RemoveDeadFalseConditions(ASCode code)
+        protected void RemoveDeadFalseConditions(ASMethodBody body)
         {
-            using (var inCode = new FlashReader(code.ToArray()))
+            using (var inCode = new FlashReader(body.Bytecode))
             using (var outCode = new FlashWriter(inCode.Length))
             {
                 while (inCode.Position != inCode.Length)
@@ -483,31 +399,18 @@ namespace Sulakore.Habbo
                     }
                     else inCode.ReadS24();
                 }
-                code.Clear();
-                code.AddRange(outCode.ToArray());
+                body.Bytecode = outCode.ToArray();
             }
         }
         protected void InsertEarlyReturnTrue(ASMethod method)
         {
-            ASCode code = method.Body.Code;
-            if (code[0] == (byte)OPCode.PushTrue &&
-                code[1] == (byte)OPCode.ReturnValue)
-                return;
-
-            method.Body.Code.InsertInstruction(0, OPCode.PushTrue);
-            method.Body.Code.InsertInstruction(1, OPCode.ReturnValue);
+            method.Body.Bytecode[0] = (byte)OPCode.PushTrue;
+            method.Body.Bytecode[1] = (byte)OPCode.ReturnValue;
         }
         protected void InsertEarlyReturnLocal(ASMethod method, byte local)
         {
-            OPCode getLocal = (local + OPCode.GetLocal_0);
-
-            ASCode code = method.Body.Code;
-            if (code[0] == (byte)getLocal &&
-                code[1] == (byte)OPCode.ReturnValue)
-                return;
-
-            method.Body.Code.InsertInstruction(0, getLocal);
-            method.Body.Code.InsertInstruction(1, OPCode.ReturnValue);
+            method.Body.Bytecode[0] = (byte)(local + OPCode.GetLocal_0);
+            method.Body.Bytecode[1] = (byte)OPCode.ReturnValue;
         }
         protected ASMethod FindVerifyMethod(ASInstance instance, ABCFile abc, out int rsaStart)
         {
@@ -522,8 +425,7 @@ namespace Sulakore.Habbo
                 if (method.ReturnType.ObjName != "void") continue;
                 if (method.Parameters.Count != 1) continue;
 
-                ASCode methodCode = method.Body.Code;
-                using (var code = new FlashReader(methodCode.ToArray()))
+                using (var code = new FlashReader(method.Body.Bytecode))
                 {
                     while (code.Position != code.Length)
                     {
@@ -581,6 +483,33 @@ namespace Sulakore.Habbo
                     .Replace("-", string.Empty).ToLower();
             }
         }
+        protected virtual string GetParserSlotObjName(ASInstance inInstace)
+        {
+            ASMethod parserGetter = inInstace
+                .FindGetter("parser").Method;
+
+            string parserSlotObjName = string.Empty;
+            using (var inCode = new FlashReader(
+                parserGetter.Body.Bytecode.ToArray()))
+            {
+                while (inCode.Position != inCode.Length)
+                {
+                    OPCode op = inCode.ReadOP();
+                    object[] values = inCode.ReadValues(op);
+                    if (op == OPCode.GetProperty)
+                    {
+                        int getPropertyIndex = (int)values[0];
+
+                        ASMultiname parserSlotName = _abcFiles[2]
+                            .Constants.Multinames[getPropertyIndex];
+
+                        parserSlotObjName = parserSlotName.ObjName;
+                        break;
+                    }
+                }
+            }
+            return parserSlotObjName;
+        }
         protected virtual byte[] GenerateHashData(ASInstance instance, bool isOutgoing)
         {
             using (var binStream = new MemoryStream())
@@ -590,13 +519,11 @@ namespace Sulakore.Habbo
                 if (!isOutgoing)
                 {
                     ASMethod constructor = instance.Constructor;
-                    ASCode ctorCode = constructor.Body.Code;
-
                     if (constructor.Parameters.Count < 2)
                     {
-                        using (var inCode = new FlashReader(ctorCode.ToArray()))
+                        using (var inCode = new FlashReader(constructor.Body.Bytecode))
                         {
-                            while (inCode.Position != inCode.Length)
+                            while (inCode.IsDataAvailable)
                             {
                                 OPCode op = inCode.ReadOP();
                                 object[] values = inCode.ReadValues(op);
@@ -616,6 +543,10 @@ namespace Sulakore.Habbo
                                 }
                             }
                         }
+                    }
+                    else
+                    {
+                        string parserSlotObjName = GetParserSlotObjName(instance);
                     }
                 }
 
