@@ -20,7 +20,7 @@ namespace Sulakore.Disassembler.ActionScript.Traits
                     continue;
 
                 if (typeName != "*" &&
-                    slotTrait.Type.ObjName == typeName)
+                    slotTrait.Type.ObjName != typeName)
                     continue;
 
                 return slotTrait;
