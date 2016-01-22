@@ -446,34 +446,6 @@ namespace Sulakore.Habbo
             return null;
         }
 
-        public override List<FlashTag> ReadTags()
-        {
-            _binTags.Clear();
-            _abcFiles.Clear();
-
-            OutgoingTypes.Clear();
-            IncomingTypes.Clear();
-
-            return base.ReadTags();
-        }
-        protected override FlashTag ReadTag(FlashReader reader, TagRecord header)
-        {
-            FlashTag tag =
-                base.ReadTag(reader, header);
-
-            switch (tag.Header.TagType)
-            {
-                case FlashTagType.DoABC:
-                _abcFiles.Add(((DoABCTag)tag).ABC);
-                break;
-
-                case FlashTagType.DefineBinaryData:
-                _binTags.Add((DefineBinaryDataTag)tag);
-                break;
-            }
-            return tag;
-        }
-
         public string GenerateHash(ASInstance instance, bool isOutgoing)
         {
             using (var md5 = MD5.Create())
@@ -483,33 +455,6 @@ namespace Sulakore.Habbo
                     .Replace("-", string.Empty).ToLower();
             }
         }
-        protected virtual string GetParserSlotObjName(ASInstance inInstace)
-        {
-            ASMethod parserGetter = inInstace
-                .FindGetter("parser").Method;
-
-            string parserSlotObjName = string.Empty;
-            using (var inCode = new FlashReader(
-                parserGetter.Body.Bytecode.ToArray()))
-            {
-                while (inCode.Position != inCode.Length)
-                {
-                    OPCode op = inCode.ReadOP();
-                    object[] values = inCode.ReadValues(op);
-                    if (op == OPCode.GetProperty)
-                    {
-                        int getPropertyIndex = (int)values[0];
-
-                        ASMultiname parserSlotName = _abcFiles[2]
-                            .Constants.Multinames[getPropertyIndex];
-
-                        parserSlotObjName = parserSlotName.ObjName;
-                        break;
-                    }
-                }
-            }
-            return parserSlotObjName;
-        }
         protected virtual byte[] GenerateHashData(ASInstance instance, bool isOutgoing)
         {
             using (var binStream = new MemoryStream())
@@ -518,11 +463,6 @@ namespace Sulakore.Habbo
                 binWriter.Write(GenerateHashData(instance));
                 if (!isOutgoing)
                 {
-                    if (instance.Constructor.Parameters.Count == 1)
-                    {
-
-                    }
-
                     string superTypeObjName =
                         instance.SuperType.ObjName;
 
@@ -569,6 +509,34 @@ namespace Sulakore.Habbo
                 binWriter.Close();
                 return binStream.ToArray();
             }
+        }
+
+        public override List<FlashTag> ReadTags()
+        {
+            _binTags.Clear();
+            _abcFiles.Clear();
+
+            OutgoingTypes.Clear();
+            IncomingTypes.Clear();
+
+            return base.ReadTags();
+        }
+        protected override FlashTag ReadTag(FlashReader reader, TagRecord header)
+        {
+            FlashTag tag =
+                base.ReadTag(reader, header);
+
+            switch (tag.Header.TagType)
+            {
+                case FlashTagType.DoABC:
+                _abcFiles.Add(((DoABCTag)tag).ABC);
+                break;
+
+                case FlashTagType.DefineBinaryData:
+                _binTags.Add((DefineBinaryDataTag)tag);
+                break;
+            }
+            return tag;
         }
     }
 }
