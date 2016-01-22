@@ -47,9 +47,8 @@ namespace Sulakore.Disassembler.ActionScript
             InterfaceIndices = new List<int>();
         }
         public ASInstance(ABCFile abc, FlashReader reader)
+            : this(abc)
         {
-            ABC = abc;
-
             TypeIndex = reader.Read7BitEncodedInt();
             SuperTypeIndex = reader.Read7BitEncodedInt();
             ClassInfo = (ClassFlags)reader.ReadByte();
@@ -57,14 +56,14 @@ namespace Sulakore.Disassembler.ActionScript
             if ((ClassInfo & ClassFlags.ProtectedNamespace) != 0)
                 ProtectedNamespaceIndex = reader.Read7BitEncodedInt();
 
-            InterfaceIndices = new List<int>(reader.Read7BitEncodedInt());
+            InterfaceIndices.Capacity = reader.Read7BitEncodedInt();
             for (int i = 0; i < InterfaceIndices.Capacity; i++)
                 InterfaceIndices.Add(reader.Read7BitEncodedInt());
 
             ConstructorIndex = reader.Read7BitEncodedInt();
             if (Constructor != null) Constructor.IsConstructor = true;
 
-            Traits = new List<ASTrait>(reader.Read7BitEncodedInt());
+            Traits.Capacity = reader.Read7BitEncodedInt();
             for (int i = 0; i < Traits.Capacity; i++)
                 Traits.Add(new ASTrait(abc, reader));
         }
