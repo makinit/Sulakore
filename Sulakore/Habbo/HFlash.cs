@@ -518,35 +518,54 @@ namespace Sulakore.Habbo
                 binWriter.Write(GenerateHashData(instance));
                 if (!isOutgoing)
                 {
-                    ASMethod constructor = instance.Constructor;
-                    if (constructor.Parameters.Count < 2)
+                    if (instance.Constructor.Parameters.Count == 1)
                     {
-                        using (var inCode = new FlashReader(constructor.Body.Bytecode))
+
+                    }
+
+                    string superTypeObjName =
+                        instance.SuperType.ObjName;
+
+                    ASInstance superInstance = instance.ABC
+                        .FindInstanceByName(superTypeObjName);
+
+                    ASMethod parserMethod = superInstance
+                        .FindGetter("parser").Method;
+
+                    string parserTypeObjName =
+                        parserMethod.ReturnType.ObjName;
+
+                    IList<MethodGetterSetterTrait> mgsTraits = instance
+                        .FindTraits<MethodGetterSetterTrait>(TraitType.Method);
+
+                    bool hashedParserInstance = false;
+                    foreach (MethodGetterSetterTrait msgTrait in mgsTraits)
+                    {
+                        string methodReturnTypeObjName =
+                            msgTrait.Method.ReturnType.ObjName;
+
+                        ASInstance methodReturnTypeInstance = instance.ABC
+                            .FindInstanceByName(methodReturnTypeObjName);
+
+                        if (methodReturnTypeInstance == null)
+                            continue;
+
+                        foreach (int interfaceIndex in
+                            methodReturnTypeInstance.InterfaceIndices)
                         {
-                            while (inCode.IsDataAvailable)
+                            ASMultiname interfaceInstance =
+                                instance.ABC.Constants.Multinames[interfaceIndex];
+
+                            if (interfaceInstance.ObjName == parserTypeObjName)
                             {
-                                OPCode op = inCode.ReadOP();
-                                object[] values = inCode.ReadValues(op);
-
-                                if (op == OPCode.GetLex)
-                                {
-                                    ASMultiname classParamTypeName = constructor
-                                        .ABC.Constants.Multinames[(int)values[0]];
-
-                                    ASInstance inMsgParser = constructor
-                                        .ABC.FindInstanceByName(classParamTypeName.ObjName);
-
-                                    if (inCode.ReadOP() == OPCode.ConstructSuper)
-                                    {
-                                        binWriter.Write(GenerateHashData(inMsgParser));
-                                    }
-                                    break;
-                                }
+                                binWriter.Write(GenerateHashData(methodReturnTypeInstance));
+                                hashedParserInstance = true;
+                                break;
                             }
                         }
+                        if (hashedParserInstance) break;
                     }
                 }
-
                 binWriter.Close();
                 return binStream.ToArray();
             }
