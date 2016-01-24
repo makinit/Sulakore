@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 
 using Sulakore.Disassembler.IO;
+using Sulakore.Disassembler.ActionScript.Traits;
 
 namespace Sulakore.Disassembler.ActionScript
 {
     [DebuggerDisplay("Function: {Function?.ObjName}, Traits: {Traits.Count}")]
-    public class ASScript : IABCChild
+    public class ASScript : TraitContainer, IABCChild
     {
         public ABCFile ABC { get; }
-        public List<ASTrait> Traits { get; }
+        public override List<ASTrait> Traits { get; }
 
         public ASMethod Function
         {

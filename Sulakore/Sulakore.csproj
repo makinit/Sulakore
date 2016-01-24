@@ -106,6 +106,7 @@
     <Compile Include="Communication\Eavesdropper.cs" />
     <Compile Include="Communication\Event Args\EavesdropperRequestEventArgs.cs" />
     <Compile Include="Communication\Event Args\EavesdropperResponseEventArgs.cs" />
+    <Compile Include="Disassembler\ActionScript\IValueSlot.cs" />
     <Compile Include="Extensions\Enums\ExtensionActionType.cs" />
     <Compile Include="Extensions\Event Args\ExtensionActionEventArgs.cs" />
     <Compile Include="Extensions\Contractor.cs" />
@@ -132,7 +133,7 @@
     <Compile Include="Disassembler\ActionScript\Enums\ClassFlags.cs" />
     <Compile Include="Disassembler\ActionScript\Enums\MethodFlags.cs" />
     <Compile Include="Disassembler\ActionScript\Enums\OPCode.cs" />
-    <Compile Include="Disassembler\ActionScript\IABC.cs" />
+    <Compile Include="Disassembler\ActionScript\IABCChild.cs" />
     <Compile Include="Disassembler\ActionScript\Multinames\IMultiname.cs" />
     <Compile Include="Disassembler\ActionScript\Multinames\Multiname.cs" />
     <Compile Include="Disassembler\ActionScript\Multinames\MultinameL.cs" />

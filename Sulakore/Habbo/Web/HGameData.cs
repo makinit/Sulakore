@@ -86,7 +86,7 @@ namespace Sulakore.Habbo.Web
             }
 
             string variables =
-                flashVarsMatch.Groups["value"].Value;
+                flashVarsMatch.Groups["value"].Value + ";";
 
             try
             {
@@ -145,7 +145,7 @@ namespace Sulakore.Habbo.Web
 
             if (isSwfObject)
             {
-                variables = variables.GetChild("{", '}')
+                variables = variables.GetChild("{").GetParent("};")
                     .Replace(" :", ":").Replace(": ", ":").Trim();
 
                 int previousLength = 0;

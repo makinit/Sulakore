@@ -6,7 +6,7 @@ using Sulakore.Disassembler.ActionScript.Constants;
 namespace Sulakore.Disassembler.ActionScript.Traits
 {
     [DebuggerDisplay("{ObjName}, Type: {Type?.ObjName}, Value: {Value}, TraitType: {TraitType}, Slot: {Id}")]
-    public class SlotConstantTrait : ITrait
+    public class SlotConstantTrait : IValueSlot, ITrait
     {
         public int Id => SlotId;
         public ABCFile ABC { get; }

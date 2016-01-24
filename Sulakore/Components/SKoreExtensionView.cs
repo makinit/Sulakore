@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.Collections.Generic;
 
 using Sulakore.Extensions;
-using Sulakore.Communication;
 
 namespace Sulakore.Components
 {

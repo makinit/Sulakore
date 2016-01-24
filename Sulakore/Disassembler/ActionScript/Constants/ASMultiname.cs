@@ -19,7 +19,7 @@ namespace Sulakore.Disassembler.ActionScript.Constants
         public int ObjNameIndex { get; internal set; }
 
         public IMultiname Data { get; set; }
-        
+
         public ASMultiname(ABCFile abc)
         {
             ABC = abc;

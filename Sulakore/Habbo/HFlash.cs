@@ -1,8 +1,6 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 
 using Sulakore.Disassembler;
 using Sulakore.Disassembler.IO;
@@ -28,8 +26,8 @@ namespace Sulakore.Habbo
         /// </summary>
         public string Exponent { get; private set; }
 
-        public Dictionary<ushort, ASInstance> OutgoingTypes { get; }
-        public Dictionary<ushort, ASInstance> IncomingTypes { get; }
+        public Dictionary<ushort, ASClass> OutgoingTypes { get; }
+        public Dictionary<ushort, ASClass> IncomingTypes { get; }
 
         public HFlash(byte[] data)
             : base(data)
@@ -37,8 +35,8 @@ namespace Sulakore.Habbo
             _abcFiles = new List<ABCFile>();
             _binTags = new List<DefineBinaryDataTag>();
 
-            OutgoingTypes = new Dictionary<ushort, ASInstance>();
-            IncomingTypes = new Dictionary<ushort, ASInstance>();
+            OutgoingTypes = new Dictionary<ushort, ASClass>();
+            IncomingTypes = new Dictionary<ushort, ASClass>();
         }
         public HFlash(string path)
             : this(File.ReadAllBytes(path))
@@ -83,7 +81,7 @@ namespace Sulakore.Habbo
 
                     int messageTypeIndex = mapReader.Read7BitEncodedInt();
                     ASMultiname messageType = abc.Constants.Multinames[messageTypeIndex];
-                    ASInstance messageInstance = abc.FindInstanceByName(messageType.ObjName);
+                    ASClass messageInstance = abc.FindClassByName(messageType.ObjName);
 
                     if (isOutgoing) OutgoingTypes[header] = messageInstance;
                     else if (isIncoming) IncomingTypes[header] = messageInstance;
@@ -218,6 +216,7 @@ namespace Sulakore.Habbo
         public bool DisableClientEncryption()
         {
             ASInstance rc4 = _abcFiles[2].FindInstanceByName("ArcFour");
+            if (rc4 == null) _abcFiles[2].FindInstanceByName("RC4");
             if (rc4 == null) return false;
 
             int modifyCount = 0;
@@ -237,20 +236,30 @@ namespace Sulakore.Habbo
         }
         public bool RemoveLocalUseRestrictions()
         {
-            ASMethod clientUnloader = _abcFiles[0].Classes[0].FindMethod("*", "Boolean")?.Method;
-            if (clientUnloader == null) return false;
+            ASMethod unloadingMethod = _abcFiles[0].Classes[0]
+                .FindMethod("*", "Boolean")?.Method;
 
-            ASInstance habbo = _abcFiles[1].FindInstanceByName("Habbo");
-            if (habbo == null) return false;
+            if (unloadingMethod == null)
+                return false;
 
-            ASMethod domainChecker = habbo.FindMethod("*", "Boolean")?.Method;
-            if (domainChecker == null) return false;
+            ASClass habboClass = _abcFiles[1].FindClassByName("Habbo");
+            if (habboClass == null) return false;
 
-            if (domainChecker.Parameters.Count != 2) return false;
-            if (domainChecker.Parameters[0].Type.ObjName != "String") return false;
+            ASMethod domainValidatorMethod =
+                habboClass.FindMethod("*", "Boolean")?.Method;
 
-            InsertEarlyReturnTrue(domainChecker);
-            InsertEarlyReturnTrue(clientUnloader);
+            if (domainValidatorMethod == null)
+            {
+                domainValidatorMethod = habboClass.Instance
+                    .FindMethod("*", "Boolean")?.Method;
+            }
+
+            if (domainValidatorMethod == null) return false;
+            if (domainValidatorMethod.Parameters.Count == 0) return false;
+            if (domainValidatorMethod.Parameters[0].Type.ObjName != "String") return false;
+
+            InsertEarlyReturnTrue(domainValidatorMethod);
+            InsertEarlyReturnTrue(unloadingMethod);
             return true;
         }
         public bool DisableExpirationDateCheck()
@@ -446,68 +455,111 @@ namespace Sulakore.Habbo
             return null;
         }
 
-        public string GenerateHash(ASInstance instance, bool isOutgoing)
+        public string GetHash(ASClass asClass, bool isOutgoing)
         {
-            using (var md5 = MD5.Create())
+            return GetHash(GetHashData(asClass, isOutgoing));
+        }
+        protected virtual byte[] GetHashData(ASClass asClass, bool isOutgoing)
+        {
+            using (var hashStream = new MemoryStream())
+            using (var hashInput = new BinaryWriter(hashStream))
             {
-                return BitConverter.ToString(
-                    md5.ComputeHash(GenerateHashData(instance, isOutgoing)))
-                    .Replace("-", string.Empty).ToLower();
+                hashInput.Write(GetHashData(asClass));
+                if (isOutgoing)
+                {
+                    hashInput.Write("OUTGOING");
+                    WriteOutgoingHashData(hashInput, asClass);
+                }
+                else
+                {
+                    hashInput.Write("INCOMING");
+                    WriteIncomingHashData(hashInput, asClass);
+                }
+                return hashStream.ToArray();
             }
         }
-        protected virtual byte[] GenerateHashData(ASInstance instance, bool isOutgoing)
+        protected virtual void WriteIncomingHashData(BinaryWriter hashInput, ASClass incomingType)
         {
-            using (var binStream = new MemoryStream())
-            using (var binWriter = new BinaryWriter(binStream))
+            ASClass parserType = null;
+            using (var codeOutput = new FlashReader(
+                incomingType.Instance.Constructor.Body.Bytecode))
             {
-                binWriter.Write(GenerateHashData(instance));
-                if (!isOutgoing)
+                while (codeOutput.IsDataAvailable)
                 {
-                    string superTypeObjName =
-                        instance.SuperType.ObjName;
-
-                    ASInstance superInstance = instance.ABC
-                        .FindInstanceByName(superTypeObjName);
-
-                    ASMethod parserMethod = superInstance
-                        .FindGetter("parser").Method;
-
-                    string parserTypeObjName =
-                        parserMethod.ReturnType.ObjName;
-
-                    IList<MethodGetterSetterTrait> mgsTraits = instance
-                        .FindTraits<MethodGetterSetterTrait>(TraitType.Method);
-
-                    bool hashedParserInstance = false;
-                    foreach (MethodGetterSetterTrait msgTrait in mgsTraits)
+                    OPCode op = codeOutput.ReadOP();
+                    object[] values = codeOutput.ReadValues(op);
+                    if (op == OPCode.GetLex)
                     {
-                        string methodReturnTypeObjName =
-                            msgTrait.Method.ReturnType.ObjName;
+                        int getLexIndex = (int)values[0];
 
-                        ASInstance methodReturnTypeInstance = instance.ABC
-                            .FindInstanceByName(methodReturnTypeObjName);
+                        ASMultiname getLexMultiname = incomingType.ABC
+                            .Constants.Multinames[getLexIndex];
 
-                        if (methodReturnTypeInstance == null)
-                            continue;
+                        parserType = incomingType.ABC
+                            .FindClassByName(getLexMultiname.ObjName);
 
-                        foreach (int interfaceIndex in
-                            methodReturnTypeInstance.InterfaceIndices)
-                        {
-                            ASMultiname interfaceInstance =
-                                instance.ABC.Constants.Multinames[interfaceIndex];
-
-                            if (interfaceInstance.ObjName == parserTypeObjName)
-                            {
-                                binWriter.Write(GenerateHashData(methodReturnTypeInstance));
-                                hashedParserInstance = true;
-                                break;
-                            }
-                        }
-                        if (hashedParserInstance) break;
+                        break;
                     }
                 }
-                binWriter.Close();
-                return binStream.ToArray();
+            }
+
+            if (parserType != null)
+                hashInput.Write(GetHashData(parserType));
+            else
+                WriteIncomingParserHashData(hashInput, incomingType);
+        }
+        protected virtual void WriteOutgoingHashData(BinaryWriter hashInput, ASClass outgoingType)
+        {
+            // If ALL Outgoing message types begin to get their names obfuscated,
+            // remove this condition/check.
+            string outgoingTypeName =
+                outgoingType.Instance.Type.ObjName;
+
+            if (outgoingTypeName.EndsWith("Composer"))
+                hashInput.Write(outgoingTypeName);
+        }
+        protected virtual void WriteIncomingParserHashData(BinaryWriter hashInput, ASClass incomingType)
+        {
+            ASInstance eventSuperInstance = incomingType.ABC.FindInstanceByName(
+                incomingType.Instance.SuperType.ObjName);
+
+            ASMultiname parserReturnType = eventSuperInstance
+                .FindGetter("parser").Method.ReturnType;
+
+            SlotConstantTrait parserSlot = eventSuperInstance
+                .FindSlot("*", parserReturnType.ObjName);
+
+            foreach (ASTrait trait in incomingType.Instance.Traits)
+            {
+                if (trait.TraitType != TraitType.Method) continue;
+
+                var mgs = (MethodGetterSetterTrait)trait.Data;
+                if (mgs.Method.Parameters.Count != 0) continue;
+
+                using (var codeOutput =
+                    new FlashReader(mgs.Method.Body.Bytecode))
+                {
+                    while (codeOutput.IsDataAvailable)
+                    {
+                        OPCode op = codeOutput.ReadOP();
+                        object[] values = codeOutput.ReadValues(op);
+
+                        if (op == OPCode.GetLex)
+                        {
+                            ASMultiname getLexType = incomingType.ABC
+                                .Constants.Multinames[(int)values[0]];
+
+                            if (getLexType.ObjName == parserSlot.ObjName)
+                            {
+                                ASClass parserType = incomingType.ABC
+                                    .FindClassByName(mgs.Method.ReturnType.ObjName);
+
+                                hashInput.Write(GetHashData(parserType));
+                                return;
+                            }
+                        }
+                    }
+                }
             }
         }
 

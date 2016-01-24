@@ -13,6 +13,7 @@ using Sulakore.Compression.Ionic.Zlib;
 using Sulakore.Disassembler.Dictionary;
 using Sulakore.Disassembler.ActionScript;
 using Sulakore.Disassembler.ActionScript.Traits;
+using Sulakore.Disassembler.ActionScript.Constants;
 
 namespace Sulakore.Disassembler
 {
@@ -203,106 +204,166 @@ namespace Sulakore.Disassembler
             return Tags;
         }
 
-        public string GenerateHash(ASInstance instance)
+        public string GetHash(ASClass asClass)
+        {
+            return GetHash(GetHashData(asClass));
+        }
+        protected string GetHash(byte[] hashData)
         {
             using (var md5 = MD5.Create())
             {
-                return BitConverter.ToString(
-                    md5.ComputeHash(GenerateHashData(instance)))
-                    .Replace("-", string.Empty).ToLower();
+                hashData = md5.ComputeHash(hashData);
+                string hex = BitConverter.ToString(hashData);
+                return hex.Replace("-", string.Empty).ToLower();
             }
         }
-        protected virtual byte[] GenerateHashData(ASInstance instance)
+        protected virtual byte[] GetHashData(ASClass asClass)
         {
-            using (var binStream = new MemoryStream())
-            using (var binWriter = new BinaryWriter(binStream, Encoding.UTF8, true))
+            using (var hashStream = new MemoryStream())
+            using (var hashInput = new BinaryWriter(hashStream))
             {
-                binWriter.Write("INSTANCE");
-                binWriter.Write(instance.InterfaceIndices.Count);
+                WriteHashData(hashInput, asClass);
+                hashInput.Write(GetHashData(asClass.Constructor));
 
-                binWriter.Write("TRAITS");
-                WriteTraits(binWriter, instance.Traits);
+                WriteHashData(hashInput, asClass.Instance);
+                hashInput.Write(GetHashData(asClass.Instance.Constructor));
 
-                binWriter.Write("CONSTRUCTOR");
-                WriteMethod(binWriter, instance.Constructor);
-
-                binWriter.Close();
-                return binStream.ToArray();
-            }
-        }
-
-        private void WriteMethod(BinaryWriter writer, ASMethod method)
-        {
-            ASMethodBody body = method.Body;
-            writer.Write(body.Traits.Count);
-            writer.Write(body.Exceptions.Count);
-            writer.Write(body.MaxStack);
-            writer.Write(body.LocalCount);
-            writer.Write(body.MaxScopeDepth);
-            writer.Write(body.InitialScopeDepth);
-            writer.Write(body.Method.Parameters.Count);
-
-            foreach (ASParameter parameter in body.Method.Parameters)
-            {
-                switch (parameter.Type.ObjName)
+                if (asClass.Instance.SuperType?.ObjName != "Object")
                 {
-                    case "int":
-                    case "Class":
-                    case "Array":
-                    case "String":
-                    case "Boolean":
-                    case "Function":
-                    {
-                        writer.Write(parameter.Type.ObjName);
-                        break;
-                    }
+                    string superTypeObjName = asClass.Instance.SuperType.ObjName;
+                    ASClass superClass = asClass.ABC.FindClassByName(superTypeObjName);
+
+                    if (superClass != null)
+                        hashInput.Write(GetHashData(superClass));
                 }
 
-                writer.Write(parameter.IsOptional);
-                if (parameter.IsOptional)
-                    writer.Write((byte)parameter.ValueType);
-            }
-
-            writer.Write("OPERATIONS");
-            using (var inCode = new FlashReader(body.Bytecode))
-            {
-                while (inCode.Position != inCode.Length)
+                hashInput.Write((byte)asClass.Instance.ClassInfo);
+                hashInput.Write((byte)asClass.Instance.Type.MultinameType);
+                hashInput.Write((byte)asClass.Instance.ProtectedNamespace.NamespaceType);
+                if (asClass.Instance.SuperType != null)
                 {
-                    OPCode op = inCode.ReadOP();
-                    inCode.ReadValues(op);
-                    switch (op)
+                    hashInput.Write((byte)asClass.Instance
+                        .SuperType.MultinameType);
+                }
+                return hashStream.ToArray();
+            }
+        }
+        protected virtual byte[] GetHashData(ASMethod asMethod)
+        {
+            using (var hashStream = new MemoryStream())
+            using (var hashInput = new BinaryWriter(hashStream))
+            {
+                WriteHashData(hashInput, asMethod.Body);
+                hashInput.Write(asMethod.Body.Exceptions.Count);
+                hashInput.Write(asMethod.Body.MaxStack);
+                hashInput.Write(asMethod.Body.LocalCount);
+                hashInput.Write(asMethod.Body.MaxScopeDepth);
+                hashInput.Write(asMethod.Body.InitialScopeDepth);
+
+                hashInput.Write(asMethod.Parameters.Count);
+                foreach (ASParameter parameter in asMethod.Parameters)
+                {
+                    if (parameter.IsOptional)
                     {
-                        case OPCode.PushString:
-                        break;
+                        hashInput.Write(parameter.IsOptional);
+                        WriteHashData(hashInput, parameter);
                     }
-                    writer.Write((byte)op);
+                    WriteHashData(hashInput, parameter.Type);
+                }
+
+                using (var codeOutput =
+                    new FlashReader(asMethod.Body.Bytecode))
+                {
+                    while (codeOutput.IsDataAvailable)
+                    {
+                        OPCode op = codeOutput.ReadOP();
+                        object[] values = codeOutput.ReadValues(op);
+                        hashInput.Write((byte)op);
+                    }
+                }
+                return hashStream.ToArray();
+            }
+        }
+
+        protected virtual void WriteHashData(BinaryWriter hashInput, IValueSlot valueSlot)
+        {
+            hashInput.Write((byte)valueSlot.ValueType);
+            switch (valueSlot.ValueType)
+            {
+                case ConstantType.True:
+                case ConstantType.False:
+                hashInput.Write((bool)valueSlot.Value);
+                break;
+
+                case ConstantType.String:
+                hashInput.Write((string)valueSlot.Value);
+                break;
+
+                case ConstantType.Double:
+                hashInput.Write((double)valueSlot.Value);
+                break;
+
+                case ConstantType.Integer:
+                hashInput.Write((int)valueSlot.Value);
+                break;
+
+                case ConstantType.UInteger:
+                hashInput.Write((uint)valueSlot.Value);
+                break;
+            }
+        }
+        protected virtual void WriteHashData(BinaryWriter hashInput, ASMultiname asMultiname)
+        {
+            hashInput.Write((byte)asMultiname.MultinameType);
+            switch (asMultiname.ObjName)
+            {
+                case "int":
+                case "Class":
+                case "Array":
+                case "String":
+                case "Boolean":
+                case "Function":
+                {
+                    hashInput.Write(asMultiname.ObjName);
+                    break;
                 }
             }
         }
-        private void WriteTraits(BinaryWriter writer, IList<ASTrait> traits)
+        protected virtual void WriteHashData(BinaryWriter hashInput, TraitContainer traitContainer)
         {
-            writer.Write(traits.Count);
-            foreach (ASTrait trait in traits)
+            hashInput.Write(traitContainer.Traits.Count);
+            foreach (ASTrait trait in traitContainer.Traits)
             {
-                writer.Write((byte)trait.TraitType);
+                hashInput.Write((byte)trait.TraitType);
+                hashInput.Write((byte)trait.Attributes);
+                hashInput.Write(trait.Id);
                 switch (trait.TraitType)
                 {
+                    case TraitType.Class:
+                    {
+                        var classTrait = (ClassTrait)trait.Data;
+                        hashInput.Write(GetHashData(classTrait.Class));
+                        break;
+                    }
                     case TraitType.Method:
                     case TraitType.Getter:
                     case TraitType.Setter:
                     {
-                        var msg = (MethodGetterSetterTrait)trait.Data;
-                        writer.Write(msg.DispId);
-                        WriteMethod(writer, msg.Method);
+                        var mgsTrait = (MethodGetterSetterTrait)trait.Data;
+                        hashInput.Write(GetHashData(mgsTrait.Method));
                         break;
                     }
-
                     case TraitType.Slot:
                     case TraitType.Constant:
                     {
-                        var sc = (SlotConstantTrait)trait.Data;
-                        writer.Write(sc.SlotId);
-                        writer.Write((byte)sc.ValueType);
+                        var slotConstTrait = (SlotConstantTrait)trait.Data;
+                        WriteHashData(hashInput, slotConstTrait);
+                        break;
+                    }
+                    case TraitType.Function:
+                    {
+                        var funcTrait = (FunctionTrait)trait.Data;
+                        hashInput.Write(GetHashData(funcTrait.Function));
                         break;
                     }
                 }

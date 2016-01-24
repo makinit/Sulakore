@@ -69,7 +69,7 @@ namespace Sulakore.Disassembler.ActionScript
         {
             return AddValue(_strings, value);
         }
-        public virtual int AddValue<T>(List<T> valueList, T value)
+        protected virtual int AddValue<T>(List<T> valueList, T value)
         {
             int valueIndex = valueList.IndexOf(value);
             if (valueIndex == -1)
@@ -78,6 +78,31 @@ namespace Sulakore.Disassembler.ActionScript
                 valueIndex = (valueList.Count - 1);
             }
             return valueIndex;
+        }
+
+        public void SetByte(int index, byte value)
+        {
+            SetInteger(index, value);
+        }
+        public void SetInteger(int index, int value)
+        {
+            SetValue(index, value, _integers);
+        }
+        public void SetUInteger(int index, uint value)
+        {
+            SetValue(index, value, _uintegers);
+        }
+        public void SetDouble(int index, double value)
+        {
+            SetValue(index, value, _doubles);
+        }
+        public void SetString(int index, string value)
+        {
+            SetValue(index, value, _strings);
+        }
+        protected virtual void SetValue<T>(int index, T value, List<T> valueList)
+        {
+            valueList[index] = value;
         }
 
         public int IndexOfMultiname(string name)

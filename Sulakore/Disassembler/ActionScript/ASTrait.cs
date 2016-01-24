@@ -9,9 +9,11 @@ using Sulakore.Disassembler.ActionScript.Constants;
 namespace Sulakore.Disassembler.ActionScript
 {
     [DebuggerDisplay("{Data?.ObjName}, MetadataIndices: {MetadataIndices.Count}, Attributes: {Attributes}, TraitType: {TraitType}")]
-    public class ASTrait : IABCChild
+    public class ASTrait : ITrait
     {
+        public int Id => Data.Id;
         public ABCFile ABC { get; }
+        public string ObjName => Data.ObjName;
         public List<int> MetadataIndices { get; }
         public TraitType TraitType => Data.TraitType;
 
@@ -23,7 +25,7 @@ namespace Sulakore.Disassembler.ActionScript
             get { return ABC.Constants.Multinames[TypeIndex]; }
         }
         public int TypeIndex { get; set; }
-
+        
         public ASTrait(ABCFile abc)
         {
             ABC = abc;

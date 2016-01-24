@@ -2,15 +2,16 @@
 using System.Collections.Generic;
 
 using Sulakore.Disassembler.IO;
+using Sulakore.Disassembler.ActionScript.Traits;
 
 namespace Sulakore.Disassembler.ActionScript
 {
     [DebuggerDisplay("MaxStack: {MaxStack}, LocalCount: {LocalCount}, MaxScopeDepth: {MaxScopeDepth}, InitialScopeDepth: {InitialScopeDepth}")]
-    public class ASMethodBody : IABCChild
+    public class ASMethodBody : TraitContainer, IABCChild
     {
         public ABCFile ABC { get; }
-        public List<ASTrait> Traits { get; }
         public List<ASException> Exceptions { get; }
+        public override List<ASTrait> Traits { get; }
 
         public int MaxStack { get; set; }
         public int LocalCount { get; set; }

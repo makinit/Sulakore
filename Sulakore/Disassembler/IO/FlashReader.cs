@@ -21,7 +21,7 @@ namespace Sulakore.Disassembler.IO
             set { BaseStream.Position = value; }
         }
         public int Length => (int)BaseStream.Length;
-        public bool IsDataAvailable => (Position >= Length);
+        public bool IsDataAvailable => (Position < Length);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FlashReader"/> class based on the specified byte array and using UTF8-encoding.

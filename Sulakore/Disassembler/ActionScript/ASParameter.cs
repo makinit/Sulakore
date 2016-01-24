@@ -5,7 +5,7 @@ using Sulakore.Disassembler.ActionScript.Constants;
 namespace Sulakore.Disassembler.ActionScript
 {
     [DebuggerDisplay("{ObjName}, Type: {Type?.ObjName}, Value: {Value}, IsOptional: {IsOptional}")]
-    public class ASParameter : IABCChild
+    public class ASParameter : IValueSlot, IABCChild
     {
         public ABCFile ABC { get; }
 
