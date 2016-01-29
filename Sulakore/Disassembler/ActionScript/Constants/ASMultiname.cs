@@ -7,7 +7,7 @@ using Sulakore.Disassembler.ActionScript.Multinames;
 namespace Sulakore.Disassembler.ActionScript.Constants
 {
     [DebuggerDisplay("{ObjName}, MultinameType: {MultinameType}")]
-    public class ASMultiname : IABCChild
+    public class ASMultiname : IConstant
     {
         public ABCFile ABC { get; }
         public ConstantType MultinameType => Data.MultinameType;
@@ -16,9 +16,10 @@ namespace Sulakore.Disassembler.ActionScript.Constants
         {
             get { return ABC.Constants.Strings[ObjNameIndex]; }
         }
-        public int ObjNameIndex { get; internal set; }
+        public int ObjNameIndex { get; set; }
 
         public IMultiname Data { get; set; }
+        public int ConstantIndex { get; internal set; }
 
         public ASMultiname(ABCFile abc)
         {
@@ -73,6 +74,26 @@ namespace Sulakore.Disassembler.ActionScript.Constants
 
                 default:
                 throw new Exception("Invalid multiname: " + multinameType);
+            }
+        }
+
+        public static bool IsValidMultiname(ConstantType multinameType)
+        {
+            switch (multinameType)
+            {
+                default: return false;
+
+                case ConstantType.QName:
+                case ConstantType.QNameA:
+                case ConstantType.RTQName:
+                case ConstantType.RTQNameA:
+                case ConstantType.RTQNameL:
+                case ConstantType.RTQNameLA:
+                case ConstantType.Multiname:
+                case ConstantType.MultinameA:
+                case ConstantType.MultinameL:
+                case ConstantType.MultinameLA:
+                case ConstantType.Typename: return true;
             }
         }
 

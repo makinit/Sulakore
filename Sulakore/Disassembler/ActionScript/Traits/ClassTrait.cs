@@ -8,7 +8,6 @@ namespace Sulakore.Disassembler.ActionScript.Traits
     {
         public int Id => SlotId;
         public ABCFile ABC { get; }
-        public string ObjName { get; }
         public TraitType TraitType => TraitType.Class;
 
         public ASClass Class
@@ -18,14 +17,14 @@ namespace Sulakore.Disassembler.ActionScript.Traits
         public int ClassIndex { get; set; }
 
         public int SlotId { get; set; }
+        public string ObjName { get; internal set; }
 
-        public ClassTrait(ABCFile abc, string objName)
+        public ClassTrait(ABCFile abc)
         {
             ABC = abc;
-            ObjName = objName;
         }
-        public ClassTrait(ABCFile abc, FlashReader reader, string objName) :
-            this(abc, objName)
+        public ClassTrait(ABCFile abc, FlashReader reader) :
+            this(abc)
         {
             SlotId = reader.Read7BitEncodedInt();
             ClassIndex = reader.Read7BitEncodedInt();

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 
 using Sulakore.Disassembler.IO;
 using Sulakore.Disassembler.ActionScript.Constants;
@@ -28,9 +29,13 @@ namespace Sulakore.Disassembler.ActionScript.Multinames
         { }
         public Multiname(ABCFile abc, ConstantType multinameType)
         {
-            ABC = abc;
-            MultinameType = multinameType;
-            // TODO: Throw exception on invalid constant/multiname type.
+            if (multinameType == ConstantType.Multiname ||
+                multinameType == ConstantType.MultinameA)
+            {
+                ABC = abc;
+                MultinameType = multinameType;
+            }
+            else throw new Exception($"Invalid {nameof(Multiname)} type: " + multinameType);
         }
         public Multiname(ABCFile abc, FlashReader reader, ConstantType multinameType)
             : this(abc, multinameType)

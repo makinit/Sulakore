@@ -56,6 +56,10 @@ namespace Sulakore.Disassembler
         /// Gets the global character dictionary that associates character ids to objects.
         /// </summary>
         public FlashDictionary Dictionary { get; }
+
+        /// <summary>
+        /// Gets or sets the location for the Shockwave Flash(SWF) file.
+        /// </summary>
         public string Location { get; set; }
         /// <summary>
         /// Gets or sets the <see cref="CompressionStandard"/> value that will be used to determine the compresison method used when <see cref="Compress"/> is invoked.
@@ -99,6 +103,9 @@ namespace Sulakore.Disassembler
         /// </summary>
         public RectangleRecord FrameSize { get; private set; }
 
+        private readonly List<ABCFile> _abcFiles;
+        public IReadOnlyList<ABCFile> ABCFiles => _abcFiles;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ShockwaveFlash"/> class based on the specified Shockwave Flash(SWF) file path.
         /// </summary>
@@ -115,6 +122,7 @@ namespace Sulakore.Disassembler
         public ShockwaveFlash(byte[] data)
         {
             _flashData = data;
+            _abcFiles = new List<ABCFile>();
 
             Reader = new FlashReader(data);
             Tags = new List<FlashTag>();
@@ -179,14 +187,15 @@ namespace Sulakore.Disassembler
                 return _flashData;
             }
         }
+
         /// <summary>
         /// Reads the flash tags that make up the content of the Shockwave Flash(SWF) file.
         /// </summary>
         public virtual List<FlashTag> ReadTags()
         {
             Tags.Clear();
+            _abcFiles.Clear();
             Reader.Position = _frameEndPos;
-
             while (Reader.Position != Reader.Length)
             {
                 var header = new TagRecord(Reader);
@@ -196,17 +205,53 @@ namespace Sulakore.Disassembler
                 if (Reader.Position != expectedPosition)
                 {
                     int lastTagIndex = (Tags.Count - 1);
-
                     throw new Exception($"Incorrect position has been reached at {Reader.Position}.\r\n" +
                         $"Expected Position: {expectedPosition} | TagType: {Tags[lastTagIndex].Header.TagType} | Tag Index: {lastTagIndex}");
                 }
             }
             return Tags;
         }
+        protected virtual FlashTag ReadTag(FlashReader reader, TagRecord header)
+        {
+            FlashTag tag = null;
+            switch (header.TagType)
+            {
+                default:
+                tag = new UnknownTag(Reader, header);
+                break;
+
+                case FlashTagType.DoABC:
+                tag = new DoABCTag(Reader, header);
+                _abcFiles.Add(((DoABCTag)tag).ABC);
+                break;
+
+                case FlashTagType.DefineBitsLossless2:
+                tag = new DefineBitsLossless2Tag(Reader, header);
+                break;
+
+                case FlashTagType.DefineBinaryData:
+                tag = new DefineBinaryDataTag(Reader, header);
+                break;
+            }
+
+            var character = (tag as ICharacter);
+            if (character != null)
+            {
+                // Add ICharacter tag to the global dictionary.
+                Dictionary.Characters[
+                    character.CharacterId] = character;
+            }
+            return tag;
+        }
 
         public string GetHash(ASClass asClass)
         {
-            return GetHash(GetHashData(asClass));
+            using (var hashStream = new MemoryStream())
+            using (var hashInput = new BinaryWriter(hashStream))
+            {
+                WriteClassHashData(hashInput, asClass);
+                return GetHash(hashStream.ToArray());
+            }
         }
         protected string GetHash(byte[] hashData)
         {
@@ -217,75 +262,34 @@ namespace Sulakore.Disassembler
                 return hex.Replace("-", string.Empty).ToLower();
             }
         }
-        protected virtual byte[] GetHashData(ASClass asClass)
+
+        protected virtual void WriteClassHashData(BinaryWriter hashInput, ASClass asClass)
         {
-            using (var hashStream = new MemoryStream())
-            using (var hashInput = new BinaryWriter(hashStream))
+            ABCFile abc = asClass.ABC;
+            WriteTraitsHashData(hashInput, asClass);
+            WriteMethodHashData(hashInput, asClass.Constructor, true);
+
+            WriteTraitsHashData(hashInput, asClass.Instance);
+            WriteMethodHashData(hashInput, asClass.Instance.Constructor, true);
+
+            string superClassObjName = asClass.Instance.SuperType?.ObjName;
+            if (!string.IsNullOrWhiteSpace(superClassObjName) && superClassObjName != "Object")
             {
-                WriteHashData(hashInput, asClass);
-                hashInput.Write(GetHashData(asClass.Constructor));
+                ASClass superClass = abc
+                    .FindClassByName(superClassObjName);
 
-                WriteHashData(hashInput, asClass.Instance);
-                hashInput.Write(GetHashData(asClass.Instance.Constructor));
-
-                if (asClass.Instance.SuperType?.ObjName != "Object")
+                if (superClass != null)
                 {
-                    string superTypeObjName = asClass.Instance.SuperType.ObjName;
-                    ASClass superClass = asClass.ABC.FindClassByName(superTypeObjName);
-
-                    if (superClass != null)
-                        hashInput.Write(GetHashData(superClass));
+                    WriteMultinameHashData(hashInput, asClass.Instance.SuperType);
+                    WriteClassHashData(hashInput, superClass);
                 }
-
-                hashInput.Write((byte)asClass.Instance.ClassInfo);
-                hashInput.Write((byte)asClass.Instance.Type.MultinameType);
-                hashInput.Write((byte)asClass.Instance.ProtectedNamespace.NamespaceType);
-                if (asClass.Instance.SuperType != null)
-                {
-                    hashInput.Write((byte)asClass.Instance
-                        .SuperType.MultinameType);
-                }
-                return hashStream.ToArray();
             }
+
+            hashInput.Write((byte)asClass.Instance.ClassInfo);
+            hashInput.Write((byte)asClass.Instance.Type.MultinameType);
+            hashInput.Write((byte)asClass.Instance.ProtectedNamespace.NamespaceType);
         }
-        protected virtual byte[] GetHashData(ASMethod asMethod)
-        {
-            using (var hashStream = new MemoryStream())
-            using (var hashInput = new BinaryWriter(hashStream))
-            {
-                WriteHashData(hashInput, asMethod.Body);
-                hashInput.Write(asMethod.Body.Exceptions.Count);
-                hashInput.Write(asMethod.Body.MaxStack);
-                hashInput.Write(asMethod.Body.LocalCount);
-                hashInput.Write(asMethod.Body.MaxScopeDepth);
-                hashInput.Write(asMethod.Body.InitialScopeDepth);
-
-                hashInput.Write(asMethod.Parameters.Count);
-                foreach (ASParameter parameter in asMethod.Parameters)
-                {
-                    if (parameter.IsOptional)
-                    {
-                        hashInput.Write(parameter.IsOptional);
-                        WriteHashData(hashInput, parameter);
-                    }
-                    WriteHashData(hashInput, parameter.Type);
-                }
-
-                using (var codeOutput =
-                    new FlashReader(asMethod.Body.Bytecode))
-                {
-                    while (codeOutput.IsDataAvailable)
-                    {
-                        OPCode op = codeOutput.ReadOP();
-                        object[] values = codeOutput.ReadValues(op);
-                        hashInput.Write((byte)op);
-                    }
-                }
-                return hashStream.ToArray();
-            }
-        }
-
-        protected virtual void WriteHashData(BinaryWriter hashInput, IValueSlot valueSlot)
+        protected virtual void WriteValueSlotHashData(BinaryWriter hashInput, IValueSlot valueSlot)
         {
             hashInput.Write((byte)valueSlot.ValueType);
             switch (valueSlot.ValueType)
@@ -312,7 +316,7 @@ namespace Sulakore.Disassembler
                 break;
             }
         }
-        protected virtual void WriteHashData(BinaryWriter hashInput, ASMultiname asMultiname)
+        protected virtual void WriteMultinameHashData(BinaryWriter hashInput, ASMultiname asMultiname)
         {
             hashInput.Write((byte)asMultiname.MultinameType);
             switch (asMultiname.ObjName)
@@ -329,7 +333,7 @@ namespace Sulakore.Disassembler
                 }
             }
         }
-        protected virtual void WriteHashData(BinaryWriter hashInput, TraitContainer traitContainer)
+        protected virtual void WriteTraitsHashData(BinaryWriter hashInput, TraitContainer traitContainer)
         {
             hashInput.Write(traitContainer.Traits.Count);
             foreach (ASTrait trait in traitContainer.Traits)
@@ -342,7 +346,7 @@ namespace Sulakore.Disassembler
                     case TraitType.Class:
                     {
                         var classTrait = (ClassTrait)trait.Data;
-                        hashInput.Write(GetHashData(classTrait.Class));
+                        WriteClassHashData(hashInput, classTrait.Class);
                         break;
                     }
                     case TraitType.Method:
@@ -350,56 +354,60 @@ namespace Sulakore.Disassembler
                     case TraitType.Setter:
                     {
                         var mgsTrait = (MethodGetterSetterTrait)trait.Data;
-                        hashInput.Write(GetHashData(mgsTrait.Method));
+                        WriteMethodHashData(hashInput, mgsTrait.Method, true);
                         break;
                     }
                     case TraitType.Slot:
                     case TraitType.Constant:
                     {
                         var slotConstTrait = (SlotConstantTrait)trait.Data;
-                        WriteHashData(hashInput, slotConstTrait);
+                        WriteValueSlotHashData(hashInput, slotConstTrait);
                         break;
                     }
                     case TraitType.Function:
                     {
                         var funcTrait = (FunctionTrait)trait.Data;
-                        hashInput.Write(GetHashData(funcTrait.Function));
+                        WriteMethodHashData(hashInput, funcTrait.Function, true);
                         break;
                     }
                 }
             }
         }
-
-        protected virtual FlashTag ReadTag(FlashReader reader, TagRecord header)
+        protected virtual void WriteMethodHashData(BinaryWriter hashInput, ASMethod asMethod, bool writeInstructions)
         {
-            FlashTag tag = null;
-            switch (header.TagType)
+            WriteTraitsHashData(hashInput, asMethod.Body);
+            hashInput.Write(asMethod.Body.Exceptions.Count);
+            hashInput.Write(asMethod.Body.MaxStack);
+            hashInput.Write(asMethod.Body.LocalCount);
+            hashInput.Write(asMethod.Body.MaxScopeDepth);
+            hashInput.Write(asMethod.Body.InitialScopeDepth);
+
+            hashInput.Write(asMethod.Parameters.Count);
+            foreach (ASParameter parameter in asMethod.Parameters)
             {
-                default:
-                tag = new UnknownTag(Reader, header);
-                break;
+                if (parameter.IsOptional)
+                {
+                    hashInput.Write(parameter.IsOptional);
+                    WriteValueSlotHashData(hashInput, parameter);
+                }
 
-                case FlashTagType.DoABC:
-                tag = new DoABCTag(Reader, header);
-                break;
-
-                case FlashTagType.DefineBitsLossless2:
-                tag = new DefineBitsLossless2Tag(Reader, header);
-                break;
-
-                case FlashTagType.DefineBinaryData:
-                tag = new DefineBinaryDataTag(Reader, header);
-                break;
+                if (parameter.Type != null)
+                    WriteMultinameHashData(hashInput, parameter.Type);
             }
 
-            var character = (tag as ICharacter);
-            if (character != null)
+            if (writeInstructions)
             {
-                // Add ICharacter tag to the global dictionary.
-                Dictionary.Characters[
-                    character.CharacterId] = character;
+                using (var codeOutput =
+                    new FlashReader(asMethod.Body.Bytecode))
+                {
+                    while (codeOutput.IsDataAvailable)
+                    {
+                        OPCode op = codeOutput.ReadOP();
+                        object[] values = codeOutput.ReadValues(op);
+                        hashInput.Write((byte)op);
+                    }
+                }
             }
-            return tag;
         }
 
         /// <summary>

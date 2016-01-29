@@ -27,9 +27,9 @@ namespace Sulakore.Disassembler.ActionScript
             : this(abc)
         {
             FunctionIndex = reader.Read7BitEncodedInt();
-            int traitCount = reader.Read7BitEncodedInt();
+            Traits.Capacity = reader.Read7BitEncodedInt();
 
-            for (int i = 0; i < traitCount; i++)
+            for (int i = 0; i < Traits.Capacity; i++)
                 Traits.Add(new ASTrait(abc, reader));
         }
 

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 
 using Sulakore.Disassembler.IO;
@@ -9,7 +10,7 @@ namespace Sulakore.Disassembler.ActionScript
     public class ASMetadata : IABCChild
     {
         public ABCFile ABC { get; }
-        public Dictionary<int, int> Elements { get; }
+        public List<Tuple<int, int>> Elements { get; }
 
         public string ObjName
         {
@@ -20,19 +21,31 @@ namespace Sulakore.Disassembler.ActionScript
         public ASMetadata(ABCFile abc)
         {
             ABC = abc;
-            Elements = new Dictionary<int, int>();
+            Elements = new List<Tuple<int, int>>();
         }
         public ASMetadata(ABCFile abc, FlashReader reader)
             : this(abc)
         {
             ObjNameIndex = reader.Read7BitEncodedInt();
-            int itemInfoCount = reader.Read7BitEncodedInt();
-
-            for (int i = 0; i < itemInfoCount; i++)
+            Elements.Capacity = reader.Read7BitEncodedInt();
+            for (int i = 0; i < Elements.Capacity; i++)
             {
-                Elements.Add(reader.Read7BitEncodedInt(),
-                    reader.Read7BitEncodedInt());
+                int elementKey = reader.Read7BitEncodedInt();
+                int elementValue = reader.Read7BitEncodedInt();
+                Elements.Add(new Tuple<int, int>(elementKey, elementValue));
             }
+        }
+
+        public List<Tuple<string, string>> GetElements()
+        {
+            var elements = new List<Tuple<string, string>>(Elements.Capacity);
+            foreach (Tuple<int, int> element in Elements)
+            {
+                string elementKey = ABC.Constants.Strings[element.Item1];
+                string elementValue = ABC.Constants.Strings[element.Item2];
+                elements.Add(new Tuple<string, string>(elementKey, elementValue));
+            }
+            return elements;
         }
 
         public byte[] ToByteArray()
@@ -41,10 +54,10 @@ namespace Sulakore.Disassembler.ActionScript
             {
                 asMetadata.Write7BitEncodedInt(ObjNameIndex);
                 asMetadata.Write7BitEncodedInt(Elements.Count);
-                foreach (KeyValuePair<int, int> item in Elements)
+                foreach (Tuple<int, int> element in Elements)
                 {
-                    asMetadata.Write7BitEncodedInt(item.Key);
-                    asMetadata.Write7BitEncodedInt(item.Value);
+                    asMetadata.Write7BitEncodedInt(element.Item1);
+                    asMetadata.Write7BitEncodedInt(element.Item2);
                 }
                 return asMetadata.ToArray();
             }

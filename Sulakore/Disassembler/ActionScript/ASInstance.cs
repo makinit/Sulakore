@@ -14,8 +14,6 @@ namespace Sulakore.Disassembler.ActionScript
         public List<int> InterfaceIndices { get; }
         public override List<ASTrait> Traits { get; }
 
-        public ClassFlags ClassInfo { get; set; }
-
         public ASMultiname Type
         {
             get { return ABC.Constants.Multinames[TypeIndex]; }
@@ -39,6 +37,8 @@ namespace Sulakore.Disassembler.ActionScript
             get { return ABC.Constants.Namespaces[ProtectedNamespaceIndex]; }
         }
         public int ProtectedNamespaceIndex { get; set; }
+
+        public ClassFlags ClassInfo { get; set; }
 
         public ASInstance(ABCFile abc)
         {

@@ -25,24 +25,14 @@ namespace Sulakore.Disassembler.ActionScript
             ABC = abc;
             Traits = new List<ASTrait>();
         }
-        public ASClass(ABCFile abc, int constructorIndex)
-            : this(abc)
-        {
-            ConstructorIndex = constructorIndex;
-        }
-        public ASClass(ABCFile abc, int constructorIndex, IList<ASTrait> traits)
-            : this(abc, constructorIndex)
-        {
-            Traits.AddRange(traits);
-        }
         public ASClass(ABCFile abc, FlashReader reader)
             : this(abc)
         {
             ConstructorIndex = reader.Read7BitEncodedInt();
             if (Constructor != null) Constructor.IsConstructor = true;
 
-            int traitCount = reader.Read7BitEncodedInt();
-            for (int i = 0; i < traitCount; i++)
+            Traits.Capacity = reader.Read7BitEncodedInt();
+            for (int i = 0; i < Traits.Capacity; i++)
                 Traits.Add(new ASTrait(abc, reader));
         }
 

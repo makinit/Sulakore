@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 
 using Sulakore.Disassembler.ActionScript.Constants;
 
@@ -15,8 +16,13 @@ namespace Sulakore.Disassembler.ActionScript.Multinames
         { }
         public RTQNameL(ABCFile abc, ConstantType multinameType)
         {
-            ABC = abc;
-            MultinameType = multinameType;
+            if (multinameType == ConstantType.RTQNameL ||
+                multinameType == ConstantType.RTQNameLA)
+            {
+                ABC = abc;
+                MultinameType = multinameType;
+            }
+            else throw new Exception($"Invalid {nameof(RTQNameL)} type: " + multinameType);
         }
 
         public byte[] ToByteArray()

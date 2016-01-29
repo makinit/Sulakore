@@ -38,19 +38,23 @@ namespace Sulakore.Disassembler.ActionScript
         public ASMethod(ABCFile abc, FlashReader reader)
             : this(abc)
         {
-            int parameterCount = reader.Read7BitEncodedInt();
+            Parameters.Capacity = reader.Read7BitEncodedInt();
             ReturnTypeIndex = reader.Read7BitEncodedInt();
 
-            for (int i = 0; i < parameterCount; i++)
+            for (int i = 0; i < Parameters.Capacity; i++)
             {
                 int parameterTypeIndex = reader.Read7BitEncodedInt();
-                Parameters.Add(new ASParameter(abc, parameterTypeIndex));
+
+                var parameter = new ASParameter(abc, parameterTypeIndex);
+                Parameters.Add(parameter);
+
+                parameter.Rank = Parameters.Count;
             }
 
             NameIndex = reader.Read7BitEncodedInt();
             MethodInfo = (MethodFlags)reader.ReadByte();
 
-            if ((MethodInfo & MethodFlags.HasOptional) != 0)
+            if (MethodInfo.HasFlag(MethodFlags.HasOptional))
             {
                 int optionalParamCount = reader.Read7BitEncodedInt();
                 while (optionalParamCount > 0)
@@ -64,7 +68,7 @@ namespace Sulakore.Disassembler.ActionScript
                 }
             }
 
-            if ((MethodInfo & MethodFlags.HasParamNames) != 0)
+            if (MethodInfo.HasFlag(MethodFlags.HasParamNames))
             {
                 foreach (ASParameter parameter in Parameters)
                     parameter.ObjNameIndex = reader.Read7BitEncodedInt();
@@ -112,6 +116,16 @@ namespace Sulakore.Disassembler.ActionScript
                 }
                 return asMethod.ToArray();
             }
+        }
+        public override string ToString()
+        {
+            string arguments = string.Join(", ", Parameters);
+            string signature = $"{ObjName}({arguments})";
+
+            if (ReturnType != null)
+                signature += (":" + ReturnType.ObjName);
+
+            return signature;
         }
     }
 }

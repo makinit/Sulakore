@@ -10,7 +10,6 @@ namespace Sulakore.Disassembler.ActionScript.Traits
     {
         public int Id => SlotId;
         public ABCFile ABC { get; }
-        public string ObjName { get; }
         public TraitType TraitType { get; }
 
         public ASMultiname Type
@@ -27,15 +26,15 @@ namespace Sulakore.Disassembler.ActionScript.Traits
 
         public int SlotId { get; set; }
         public ConstantType ValueType { get; set; }
+        public string ObjName { get; internal set; }
 
-        public SlotConstantTrait(ABCFile abc, string objName, TraitType traitType)
+        public SlotConstantTrait(ABCFile abc, TraitType traitType)
         {
             ABC = abc;
-            ObjName = objName;
             TraitType = traitType;
         }
-        public SlotConstantTrait(ABCFile abc, FlashReader reader, string objName, TraitType traitType)
-            : this(abc, objName, traitType)
+        public SlotConstantTrait(ABCFile abc, FlashReader reader, TraitType traitType)
+            : this(abc, traitType)
         {
             SlotId = reader.Read7BitEncodedInt();
             TypeIndex = reader.Read7BitEncodedInt();

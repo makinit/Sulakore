@@ -28,9 +28,9 @@ namespace Sulakore.Disassembler.ActionScript.Multinames
             : this(abc)
         {
             TypeIndex = reader.Read7BitEncodedInt();
-            int paramTypeIndicesCount = reader.Read7BitEncodedInt();
+            ParameterTypeIndices.Capacity = reader.Read7BitEncodedInt();
 
-            for (int i = 0; i < paramTypeIndicesCount; i++)
+            for (int i = 0; i < ParameterTypeIndices.Capacity; i++)
                 ParameterTypeIndices.Add(reader.Read7BitEncodedInt());
         }
 

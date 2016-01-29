@@ -30,6 +30,8 @@ namespace Sulakore.Disassembler.ActionScript
         public bool IsOptional { get; set; }
         public ConstantType ValueType { get; set; }
 
+        public int Rank { get; internal set; }
+
         public ASParameter(ABCFile abc)
             : this(abc, 0, false)
         { }
@@ -41,6 +43,29 @@ namespace Sulakore.Disassembler.ActionScript
             ABC = abc;
             TypeIndex = typeIndex;
             IsOptional = isOptional;
+        }
+
+        public override string ToString()
+        {
+            string paramName = ObjName;
+            if (string.IsNullOrWhiteSpace(paramName))
+                paramName = "arg" + Rank;
+
+            string paramType = Type.ObjName;
+            bool isString = (paramType.ToLower() == "string");
+
+            string argument = $"{paramName}:{paramType}";
+            if (IsOptional)
+            {
+                argument += "=";
+                if (isString) argument += "\"";
+
+                object paramValue = (Value ?? "null");
+                argument += paramValue;
+
+                if (isString) argument += "\"";
+            }
+            return argument;
         }
     }
 }

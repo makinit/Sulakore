@@ -25,7 +25,7 @@ namespace Sulakore.Disassembler.ActionScript
             get { return ABC.Constants.Multinames[TypeIndex]; }
         }
         public int TypeIndex { get; set; }
-        
+
         public ASTrait(ABCFile abc)
         {
             ABC = abc;
@@ -44,38 +44,36 @@ namespace Sulakore.Disassembler.ActionScript
             {
                 case TraitType.Slot:
                 case TraitType.Constant:
-                Data = new SlotConstantTrait(abc, reader, Type.ObjName, traitType);
-                break;
-
+                {
+                    Data = new SlotConstantTrait(abc, reader, traitType)
+                    { ObjName = Type.ObjName };
+                    break;
+                }
                 case TraitType.Method:
                 case TraitType.Getter:
                 case TraitType.Setter:
                 {
-                    var mgsTrait = new MethodGetterSetterTrait(abc, reader, Type.ObjName, traitType);
-                    mgsTrait.Method.ObjName = Type.ObjName;
+                    Data = new MethodGetterSetterTrait(abc, reader, traitType)
+                    { ObjName = Type.ObjName };
 
-                    Data = mgsTrait;
+                    ((MethodGetterSetterTrait)Data).Method.ObjName = ObjName;
                     break;
                 }
-
                 case TraitType.Class:
                 {
-                    var classTrait = new ClassTrait(abc, reader, Type.ObjName);
-                    // TODO: Link trait information?
-                    Data = classTrait;
+                    Data = new ClassTrait(abc, reader)
+                    { ObjName = Type.ObjName };
                     break;
                 }
-
                 case TraitType.Function:
                 {
-                    var functionTrait = new FunctionTrait(abc, reader, Type.ObjName);
-                    // TODO: Link trait information?
-                    Data = functionTrait;
+                    Data = new FunctionTrait(abc, reader)
+                    { ObjName = Type.ObjName };
                     break;
                 }
 
                 default:
-                throw new Exception("Invalid trait: " + TraitType);
+                throw new Exception($"Invalid {nameof(ASTrait)} type: " + traitType);
             }
             #endregion
 

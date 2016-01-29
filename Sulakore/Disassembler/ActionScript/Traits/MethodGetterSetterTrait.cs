@@ -9,7 +9,6 @@ namespace Sulakore.Disassembler.ActionScript.Traits
     {
         public int Id => DispId;
         public ABCFile ABC { get; }
-        public string ObjName { get; }
         public TraitType TraitType { get; }
 
         public ASMethod Method
@@ -19,15 +18,15 @@ namespace Sulakore.Disassembler.ActionScript.Traits
         public int MethodIndex { get; set; }
 
         public int DispId { get; set; }
+        public string ObjName { get; internal set; }
 
-        public MethodGetterSetterTrait(ABCFile abc, string objName, TraitType traitType)
+        public MethodGetterSetterTrait(ABCFile abc, TraitType traitType)
         {
             ABC = abc;
-            ObjName = objName;
             TraitType = traitType;
         }
-        public MethodGetterSetterTrait(ABCFile abc, FlashReader reader, string objName, TraitType traitType) :
-            this(abc, objName, traitType)
+        public MethodGetterSetterTrait(ABCFile abc, FlashReader reader, TraitType traitType)
+            : this(abc, traitType)
         {
             DispId = reader.Read7BitEncodedInt();
             MethodIndex = reader.Read7BitEncodedInt();

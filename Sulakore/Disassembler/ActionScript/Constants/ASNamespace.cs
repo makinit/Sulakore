@@ -5,7 +5,7 @@ using Sulakore.Disassembler.IO;
 namespace Sulakore.Disassembler.ActionScript.Constants
 {
     [DebuggerDisplay("{ObjName}, NamespaceType: {NamespaceType}")]
-    public class ASNamespace : IABCChild
+    public class ASNamespace : IConstant
     {
         public ABCFile ABC { get; }
 
@@ -16,6 +16,7 @@ namespace Sulakore.Disassembler.ActionScript.Constants
         public int ObjNameIndex { get; set; }
 
         public ConstantType NamespaceType { get; set; }
+        public int ConstantIndex { get; internal set; }
 
         public ASNamespace(ABCFile abc)
         {

@@ -200,7 +200,15 @@ namespace Sulakore.Disassembler.IO
         {
             return base.Read7BitEncodedInt();
         }
-
+        /// <summary>
+        /// Reads a string with the specified length.
+        /// </summary>
+        /// <param name="length">The length of the string to read.</param>
+        /// <returns>The string being read.</returns>
+        public string ReadString(int length)
+        {
+            return new string(ReadChars(length));
+        }
         /// <summary>
         /// Reads a null-terminated character string from the current stream.
         /// </summary>
@@ -215,20 +223,7 @@ namespace Sulakore.Disassembler.IO
 
             return result;
         }
-        /// <summary>
-        /// Reads a string with the specified length.
-        /// </summary>
-        /// <param name="length">The length of the string to read.</param>
-        /// <returns>The string being read.</returns>
-        public string ReadString(int length)
-        {
-            return new string(ReadChars(length));
-        }
 
-        public byte[] ToArray()
-        {
-            return _flashStream.ToArray();
-        }
         public void ResetBuffer(byte[] buffer)
         {
             _flashStream.SetLength(buffer.Length);
@@ -237,5 +232,6 @@ namespace Sulakore.Disassembler.IO
             BaseStream.Write(buffer, 0, buffer.Length);
             Position = 0;
         }
+        public byte[] ToArray() => _flashStream.ToArray();
     }
 }

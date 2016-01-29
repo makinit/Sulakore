@@ -22,8 +22,11 @@ namespace Sulakore.Disassembler.ActionScript
         public List<ASMethodBody> MethodBodies { get; }
 
         public ABCFile(byte[] data)
+            : this(new FlashReader(data))
+        { }
+        public ABCFile(FlashReader reader)
         {
-            _reader = new FlashReader(data);
+            _reader = reader;
 
             MinorVersion = _reader.ReadUInt16();
             MajorVersion = _reader.ReadUInt16();

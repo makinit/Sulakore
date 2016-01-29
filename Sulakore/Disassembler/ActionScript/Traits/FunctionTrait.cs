@@ -9,7 +9,6 @@ namespace Sulakore.Disassembler.ActionScript.Traits
     {
         public int Id => SlotId;
         public ABCFile ABC { get; }
-        public string ObjName { get; }
         public TraitType TraitType => TraitType.Function;
 
         public ASMethod Function
@@ -19,14 +18,14 @@ namespace Sulakore.Disassembler.ActionScript.Traits
         public int FunctionIndex { get; set; }
 
         public int SlotId { get; set; }
+        public string ObjName { get; internal set; }
 
-        public FunctionTrait(ABCFile abc, string objName)
+        public FunctionTrait(ABCFile abc)
         {
             ABC = abc;
-            ObjName = objName;
         }
-        public FunctionTrait(ABCFile abc, FlashReader reader, string objName)
-            : this(abc, objName)
+        public FunctionTrait(ABCFile abc, FlashReader reader)
+            : this(abc)
         {
             SlotId = reader.Read7BitEncodedInt();
             FunctionIndex = reader.Read7BitEncodedInt();

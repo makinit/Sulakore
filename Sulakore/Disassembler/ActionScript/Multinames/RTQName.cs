@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 
 using Sulakore.Disassembler.IO;
 using Sulakore.Disassembler.ActionScript.Constants;
@@ -22,8 +23,13 @@ namespace Sulakore.Disassembler.ActionScript.Multinames
         { }
         public RTQName(ABCFile abc, ConstantType multinameType)
         {
-            ABC = abc;
-            MultinameType = multinameType;
+            if (multinameType == ConstantType.RTQName ||
+                multinameType == ConstantType.RTQNameA)
+            {
+                ABC = abc;
+                MultinameType = multinameType;
+            }
+            else throw new Exception($"Invalid {nameof(RTQName)} type: " + multinameType);
         }
         public RTQName(ABCFile abc, FlashReader reader, ConstantType multinameType)
             : this(abc, multinameType)

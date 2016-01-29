@@ -27,14 +27,10 @@ namespace Sulakore.Disassembler.ActionScript
         public int InitialScopeDepth { get; set; }
 
         public ASMethodBody(ABCFile abc)
-            : this(abc, new byte[0])
         {
             ABC = abc;
-        }
-        public ASMethodBody(ABCFile abc, byte[] bytecode)
-        {
-            ABC = abc;
-            Bytecode = bytecode;
+            Traits = new List<ASTrait>();
+            Exceptions = new List<ASException>();
         }
         public ASMethodBody(ABCFile abc, FlashReader reader)
             : this(abc)
@@ -48,11 +44,11 @@ namespace Sulakore.Disassembler.ActionScript
             int bytecodeLength = reader.Read7BitEncodedInt();
             Bytecode = reader.ReadBytes(bytecodeLength);
 
-            Exceptions = new List<ASException>(reader.Read7BitEncodedInt());
+            Exceptions.Capacity = reader.Read7BitEncodedInt();
             for (int i = 0; i < Exceptions.Capacity; i++)
                 Exceptions.Add(new ASException(abc, reader));
 
-            Traits = new List<ASTrait>(reader.Read7BitEncodedInt());
+            Traits.Capacity = reader.Read7BitEncodedInt();
             for (int i = 0; i < Traits.Capacity; i++)
                 Traits.Add(new ASTrait(abc, reader));
 
