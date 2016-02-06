@@ -411,9 +411,9 @@ namespace Sulakore.Disassembler
         }
 
         /// <summary>
-        /// Returns a byte array representing the Shockwave Flash(SWF).
+        /// Returns a byte array representing the Shockwave Flash(SWF) file.
         /// </summary>
-        public byte[] ToArray() => _flashData;
+        public byte[] ToByteArray() => _flashData;
         /// <summary>
         /// Reads the frame information like size, rate, and count.
         /// </summary>
