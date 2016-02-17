@@ -122,10 +122,8 @@ namespace Sulakore.Components
         }
         public ExtensionForm GetSelectedExtension()
         {
-            ListViewItem item = GetSelectedItem();
-            if (item == null) return null;
-
-            return _extensionByItem[item];
+            return (HasSelectedItem ?
+                _extensionByItem[SelectedItem] : null);
         }
     }
 }
