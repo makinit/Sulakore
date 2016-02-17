@@ -12,7 +12,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <AssemblyVersion>6.0.2.0</AssemblyVersion>
+    <AssemblyVersion>6.0.3.0</AssemblyVersion>
     <PrimaryVersionType>AssemblyVersionAttribute</PrimaryVersionType>
     <AssemblyInfoFilePath>
     </AssemblyInfoFilePath>
@@ -102,10 +102,6 @@
     <Compile Include="Components\SKoreMap.cs" />
     <Compile Include="Components\SKoreScheduleView.cs" />
     <Compile Include="Components\SKoreTabControl.cs" />
-    <Compile Include="Communication\CertificateManager.cs" />
-    <Compile Include="Communication\Eavesdropper.cs" />
-    <Compile Include="Communication\Event Args\EavesdropperRequestEventArgs.cs" />
-    <Compile Include="Communication\Event Args\EavesdropperResponseEventArgs.cs" />
     <Compile Include="Disassembler\ActionScript\Constants\IConstant.cs" />
     <Compile Include="Disassembler\ActionScript\IValueSlot.cs" />
     <Compile Include="Extensions\Enums\ExtensionActionType.cs" />
