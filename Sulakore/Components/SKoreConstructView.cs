@@ -10,94 +10,163 @@ namespace Sulakore.Components
     [DesignerCategory("Code")]
     public class SKoreConstructView : SKoreListView
     {
-        private readonly HMessage _packet;
+        private bool _isDirty;
+        private HMessage _cachedPacket;
 
-        private const string CHUNK_TIP =
-            "Type: {0}\nValue: {1}\nBlock Length: {2}\nEncoded: {3}";
-
-        [DefaultValue(0)]
-        public ushort Header
-        {
-            get { return _packet.Header; }
-            set { _packet.Header = value; }
-        }
-
-        [Browsable(false)]
-        public int Length => _packet.Length;
-
-        [Browsable(false)]
-        public IReadOnlyList<object> ValuesWritten => _packet.ValuesWritten;
+        private readonly List<object> _values;
+        public IReadOnlyList<object> Values => _values;
 
         public SKoreConstructView()
         {
-            _packet = new HMessage(0);
+            _values = new List<object>();
         }
 
-        public void ReplaceItem(object chunk)
+        public void WriteInteger(int value)
         {
-            ListViewItem item = SelectedItems[0];
-            _packet.ReplaceWritten(item.Index, chunk);
-            ListViewItem.ListViewSubItemCollection subItems = item.SubItems;
-
-            subItems[0].Text = chunk.GetType().Name
-                .Replace("Int32", "Integer");
-
-            byte[] data = HMessage.GetBytes(chunk);
-            subItems[1].Text = chunk.ToString();
-            subItems[2].Text = HMessage.ToString(data);
-
-            item.ToolTipText = string.Format(CHUNK_TIP,
-                subItems[0].Text, subItems[1].Text, data.Length, subItems[2].Text);
+            WriteInteger(value, 1);
         }
-        public void Write(params object[] values)
+        public void WriteInteger(int value, int amount)
         {
-            _packet.WriteObjects(values);
-            try
+            WriteValue("Integer", value,
+                BigEndian.GetBytes(value), amount);
+        }
+
+        public void WriteBoolean(bool value)
+        {
+            WriteBoolean(value, 1);
+        }
+        public void WriteBoolean(bool value, int amount)
+        {
+            WriteValue("Boolean", value,
+                BigEndian.GetBytes(value), amount);
+        }
+
+        public void WriteString(string value)
+        {
+            WriteString(value, 1);
+        }
+        public void WriteString(string value, int amount)
+        {
+            WriteValue("String", value,
+                BigEndian.GetBytes(value), amount);
+        }
+
+        protected virtual void MoveValue(int oldIndex, int newIndex)
+        {
+            lock (_values)
+            {
+
+                object value = _values[oldIndex];
+                _values.RemoveAt(oldIndex);
+                _values.Insert(newIndex, value);
+                _isDirty = true;
+            }
+        }
+        protected virtual void WriteValue(string type, object value, byte[] data, int amount)
+        {
+            lock (_values)
             {
                 BeginUpdate();
-                ListViewItem item = null;
-                SuppressItemSelectedEvent = true;
-
-                foreach (object value in values)
+                string encoded = HMessage.ToString(data);
+                for (int i = 0; i < amount; i++)
                 {
-                    string valueString = value.ToString();
-                    byte[] data = HMessage.GetBytes(value);
-                    string encoded = HMessage.ToString(data);
-                    string typeName = value.GetType().Name.Replace("Int32", "Integer");
+                    _values.Add(value);
+                    ListViewItem item = null;
+                    if (i != (amount - 1))
+                    {
+                        item = Add(type, value, encoded);
+                    }
+                    else item = FocusAdd(type, value, encoded);
+                }
+                EndUpdate();
+                _isDirty = true;
+            }
+        }
 
-                    item = FocusAdd(typeName, valueString, encoded);
-                    item.ToolTipText = string.Format(CHUNK_TIP, typeName, valueString, data.Length, encoded);
+        public override void ClearItems()
+        {
+            _values.Clear();
+            _isDirty = true;
+
+            base.ClearItems();
+        }
+        protected override void RemoveItem(ListViewItem item)
+        {
+            lock (_values)
+            {
+                _values.RemoveAt(item.Index);
+                base.RemoveItem(item);
+                _isDirty = true;
+            }
+        }
+        protected override void MoveItemUp(ListViewItem item)
+        {
+            int oldIndex = item.Index;
+            base.MoveItemUp(item);
+            MoveValue(oldIndex, item.Index);
+        }
+        protected override void MoveItemDown(ListViewItem item)
+        {
+            int oldIndex = item.Index;
+            base.MoveItemDown(item);
+            MoveValue(oldIndex, item.Index);
+        }
+
+        public void UpdateSelectedValue(object value)
+        {
+            if (HasSelectedItem)
+                UpdateValue(SelectedItem, value);
+        }
+        protected virtual void UpdateValue(ListViewItem item, object value)
+        {
+            lock (_values)
+            {
+                byte[] data = null;
+                switch (item.SubItems[0].Text)
+                {
+                    case "String": data = BigEndian.GetBytes((string)value); break;
+                    case "Integer": data = BigEndian.GetBytes((int)value); break;
+                    case "Boolean": data = BigEndian.GetBytes((bool)value); break;
                 }
 
-                SuppressItemSelectedEvent = false;
-                OnItemSelected(new ListViewItemSelectionChangedEventArgs(item, item.Index, true));
+                string encoded = HMessage.ToString(data);
+                item.SubItems[1].Text = value.ToString();
+                item.SubItems[2].Text = encoded;
+
+                _values[item.Index] = value;
+                _isDirty = true;
             }
-            finally { EndUpdate(); }
         }
 
-        protected override void RemoveItem(ListViewItem listViewItem)
+        public HMessage GetPacket(ushort header)
         {
-            _packet.RemoveWritten(listViewItem.Index);
-            base.RemoveItem(listViewItem);
-        }
-        protected override void MoveItemUp(ListViewItem listViewItem)
-        {
-            _packet.MoveWritten(listViewItem.Index, 1, false);
-            base.MoveItemUp(listViewItem);
-        }
-        protected override void MoveItemDown(ListViewItem listViewItem)
-        {
-            _packet.MoveWritten(listViewItem.Index, 1, true);
-            base.MoveItemDown(listViewItem);
-        }
+            lock (_values)
+            {
+                if (_isDirty)
+                {
+                    _cachedPacket =
+                        new HMessage(header, _values.ToArray());
 
-        public void ClearWritten()
-        {
-            Items.Clear();
-            _packet.ClearWritten();
-            OnItemsDeselected(EventArgs.Empty);
+                    _isDirty = false;
+                }
+                _cachedPacket.Header = header;
+                return _cachedPacket;
+            }
         }
-        public byte[] GetBytes() => _packet.ToBytes();
-        public string GetString() => _packet.ToString();
+        public string GetStructure(ushort header)
+        {
+            lock (_values)
+            {
+                string structure = $"{{l}}{{u:{header}}}";
+                foreach (object value in _values)
+                {
+                    char type = Type.GetTypeCode(
+                        value.GetType()).ToString().ToLower()[0];
+
+                    structure += $"{{{type}:{value}}}";
+                }
+                return structure;
+            }
+        }
     }
 }
