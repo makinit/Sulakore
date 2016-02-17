@@ -71,16 +71,20 @@ namespace Sulakore.Communication
 
         public async Task<HMessage> ReceiveAsync(SocketFlags flags)
         {
-            byte[] lengthData = await ReceiveAsync(flags, 4, true)
-                .ConfigureAwait(false);
+            byte[] lengthData = await ReceiveAsync(
+                flags, 4, true).ConfigureAwait(false);
 
             if (lengthData == null) return null;
             PacketsReceived++;
 
             int length = BigEndian.ToInt32(lengthData, 0);
-            byte[] data = await ReceiveAsync(flags, length, true).ConfigureAwait(false);
 
+            byte[] data = await ReceiveAsync(
+                flags, length, true).ConfigureAwait(false);
+
+            if (data == null) return null;
             var messageData = new byte[4 + length];
+
             Buffer.BlockCopy(lengthData, 0, messageData, 0, lengthData.Length);
             Buffer.BlockCopy(data, 0, messageData, lengthData.Length, data.Length);
 
@@ -91,8 +95,8 @@ namespace Sulakore.Communication
             try
             {
                 var buffer = new byte[length];
-                int readLength = await ReceiveAsync(buffer,
-                    0, length, flags).ConfigureAwait(false);
+                int readLength = await ReceiveAsync(
+                    buffer, 0, length, flags).ConfigureAwait(false);
 
                 if (!isStrict)
                 {
@@ -107,6 +111,9 @@ namespace Sulakore.Communication
 
                     readLength += await ReceiveAsync(buffer,
                         readLength, bytesLeft, flags).ConfigureAwait(false);
+
+                    if (readLength == 0 && bytesLeft > 0)
+                        return null;
                 }
 
                 Decrypter?.Parse(buffer);
