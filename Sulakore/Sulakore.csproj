@@ -12,14 +12,14 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <AssemblyVersion>6.0.3.0</AssemblyVersion>
+    <AssemblyVersion>6.2.0.0</AssemblyVersion>
     <PrimaryVersionType>AssemblyVersionAttribute</PrimaryVersionType>
     <AssemblyInfoFilePath>
     </AssemblyInfoFilePath>
     <UpdateAssemblyVersion>True</UpdateAssemblyVersion>
     <UpdateAssemblyFileVersion>False</UpdateAssemblyFileVersion>
     <UpdateAssemblyInfoVersion>False</UpdateAssemblyInfoVersion>
-    <AssemblyVersionSettings>None.None.IncrementOnDemand.None</AssemblyVersionSettings>
+    <AssemblyVersionSettings>None.IncrementOnDemand.None.None</AssemblyVersionSettings>
     <AssemblyFileVersionSettings>
     </AssemblyFileVersionSettings>
   </PropertyGroup>
