@@ -144,7 +144,10 @@ namespace Sulakore.Communication
                     foreach (TcpListener listener in listeners) listener.Stop();
 
                     Local?.Dispose();
+                    Local = null;
+
                     Remote?.Dispose();
+                    Remote = null;
 
                     TotalIncoming = TotalOutgoing = 0;
                     if (IsConnected)
