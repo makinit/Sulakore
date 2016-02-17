@@ -85,6 +85,7 @@ namespace Sulakore.Protocol
             _written.AddRange(values);
         }
 
+        #region Read Methods
         public int ReadInteger()
         {
             return ReadInteger(ref _position);
@@ -100,25 +101,6 @@ namespace Sulakore.Protocol
 
             _read.Add(value);
             return value;
-        }
-
-        public void RemoveInteger()
-        {
-            RemoveInteger(_position);
-        }
-        public void RemoveInteger(int position)
-        {
-            RemoveBytes(4, position);
-        }
-
-        public void WriteInteger(int value)
-        {
-            WriteInteger(value, _body.Count);
-        }
-        public void WriteInteger(int value, int position)
-        {
-            byte[] encoded = BigEndian.GetBytes(value);
-            WriteObject(encoded, value, position);
         }
 
         public ushort ReadShort()
@@ -138,25 +120,6 @@ namespace Sulakore.Protocol
             return value;
         }
 
-        public void RemoveShort()
-        {
-            RemoveShort(_position);
-        }
-        public void RemoveShort(int position)
-        {
-            RemoveBytes(2, position);
-        }
-
-        public void WriteShort(ushort value)
-        {
-            WriteShort(value, _body.Count);
-        }
-        public void WriteShort(ushort value, int position)
-        {
-            byte[] encoded = BigEndian.GetBytes(value);
-            WriteObject(encoded, value, position);
-        }
-
         public bool ReadBoolean()
         {
             return ReadBoolean(ref _position);
@@ -172,25 +135,6 @@ namespace Sulakore.Protocol
 
             _read.Add(value);
             return value;
-        }
-
-        public void RemoveBoolean()
-        {
-            RemoveBoolean(_position);
-        }
-        public void RemoveBoolean(int position)
-        {
-            RemoveBytes(1, position);
-        }
-
-        public void WriteBoolean(bool value)
-        {
-            WriteBoolean(value, _body.Count);
-        }
-        public void WriteBoolean(bool value, int position)
-        {
-            byte[] encoded = BigEndian.GetBytes(value);
-            WriteObject(encoded, value, position);
         }
 
         public string ReadString()
@@ -210,57 +154,6 @@ namespace Sulakore.Protocol
             return value;
         }
 
-        public bool CanReadString()
-        {
-            return CanReadString(_position);
-        }
-        public bool CanReadString(int position)
-        {
-            int readable = (_body.Count - position);
-            if (readable < 2) return false;
-
-            ushort stringLength =
-                BigEndian.ToUInt16(_bodyBuffer, position);
-
-            return (readable >= (stringLength + 2));
-        }
-
-        public void RemoveString()
-        {
-            RemoveString(_position);
-        }
-        public void RemoveString(int position)
-        {
-            int readable = (_body.Count - position);
-            if (readable < 2) return;
-
-            ushort stringLength =
-                BigEndian.ToUInt16(_bodyBuffer, position);
-
-            if (readable >= (stringLength + 2))
-                RemoveBytes(stringLength + 2, position);
-        }
-
-        public void ReplaceString(string value)
-        {
-            ReplaceString(value, _position);
-        }
-        public void ReplaceString(string value, int position)
-        {
-            RemoveString(position);
-            WriteString(value, position);
-        }
-
-        public void WriteString(string value)
-        {
-            WriteString(value, _body.Count);
-        }
-        public void WriteString(string value, int position)
-        {
-            byte[] encoded = BigEndian.GetBytes(value);
-            WriteObject(encoded, value, position);
-        }
-
         public byte[] ReadBytes(int length)
         {
             return ReadBytes(length, ref _position);
@@ -278,15 +171,46 @@ namespace Sulakore.Protocol
             _read.Add(value);
             return value;
         }
-
-        public void RemoveBytes(int length)
+        #endregion
+        #region Write Methods
+        public void WriteInteger(int value)
         {
-            RemoveBytes(length, _position);
+            WriteInteger(value, _body.Count);
         }
-        public void RemoveBytes(int length, int position)
+        public void WriteInteger(int value, int position)
         {
-            _body.RemoveRange(position, length);
-            Refresh();
+            byte[] encoded = BigEndian.GetBytes(value);
+            WriteObject(encoded, value, position);
+        }
+
+        public void WriteShort(ushort value)
+        {
+            WriteShort(value, _body.Count);
+        }
+        public void WriteShort(ushort value, int position)
+        {
+            byte[] encoded = BigEndian.GetBytes(value);
+            WriteObject(encoded, value, position);
+        }
+
+        public void WriteBoolean(bool value)
+        {
+            WriteBoolean(value, _body.Count);
+        }
+        public void WriteBoolean(bool value, int position)
+        {
+            byte[] encoded = BigEndian.GetBytes(value);
+            WriteObject(encoded, value, position);
+        }
+
+        public void WriteString(string value)
+        {
+            WriteString(value, _body.Count);
+        }
+        public void WriteString(string value, int position)
+        {
+            byte[] encoded = BigEndian.GetBytes(value);
+            WriteObject(encoded, value, position);
         }
 
         public void WriteBytes(byte[] value)
@@ -312,54 +236,85 @@ namespace Sulakore.Protocol
 
             Refresh();
         }
-
-        public void ClearWritten()
+        #endregion
+        #region Remove Methods
+        public void RemoveInteger()
         {
-            if (_written.Count < 1) return;
+            RemoveInteger(_position);
+        }
+        public void RemoveInteger(int position)
+        {
+            RemoveBytes(4, position);
+        }
 
-            _body.Clear();
-            _written.Clear();
+        public void RemoveShort()
+        {
+            RemoveShort(_position);
+        }
+        public void RemoveShort(int position)
+        {
+            RemoveBytes(2, position);
+        }
 
+        public void RemoveBoolean()
+        {
+            RemoveBoolean(_position);
+        }
+        public void RemoveBoolean(int position)
+        {
+            RemoveBytes(1, position);
+        }
+
+        public void RemoveString()
+        {
+            RemoveString(_position);
+        }
+        public void RemoveString(int position)
+        {
+            int readable = (_body.Count - position);
+            if (readable < 2) return;
+
+            ushort stringLength =
+                BigEndian.ToUInt16(_bodyBuffer, position);
+
+            if (readable >= (stringLength + 2))
+                RemoveBytes(stringLength + 2, position);
+        }
+
+        public void RemoveBytes(int length)
+        {
+            RemoveBytes(length, _position);
+        }
+        public void RemoveBytes(int length, int position)
+        {
+            _body.RemoveRange(position, length);
             Refresh();
         }
-        public void RemoveWritten(int index)
+        #endregion
+
+        public bool CanReadString()
         {
-            if (index < 0 || index >= _written.Count) return;
-
-            _written.RemoveAt(index);
-
-            _body.Clear();
-            if (_written.Count > 0)
-                _body.AddRange(GetBytes(_written.ToArray()));
-
-            Refresh();
+            return CanReadString(_position);
         }
-        public void ReplaceWritten(int index, object chunk)
+        public bool CanReadString(int position)
         {
-            if (index < 0 || index >= _written.Count) return;
+            int readable = (_body.Count - position);
+            if (readable < 2) return false;
 
-            _written[index] = chunk;
+            ushort stringLength =
+                BigEndian.ToUInt16(_bodyBuffer, position);
 
-            _body.Clear();
-            _body.AddRange(GetBytes(_written.ToArray()));
-
-            Refresh();
+            return (readable >= (stringLength + 2));
         }
-        public void MoveWritten(int index, int jump, bool toRight)
+
+        public void ReplaceString(string value)
         {
-            if (jump < 1) return;
-            int newIndex = (toRight ? index + jump : index - jump);
-            if (newIndex < 0) newIndex = 0;
-            if (newIndex >= _written.Count) newIndex = _written.Count - 1;
-
-            object chunk = _written[index];
-            _written.Remove(chunk);
-            _written.Insert(newIndex, chunk);
-
-            _body.Clear();
-            _body.AddRange(GetBytes(_written.ToArray()));
-
-            Refresh();
+            ReplaceString(value, _position);
+        }
+        public void ReplaceString(string value, int position)
+        {
+            RemoveString(position);
+            WriteString(value, position);
         }
 
         private void Refresh()
@@ -372,7 +327,7 @@ namespace Sulakore.Protocol
             _toBytesCache = null;
             _toStringCache = null;
         }
-
+        
         public byte[] ToBytes()
         {
             return _toBytesCache ??
@@ -380,6 +335,7 @@ namespace Sulakore.Protocol
         }
         public static byte[] ToBytes(string value)
         {
+            // TODO: All of this.
             value = value.Replace("{b:}", "[0]")
                 .Replace("{u:}", "[0][0]")
                 .Replace("{s:}", "[0][0]")
