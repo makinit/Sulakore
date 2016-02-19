@@ -10,7 +10,6 @@ namespace Sulakore.Components
     [DesignerCategory("Code")]
     public class SKoreConstructView : SKoreListView
     {
-        private bool _isDirty;
         private HMessage _cachedPacket;
 
         private readonly List<object> _values;
@@ -55,11 +54,10 @@ namespace Sulakore.Components
         {
             lock (_values)
             {
-
                 object value = _values[oldIndex];
                 _values.RemoveAt(oldIndex);
                 _values.Insert(newIndex, value);
-                _isDirty = true;
+                _cachedPacket = null;
             }
         }
         protected virtual void WriteValue(string type, object value, byte[] data, int amount)
@@ -74,31 +72,15 @@ namespace Sulakore.Components
                     ListViewItem item = null;
                     if (i != (amount - 1))
                     {
-                        item = Add(type, value, encoded);
+                        item = AddItem(type, value, encoded);
                     }
-                    else item = FocusAdd(type, value, encoded);
+                    else item = AddFocusedItem(type, value, encoded);
                 }
                 EndUpdate();
-                _isDirty = true;
+                _cachedPacket = null;
             }
         }
-
-        public override void ClearItems()
-        {
-            _values.Clear();
-            _isDirty = true;
-
-            base.ClearItems();
-        }
-        protected override void RemoveItem(ListViewItem item)
-        {
-            lock (_values)
-            {
-                _values.RemoveAt(item.Index);
-                base.RemoveItem(item);
-                _isDirty = true;
-            }
-        }
+        
         protected override void MoveItemUp(ListViewItem item)
         {
             int oldIndex = item.Index;
@@ -110,6 +92,15 @@ namespace Sulakore.Components
             int oldIndex = item.Index;
             base.MoveItemDown(item);
             MoveValue(oldIndex, item.Index);
+        }
+        protected override void RemoveItem(ListViewItem item, bool selectNext)
+        {
+            lock (_values)
+            {
+                _values.RemoveAt(item.Index);
+                base.RemoveItem(item, selectNext);
+                _cachedPacket = null;
+            }
         }
 
         public void UpdateSelectedValue(object value)
@@ -134,7 +125,7 @@ namespace Sulakore.Components
                 item.SubItems[2].Text = encoded;
 
                 _values[item.Index] = value;
-                _isDirty = true;
+                _cachedPacket = null;
             }
         }
 
@@ -142,12 +133,10 @@ namespace Sulakore.Components
         {
             lock (_values)
             {
-                if (_isDirty)
+                if (_cachedPacket == null)
                 {
                     _cachedPacket =
                         new HMessage(header, _values.ToArray());
-
-                    _isDirty = false;
                 }
                 _cachedPacket.Header = header;
                 return _cachedPacket;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Timers;
+using System.ComponentModel;
 
 using Sulakore.Components;
 
@@ -7,55 +8,80 @@ namespace Sulakore.Protocol
 {
     public class HSchedule : IDisposable
     {
+        private int _currentCycle;
         private readonly Timer _ticker;
-        private readonly object _tickerLock;
 
         public event EventHandler<ScheduleTickEventArgs> ScheduleTick;
         protected virtual void OnScheduleTick(ScheduleTickEventArgs e)
         {
-            EventHandler<ScheduleTickEventArgs> handler = ScheduleTick;
-            if (handler != null) handler(this, e);
-            if (e.Cancel) IsRunning = false;
+            try
+            {
+                if (Cycles != 0 && _currentCycle >= Cycles)
+                    e.Cancel = true;
+
+                ScheduleTick?.Invoke(this, e);
+            }
+            catch { e.Cancel = true; }
+            finally
+            {
+                if (e.Cancel)
+                    IsRunning = false;
+            }
         }
-        
+        protected void RaiseOnScheduleTick(HSchedule schedule, int currentCycle)
+        {
+            if (ScheduleTick != null)
+            {
+                OnScheduleTick(
+                    new ScheduleTickEventArgs(schedule, currentCycle));
+            }
+        }
+
         public int Interval
         {
             get { return (int)_ticker.Interval; }
             set { _ticker.Interval = value; }
         }
-        public int Burst { get; set; }
-        public HMessage Packet { get; set; }
-        public bool IsRunning { get; private set; }
+        public bool IsRunning
+        {
+            get { return _ticker.Enabled; }
+            set
+            {
+                if (_ticker.Enabled != value)
+                {
+                    _currentCycle = 0;
+                    _ticker.Enabled = value;
+                }
+            }
+        }
+        public ISynchronizeInvoke SynchronizingObject
+        {
+            get { return _ticker.SynchronizingObject; }
+            set { _ticker.SynchronizingObject = value; }
+        }
 
-        public HSchedule(HMessage packet, int interval, int burst)
+        public int Cycles { get; set; }
+        public HMessage Packet { get; set; }
+        public bool IsDisposed { get; private set; }
+
+        public HSchedule(HMessage packet, int interval, int cycles)
         {
             _ticker = new Timer(interval);
-            _ticker.Elapsed += Ticker_Elapsed;
-
-            _tickerLock = new object();
+            _ticker.Elapsed += Elapsed;
 
             Packet = packet;
-            Burst = burst;
+            Cycles = cycles;
         }
 
-        public void Stop()
+        private void Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (!IsRunning) return;
+            lock (_ticker)
+            {
+                if (!IsRunning) return;
+                if (Cycles != 0) _currentCycle++;
 
-            _ticker.Stop();
-            IsRunning = false;
-        }
-        public void Start()
-        {
-            if (IsRunning) return;
-
-            _ticker.Start();
-            IsRunning = true;
-        }
-        public void Toggle()
-        {
-            if (IsRunning) Stop();
-            else Start();
+                RaiseOnScheduleTick(this, _currentCycle);
+            }
         }
 
         public void Dispose()
@@ -64,30 +90,14 @@ namespace Sulakore.Protocol
         }
         protected virtual void Dispose(bool disposing)
         {
-            SKore.Unsubscribe(ref ScheduleTick);
-
+            if (IsDisposed) return;
             if (disposing)
             {
-                Stop();
+                IsRunning = false;
                 _ticker.Dispose();
             }
-        }
-
-        private void Ticker_Elapsed(object sender, ElapsedEventArgs e)
-        {
-            lock (_tickerLock)
-            {
-                _ticker.Stop();
-                int tmpBurst = Burst, burstCount;
-                for (int i = 0; i < tmpBurst && IsRunning; i++)
-                {
-                    burstCount = i + 1;
-
-                    OnScheduleTick(new ScheduleTickEventArgs(Packet,
-                        burstCount, tmpBurst - burstCount, burstCount >= tmpBurst));
-                }
-                if (IsRunning) _ticker.Start();
-            }
+            SKore.Unsubscribe(ref ScheduleTick);
+            IsDisposed = true;
         }
     }
 }

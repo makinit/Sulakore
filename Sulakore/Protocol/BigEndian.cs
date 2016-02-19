@@ -93,8 +93,11 @@ namespace Sulakore.Protocol
         }
         public static string ToString(byte[] value, int startIndex)
         {
-            ushort stringLength = ToUInt16(value, startIndex);
-            string result = Encoding.UTF8.GetString(value, startIndex + 2, stringLength);
+            ushort stringLength =
+                ToUInt16(value, startIndex);
+
+            string result = Encoding.UTF8
+                .GetString(value, startIndex + 2, stringLength);
 
             return result;
         }

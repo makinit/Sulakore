@@ -6,18 +6,35 @@ namespace Sulakore.Components
 {
     public class ScheduleTickEventArgs : CancelEventArgs
     {
-        public int BurstLeft { get; }
-        public int BurstCount { get; }
-        public HMessage Packet { get; }
-        public bool IsFinalBurst { get; }
+        private readonly HSchedule _schedule;
 
-        public ScheduleTickEventArgs(HMessage packet,
-            int burstCount, int burstLeft, bool isFinalBurst)
+        public int CurrentCycle { get; }
+        public int Cycles => _schedule.Cycles;
+
+        public int Interval
         {
-            Packet = packet;
-            BurstLeft = burstLeft;
-            BurstCount = burstCount;
-            IsFinalBurst = isFinalBurst;
+            get { return _schedule.Interval; }
+            set
+            {
+                if (value > 0)
+                    _schedule.Interval = value;
+            }
+        }
+        public HMessage Packet
+        {
+            get { return _schedule.Packet; }
+            set
+            {
+                if (!value.IsCorrupted)
+                    _schedule.Packet = value;
+            }
+        }
+
+        public ScheduleTickEventArgs(HSchedule schedule, int currentCycle)
+        {
+            _schedule = schedule;
+
+            CurrentCycle = currentCycle;
         }
     }
 }

@@ -42,7 +42,7 @@ namespace Sulakore.Components
             {
                 case ExtensionActionType.Installed:
                 {
-                    item = FocusAdd(e.Extension.Identifier, e.Extension.Creator,
+                    item = AddFocusedItem(e.Extension.Identifier, e.Extension.Creator,
                         e.Extension.Description, e.Extension.Version, "Closed");
 
                     _itemByHash[e.Extension.Hash] = item;
@@ -59,7 +59,7 @@ namespace Sulakore.Components
                 {
                     _itemByHash.Remove(e.Extension.Hash);
                     _extensionByItem.Remove(item);
-                    RemoveItem(item);
+                    RemoveItem(item, true);
                     break;
                 }
                 case ExtensionActionType.Opened:

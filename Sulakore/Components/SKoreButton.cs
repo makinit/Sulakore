@@ -12,6 +12,10 @@ namespace Sulakore.Components
     {
         private bool _isPressed;
 
+        /// <summary>
+        /// Gets or sets a value that is returned to the parent form when the button is clicked.
+        /// </summary>
+        [DefaultValue(DialogResult.None)]
         public DialogResult DialogResult { get; set; }
 
         [Browsable(false)]
@@ -50,8 +54,8 @@ namespace Sulakore.Components
             set { base.Text = value; Invalidate(); }
         }
 
-        [DefaultValue(typeof(Size), "100, 22")]
         [Localizable(true)]
+        [DefaultValue(typeof(Size), "100, 22")]
         new public Size Size
         {
             get { return base.Size; }
@@ -77,13 +81,19 @@ namespace Sulakore.Components
 
         public void PerformClick()
         {
-            Focus();
-            Invalidate();
-            base.OnClick(EventArgs.Empty);
+            if (CanSelect)
+            {
+                Focus();
+                base.OnClick(EventArgs.Empty);
+            }
         }
         public void NotifyDefault(bool value)
-        { }
+        {
+            Invalidate();
+        }
 
+        protected override void OnClick(EventArgs e)
+        { }
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.Clear(Enabled ? Skin : SystemColors.Control);
@@ -121,27 +131,31 @@ namespace Sulakore.Components
             }
             base.OnPaint(e);
         }
-
-        protected override void OnClick(EventArgs e)
-        { }
         protected override void OnMouseUp(MouseEventArgs e)
         {
             bool isLeft = (e.Button == MouseButtons.Left);
             if (isLeft)
             {
                 _isPressed = false;
+
+                Focus();
                 Invalidate();
             }
             base.OnMouseUp(e);
 
-            if (ClientRectangle.Contains(e.Location) && isLeft)
+            if (isLeft &&
+                ClientRectangle.Contains(e.Location))
+            {
                 base.OnClick(e);
+            }
         }
         protected override void OnMouseDown(MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
             {
                 _isPressed = true;
+
+                Focus();
                 Invalidate();
             }
             base.OnMouseDown(e);

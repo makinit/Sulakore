@@ -34,7 +34,7 @@ namespace Sulakore.Protocol
             }
         }
 
-        public int Length => (_body.Count + 2);
+        public int Length => (_body.Count + (!IsCorrupted ? 2 : 0));
         public int Readable => (_body.Count - Position);
 
         public bool IsCorrupted { get; }
@@ -327,9 +327,12 @@ namespace Sulakore.Protocol
             _toBytesCache = null;
             _toStringCache = null;
         }
-        
+
         public byte[] ToBytes()
         {
+            if (IsCorrupted)
+                _toBytesCache = _bodyBuffer;
+
             return _toBytesCache ??
                 (_toBytesCache = Construct(Header, _bodyBuffer));
         }

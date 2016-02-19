@@ -11,191 +11,101 @@ namespace Sulakore.Components
     public class SKoreScheduleView : SKoreListView
     {
         private readonly Dictionary<HSchedule, ListViewItem> _items;
-        private readonly Dictionary<ListViewItem, HSchedule> _schedules;
-        private readonly Dictionary<ListViewItem, string> _descriptions;
+        private readonly Action<HSchedule, ScheduleTickEventArgs, bool> _updateItem;
 
         public event EventHandler<ScheduleTickEventArgs> ScheduleTick;
         protected virtual void OnScheduleTick(object sender, ScheduleTickEventArgs e)
         {
-            EventHandler<ScheduleTickEventArgs> handler = ScheduleTick;
-            if (handler != null)
+            bool isDirty = false;
+            var schedule = (HSchedule)sender;
+            try
             {
-                try { handler(sender, e); }
-                catch { e.Cancel = true; }
-                finally
+                string oldpacket = e.Packet.ToString();
+                ScheduleTick?.Invoke(this, e);
+                string newPacket = e.Packet.ToString();
+
+                if (e.Interval > 0 && schedule.Interval != e.Interval ||
+                    oldpacket != newPacket && !e.Packet.IsCorrupted)
                 {
-                    if (e.Cancel)
-                    {
-                        Invoke(new MethodInvoker(() =>
-                        {
-                            ListViewItem item = _items[(HSchedule)sender];
-                            item.SubItems[4].Text = "Stopped";
-                            item.Checked = false;
-                        }));
-                    }
+                    isDirty = true;
                 }
             }
-        }
-
-        [Browsable(false)]
-        [DefaultValue(true)]
-        public bool AutoStart { get; set; }
-
-        [Browsable(false)]
-        public int Running
-        {
-            get { return _items.Keys.Count(x => x.IsRunning); }
+            catch { e.Cancel = true; }
+            finally
+            {
+                if (isDirty || e.Cancel)
+                    UpdateItem(schedule, e, isDirty);
+            }
         }
 
         public SKoreScheduleView()
         {
+            _updateItem = UpdateItem;
             _items = new Dictionary<HSchedule, ListViewItem>();
-            _descriptions = new Dictionary<ListViewItem, string>();
-            _schedules = new Dictionary<ListViewItem, HSchedule>();
 
-            AutoStart = true;
             CheckBoxes = true;
         }
 
-        protected override void RemoveItem(ListViewItem listViewItem)
+        public void AddSchedule(HMessage packet, int interval, int cycles, bool autoStart)
         {
-            if (_schedules.ContainsKey(listViewItem))
-            {
-                HSchedule schedule = _schedules[listViewItem];
-                _items.Remove(schedule);
+            ListViewItem item = AddFocusedItem(packet,
+                packet.Destination, interval, cycles, string.Empty);
 
-                schedule.Dispose();
-                _schedules.Remove(listViewItem);
-
-                _descriptions.Remove(listViewItem);
-            }
-
-            base.RemoveItem(listViewItem);
-        }
-        public void AddSchedule(HMessage packet, int burst, int interval, string description)
-        {
-            if (packet.IsCorrupted)
-                throw new Exception("Corrupted Packet: " + packet);
-
-            var item = new ListViewItem(new[] { packet.ToString(),
-                packet.Destination.ToString(), burst.ToString(), interval.ToString(), AutoStart ? "Running" : "Stopped" });
-
-            var schedule = new HSchedule(packet, interval, burst);
+            var schedule = new HSchedule(packet, interval, cycles);
             schedule.ScheduleTick += OnScheduleTick;
 
             _items.Add(schedule, item);
-            _schedules.Add(item, schedule);
-            _descriptions.Add(item, description);
 
-            item.Checked = AutoStart;
-            item.ToolTipText = description;
-
-            FocusAdd(item);
+            item.Tag = schedule;
+            item.Checked = autoStart;
         }
 
-        public void StopAllSchedules()
+        protected override void RemoveItem(ListViewItem item, bool selectNext)
         {
-            foreach (ListViewItem item in _schedules.Keys)
-                item.Checked = false;
-        }
-        public void StartAllSchedules()
-        {
-            foreach (ListViewItem item in _schedules.Keys)
-                item.Checked = true;
-        }
+            var schedule = (item.Tag as HSchedule);
+            if (schedule != null)
+            {
+                if (_items.ContainsKey(schedule))
+                    _items.Remove(schedule);
 
-        public int GetItemBurst()
-        {
-            return SelectedItems.Count > 0 ?
-                _schedules[SelectedItems[0]].Burst : 0;
-        }
-        public void SetItemBurst(int burst)
-        {
-            if (SelectedItems.Count < 1) return;
-
-            ListViewItem item = SelectedItems[0];
-            _schedules[item].Burst = burst;
-            item.SubItems[2].Text = burst.ToString();
-        }
-
-        public int GetItemInterval()
-        {
-            return SelectedItems.Count > 0 ?
-                _schedules[SelectedItems[0]].Interval : 0;
-        }
-        public void SetItemInterval(int interval)
-        {
-            if (SelectedItems.Count < 1) return;
-
-            ListViewItem item = SelectedItems[0];
-            _schedules[item].Interval = interval;
-            item.SubItems[2].Text = interval.ToString();
-        }
-
-        public string GetItemDescription()
-        {
-            return SelectedItems.Count > 0 ?
-                _descriptions[SelectedItems[0]] : string.Empty;
-        }
-        public void SetItemDescription(string description)
-        {
-            if (SelectedItems.Count < 1) return;
-
-            ListViewItem item = SelectedItems[0];
-            item.ToolTipText = description;
-            _descriptions[item] = description;
-        }
-
-        public HMessage GetItemPacket()
-        {
-            return SelectedItems.Count > 0 ?
-                _schedules[SelectedItems[0]].Packet : null;
-        }
-        public void SetItemPacket(HMessage packet)
-        {
-            if (SelectedItems.Count < 1) return;
-
-            ListViewItem item = SelectedItems[0];
-            _schedules[item].Packet = packet;
-            item.SubItems[0].Text = packet.ToString();
-            item.SubItems[1].Text = packet.Destination.ToString();
-        }
-
-        public HDestination GetItemDestination()
-        {
-            return SelectedItems.Count > 0 ?
-                _schedules[SelectedItems[0]].Packet.Destination : HDestination.Client;
-        }
-        public void SetItemDestination(HDestination destination)
-        {
-            if (SelectedItems.Count < 1) return;
-
-            ListViewItem item = SelectedItems[0];
-            _schedules[item].Packet.Destination = destination;
-            item.SubItems[1].Text = destination.ToString();
+                schedule.Dispose();
+            }
+            base.RemoveItem(item, selectNext);
         }
 
         protected override void OnItemChecked(ItemCheckedEventArgs e)
         {
-            if (!_schedules.ContainsKey(e.Item)) return;
+            var schedule = (e.Item.Tag as HSchedule);
+            if (schedule != null)
+            {
+                bool isRunning = e.Item.Checked;
+                schedule.IsRunning = isRunning;
 
-            HSchedule schedule = _schedules[e.Item];
-            e.Item.SubItems[4].Text = e.Item.Checked ? "Running" : "Stopped";
-
-            if (e.Item.Checked) schedule.Start();
-            else if (schedule.IsRunning) schedule.Stop();
-
+                e.Item.SubItems[4].Text =
+                    (isRunning ? "Running" : "Stopped");
+            }
             base.OnItemChecked(e);
         }
-
-        protected override void Dispose(bool disposing)
+        protected virtual void UpdateItem(HSchedule schedule, ScheduleTickEventArgs e, bool isDirty)
         {
-            if (!IsDisposed && disposing)
+            if (InvokeRequired) BeginInvoke(_updateItem, schedule, e, isDirty);
+            else
             {
-                foreach (HSchedule schedule in _schedules.Values)
-                    schedule.Dispose();
+                if (e.Cancel)
+                    _items[schedule].Checked = false;
+
+                if (isDirty)
+                {
+                    schedule.Packet = e.Packet;
+                    schedule.Interval = e.Interval;
+
+                    ListViewItem item = _items[schedule];
+                    item.SubItems[0].Text = e.Packet.ToString();
+                    item.SubItems[1].Text = e.Packet.Destination.ToString();
+                    item.SubItems[2].Text = e.Interval.ToString();
+                    item.SubItems[3].Text = e.Cycles.ToString();
+                }
             }
-            base.Dispose(disposing);
         }
     }
 }

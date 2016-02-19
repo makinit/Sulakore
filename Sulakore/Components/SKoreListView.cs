@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Windows.Forms;
 using System.ComponentModel;
+using System.Collections.Generic;
 
 namespace Sulakore.Components
 {
@@ -88,21 +89,32 @@ namespace Sulakore.Components
             HeaderStyle = ColumnHeaderStyle.Nonclickable;
         }
 
-        public virtual void ClearItems()
+        public void ClearItems()
         {
-            Items.Clear();
-            OnItemSelectionStateChanged(EventArgs.Empty);
+            var items = new ListViewItem[Items.Count];
+            Items.CopyTo(items, 0);
+            ClearItems(items);
+        }
+        protected virtual void ClearItems(IEnumerable<ListViewItem> items)
+        {
+            try
+            {
+                BeginUpdate();
+                foreach (ListViewItem item in items)
+                    RemoveItem(item, false);
+            }
+            finally { EndUpdate(); }
         }
 
         public void RemoveSelectedItem()
         {
             if (HasSelectedItem)
-                RemoveItem(SelectedItem);
+                RemoveItem(SelectedItem, true);
         }
-        protected virtual void RemoveItem(ListViewItem item)
+        protected virtual void RemoveItem(ListViewItem item, bool selectNext)
         {
             int index = item.Index;
-            bool selectNext = (Items.Count - 1 > 0);
+            selectNext = (Items.Count - 1 > 0 && selectNext);
 
             Items.RemoveAt(index);
             if (selectNext)
@@ -126,6 +138,7 @@ namespace Sulakore.Components
         {
             int oldIndex = item.Index;
             if (oldIndex < 1) return;
+            _previouslySelectedItem = null;
 
             BeginUpdate();
             Items.RemoveAt(oldIndex);
@@ -148,6 +161,7 @@ namespace Sulakore.Components
         {
             int oldIndex = item.Index;
             if (oldIndex == (Items.Count - 1)) return;
+            _previouslySelectedItem = null;
 
             BeginUpdate();
             Items.RemoveAt(oldIndex);
@@ -161,34 +175,34 @@ namespace Sulakore.Components
             EnsureVisible(index + 4 >= Items.Count ? Items.Count - 1 : index + 4);
         }
 
-        public void FocusAdd(ListViewItem item)
+        public void AddFocusedItem(ListViewItem item)
         {
-            Add(item);
+            AddItem(item);
             item.Selected = true;
             OnItemSelectionStateChanged(EventArgs.Empty);
         }
-        public ListViewItem FocusAdd(params object[] items)
+        public ListViewItem AddFocusedItem(params object[] items)
         {
-            ListViewItem item = Add(items);
+            ListViewItem item = AddItem(items);
             item.Selected = true;
 
             OnItemSelectionStateChanged(EventArgs.Empty);
             return item;
         }
 
-        public void Add(ListViewItem item)
+        public void AddItem(ListViewItem item)
         {
             Focus();
             Items.Add(item);
             item.EnsureVisible();
         }
-        public ListViewItem Add(params object[] items)
+        public ListViewItem AddItem(params object[] items)
         {
             string[] stringItems = items
                 .Select(i => i.ToString()).ToArray();
 
             var item = new ListViewItem(stringItems);
-            Add(item);
+            AddItem(item);
 
             return item;
         }
