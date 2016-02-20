@@ -14,20 +14,12 @@ namespace Sulakore.Components
         public int Interval
         {
             get { return _schedule.Interval; }
-            set
-            {
-                if (value > 0)
-                    _schedule.Interval = value;
-            }
+            set { _schedule.Interval = value; }
         }
         public HMessage Packet
         {
             get { return _schedule.Packet; }
-            set
-            {
-                if (!value.IsCorrupted)
-                    _schedule.Packet = value;
-            }
+            set { _schedule.Packet = value; }
         }
 
         public ScheduleTickEventArgs(HSchedule schedule, int currentCycle)
