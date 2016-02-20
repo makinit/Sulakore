@@ -17,8 +17,10 @@ namespace Sulakore.Protocol
             try
             {
                 if (Cycles != 0 && _currentCycle >= Cycles)
+                {
+                    IsRunning = false;
                     e.Cancel = true;
-
+                }
                 ScheduleTick?.Invoke(this, e);
             }
             catch { e.Cancel = true; }
@@ -40,7 +42,11 @@ namespace Sulakore.Protocol
         public int Interval
         {
             get { return (int)_ticker.Interval; }
-            set { _ticker.Interval = value; }
+            set
+            {
+                if (value > 0)
+                    _ticker.Interval = value;
+            }
         }
         public bool IsRunning
         {
@@ -60,8 +66,19 @@ namespace Sulakore.Protocol
             set { _ticker.SynchronizingObject = value; }
         }
 
-        public int Cycles { get; set; }
+        private int _cycles;
+        public int Cycles
+        {
+            get { return _cycles; }
+            set
+            {
+                if (_cycles >= 0)
+                    _cycles = value;
+            }
+        }
+
         public HMessage Packet { get; set; }
+
         public bool IsDisposed { get; private set; }
 
         public HSchedule(HMessage packet, int interval, int cycles)
@@ -79,7 +96,6 @@ namespace Sulakore.Protocol
             {
                 if (!IsRunning) return;
                 if (Cycles != 0) _currentCycle++;
-
                 RaiseOnScheduleTick(this, _currentCycle);
             }
         }
