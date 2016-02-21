@@ -10,8 +10,20 @@ namespace Sulakore.Components
     [DesignerCategory("Code")]
     public class SKoreInjectionMenu : ContextMenuStrip
     {
+        private TextBox _inputBox;
         [Browsable(false)]
-        public TextBoxBase InputBox { get; set; }
+        public TextBox InputBox
+        {
+            get { return _inputBox; }
+            set
+            {
+                if (value != null)
+                {
+                    _inputBox = value;
+                    _inputBox.ContextMenuStrip = this;
+                }
+            }
+        }
 
         #region Menu Items
         protected ToolStripMenuItem RealignBtn;
