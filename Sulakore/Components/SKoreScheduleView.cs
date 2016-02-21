@@ -33,6 +33,8 @@ namespace Sulakore.Components
             catch { e.Cancel = true; }
             finally
             {
+                schedule.IsRunning = !e.Cancel;
+
                 if (isDirty || e.Cancel)
                     UpdateItem(schedule);
             }
@@ -57,7 +59,8 @@ namespace Sulakore.Components
             get { return SelectedSchedule?.Cycles ?? -1; }
             set
             {
-                if (SelectedSchedule?.Cycles != value)
+                if (!HasSelectedItem) return;
+                if (SelectedSchedule.Cycles != value)
                 {
                     SelectedSchedule.Cycles = value;
                     UpdateItem(SelectedSchedule);
@@ -69,7 +72,8 @@ namespace Sulakore.Components
             get { return SelectedSchedule?.Interval ?? -1; }
             set
             {
-                if (SelectedSchedule?.Interval != value)
+                if (!HasSelectedItem) return;
+                if (SelectedSchedule.Interval != value)
                 {
                     SelectedSchedule.Interval = value;
                     UpdateItem(SelectedSchedule);
@@ -81,7 +85,8 @@ namespace Sulakore.Components
             get { return SelectedSchedule?.Packet.ToString(); }
             set
             {
-                if (SelectedSchedule?.Packet.ToString() != value)
+                if (!HasSelectedItem) return;
+                if (SelectedSchedule.Packet.ToString() != value)
                 {
                     var packet = new HMessage(value, SelectedDestination);
                     if (packet.IsCorrupted) return;
@@ -100,7 +105,8 @@ namespace Sulakore.Components
             }
             set
             {
-                if (SelectedSchedule?.Packet.Destination != value)
+                if (!HasSelectedItem) return;
+                if (SelectedSchedule.Packet.Destination != value)
                 {
                     SelectedSchedule
                         .Packet.Destination = value;
@@ -121,7 +127,7 @@ namespace Sulakore.Components
         public void AddSchedule(HMessage packet, int interval, int cycles, bool autoStart)
         {
             ListViewItem item = AddFocusedItem(packet,
-                packet.Destination, interval, cycles, string.Empty);
+                packet.Destination, interval, cycles, "Stopped");
 
             var schedule = new HSchedule(packet, interval, cycles);
             schedule.ScheduleTick += OnScheduleTick;
