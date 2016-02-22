@@ -82,7 +82,7 @@ namespace Sulakore.Extensions
 
         public ExtensionForm()
         {
-            Triggers = new HTriggers(false);
+            Triggers = InitializeTriggers();
             var extensionAssembly = Assembly.GetCallingAssembly();
 
             ExtensionInfo extensionInfo =
@@ -105,7 +105,7 @@ namespace Sulakore.Extensions
             {
                 _contractor = new Contractor();
                 var externalContractor = HNode.ConnectAsync("127.0.0.1", 8787).Result;
-                
+
                 HMessage initializationMessage = externalContractor.ReceiveAsync().Result;
                 _contractor.Hotel = (HHotel)initializationMessage.ReadShort();
 
@@ -114,6 +114,11 @@ namespace Sulakore.Extensions
 
                 _contractor.Connection = new ExtensionBridge(externalContractor, this);
             }
+        }
+
+        protected virtual HTriggers InitializeTriggers()
+        {
+            return new HTriggers(false);
         }
 
         protected virtual void OnDisposed()
@@ -137,6 +142,33 @@ namespace Sulakore.Extensions
         {
             IsRunning = false;
             base.OnFormClosed(e);
+        }
+    }
+    public class ExtensionForm<T> : ExtensionForm where T : HTriggers
+    {
+        private T _triggers;
+        /// <summary>
+        /// Gets the <see cref="HTriggers"/> that handles the in-game callbacks/events.
+        /// </summary>
+        [Browsable(false)]
+        public new T Triggers
+        {
+            get { return _triggers; }
+            set
+            {
+                _triggers = value;
+                base.Triggers = value;
+            }
+        }
+
+        public ExtensionForm()
+        {
+            Triggers = (T)base.Triggers;
+        }
+
+        protected override HTriggers InitializeTriggers()
+        {
+            return (T)Activator.CreateInstance(typeof(T), new object[] { false });
         }
     }
 }

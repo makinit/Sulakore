@@ -11,6 +11,8 @@ namespace Sulakore.Communication
     /// </summary>
     public class InterceptedEventArgs : EventArgs
     {
+        protected List<HMessage> Executions { get; }
+
         /// <summary>
         /// Gets the current count/step/order from which this data was intercepted.
         /// </summary>
@@ -46,10 +48,23 @@ namespace Sulakore.Communication
         /// Gets or sets a value that determines whether the data should be blocked.
         /// </summary>
         public bool IsBlocked { get; set; }
-        /// <summary>
-        /// Gets a list of data that will be sent to the destination after this intercepted data has been processed first.
-        /// </summary>
-        public List<HMessage> Executions { get; }
+
+        public void ClearExecutions()
+        {
+            Executions.Clear();
+        }
+        public void AddClientExecution(HMessage packet)
+        {
+            if (packet.IsCorrupted) return;
+            packet.Destination = HDestination.Client;
+            Executions.Add(packet);
+        }
+        public void AddServerExecution(HMessage packet)
+        {
+            if (packet.IsCorrupted) return;
+            packet.Destination = HDestination.Server;
+            Executions.Add(packet);
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InterceptedEventArgs"/> class.
@@ -80,6 +95,11 @@ namespace Sulakore.Communication
             else WasContinued = true;
 
             Continuation();
+        }
+
+        public HMessage[] GetExecutions()
+        {
+            return Executions.ToArray();
         }
     }
 }

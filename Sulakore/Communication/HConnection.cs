@@ -330,13 +330,7 @@ namespace Sulakore.Communication
             if (!args.IsBlocked)
             {
                 SendToServerAsync(args.Replacement.ToBytes()).Wait();
-                var executeTaskList = new List<Task<int>>(args.Executions.Count);
-                for (int i = 0; i < args.Executions.Count; i++)
-                {
-                    executeTaskList.Add(
-                        SendToServerAsync(args.Executions[i].ToBytes()));
-                }
-                Task.WhenAll(executeTaskList).Wait();
+                HandleExecutions(args.GetExecutions());
             }
             if (!args.WasContinued)
             {
@@ -365,19 +359,29 @@ namespace Sulakore.Communication
             if (!args.IsBlocked)
             {
                 SendToClientAsync(args.Replacement.ToBytes()).Wait();
-                var executeTaskList = new List<Task<int>>(args.Executions.Count);
-                for (int i = 0; i < args.Executions.Count; i++)
-                {
-                    executeTaskList.Add(
-                        SendToClientAsync(args.Executions[i].ToBytes()));
-                }
-                Task.WhenAll(executeTaskList).Wait();
+                HandleExecutions(args.GetExecutions());
             }
-
             if (!args.WasContinued)
             {
                 Task readInTask = ReadIncomingAsync();
             }
+        }
+
+        protected void HandleExecutions(HMessage[] executions)
+        {
+            var executeTaskList = new List<Task<int>>(executions.Length);
+            for (int i = 0; i < executions.Length; i++)
+            {
+                byte[] executionData =
+                    executions[i].ToBytes();
+
+                HNode node = (executions[i].Destination ==
+                    HDestination.Server ? Remote : Local);
+
+                executeTaskList.Add(
+                    node.SendAsync(executionData));
+            }
+            Task.WhenAll(executeTaskList).Wait();
         }
 
         /// <summary>
