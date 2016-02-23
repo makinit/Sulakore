@@ -12,7 +12,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <AssemblyVersion>6.4.0.0</AssemblyVersion>
+    <AssemblyVersion>6.5.0.0</AssemblyVersion>
     <PrimaryVersionType>AssemblyVersionAttribute</PrimaryVersionType>
     <AssemblyInfoFilePath>
     </AssemblyInfoFilePath>
@@ -43,22 +43,6 @@
     <DocumentationFile>bin\Release\Sulakore.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Compression\SevenZip\Common\CommandLineParser.cs" />
-    <Compile Include="Compression\SevenZip\Common\CRC.cs" />
-    <Compile Include="Compression\SevenZip\Common\InBuffer.cs" />
-    <Compile Include="Compression\SevenZip\Common\OutBuffer.cs" />
-    <Compile Include="Compression\SevenZip\Compress\LZMA\LzmaBase.cs" />
-    <Compile Include="Compression\SevenZip\Compress\LZMA\LzmaDecoder.cs" />
-    <Compile Include="Compression\SevenZip\Compress\LZMA\LzmaEncoder.cs" />
-    <Compile Include="Compression\SevenZip\Compress\LZ\IMatchFinder.cs" />
-    <Compile Include="Compression\SevenZip\Compress\LZ\LzBinTree.cs" />
-    <Compile Include="Compression\SevenZip\Compress\LZ\LzInWindow.cs" />
-    <Compile Include="Compression\SevenZip\Compress\LZ\LzOutWindow.cs" />
-    <Compile Include="Compression\SevenZip\Compress\RangeCoder\RangeCoder.cs" />
-    <Compile Include="Compression\SevenZip\Compress\RangeCoder\RangeCoderBit.cs" />
-    <Compile Include="Compression\SevenZip\Compress\RangeCoder\RangeCoderBitTree.cs" />
-    <Compile Include="Compression\SevenZip\ICoder.cs" />
-    <Compile Include="Compression\SevenZip\LZMA.cs" />
     <Compile Include="Communication\Event Args\InterceptedEventArgs.cs" />
     <Compile Include="Communication\Event Args\Incoming Event Args\FurnitureLoadEventArgs.cs" />
     <Compile Include="Communication\Event Args\Incoming Event Args\EntityActionEventArgs.cs" />
@@ -102,8 +86,6 @@
     <Compile Include="Components\SKoreMap.cs" />
     <Compile Include="Components\SKoreScheduleView.cs" />
     <Compile Include="Components\SKoreTabControl.cs" />
-    <Compile Include="Disassembler\ActionScript\Constants\IConstant.cs" />
-    <Compile Include="Disassembler\ActionScript\IValueSlot.cs" />
     <Compile Include="Extensions\Enums\ExtensionActionType.cs" />
     <Compile Include="Extensions\Event Args\ExtensionActionEventArgs.cs" />
     <Compile Include="Extensions\Contractor.cs" />
@@ -112,61 +94,6 @@
     <Compile Include="Extensions\ExtensionForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Disassembler\ActionScript\ABCFile.cs" />
-    <Compile Include="Disassembler\ActionScript\ASClass.cs" />
-    <Compile Include="Disassembler\ActionScript\ASConstants.cs" />
-    <Compile Include="Disassembler\ActionScript\ASException.cs" />
-    <Compile Include="Disassembler\ActionScript\ASInstance.cs" />
-    <Compile Include="Disassembler\ActionScript\ASMetadata.cs" />
-    <Compile Include="Disassembler\ActionScript\ASMethod.cs" />
-    <Compile Include="Disassembler\ActionScript\ASMethodBody.cs" />
-    <Compile Include="Disassembler\ActionScript\ASParameter.cs" />
-    <Compile Include="Disassembler\ActionScript\ASScript.cs" />
-    <Compile Include="Disassembler\ActionScript\ASTrait.cs" />
-    <Compile Include="Disassembler\ActionScript\Constants\ASMultiname.cs" />
-    <Compile Include="Disassembler\ActionScript\Constants\ASNamespace.cs" />
-    <Compile Include="Disassembler\ActionScript\Constants\ASNamespaceSet.cs" />
-    <Compile Include="Disassembler\ActionScript\Constants\Enums\ConstantType.cs" />
-    <Compile Include="Disassembler\ActionScript\Enums\ClassFlags.cs" />
-    <Compile Include="Disassembler\ActionScript\Enums\MethodFlags.cs" />
-    <Compile Include="Disassembler\ActionScript\Enums\OPCode.cs" />
-    <Compile Include="Disassembler\ActionScript\IABCChild.cs" />
-    <Compile Include="Disassembler\ActionScript\Multinames\IMultiname.cs" />
-    <Compile Include="Disassembler\ActionScript\Multinames\Multiname.cs" />
-    <Compile Include="Disassembler\ActionScript\Multinames\MultinameL.cs" />
-    <Compile Include="Disassembler\ActionScript\Multinames\QName.cs" />
-    <Compile Include="Disassembler\ActionScript\Multinames\RTQName.cs" />
-    <Compile Include="Disassembler\ActionScript\Multinames\RTQNameL.cs" />
-    <Compile Include="Disassembler\ActionScript\Multinames\Typename.cs" />
-    <Compile Include="Disassembler\ActionScript\Traits\ClassTrait.cs" />
-    <Compile Include="Disassembler\ActionScript\Traits\Enums\TraitAttributes.cs" />
-    <Compile Include="Disassembler\ActionScript\Traits\Enums\TraitType.cs" />
-    <Compile Include="Disassembler\ActionScript\Traits\FunctionTrait.cs" />
-    <Compile Include="Disassembler\ActionScript\Traits\ITrait.cs" />
-    <Compile Include="Disassembler\ActionScript\Traits\MethodGetterSetterTrait.cs" />
-    <Compile Include="Disassembler\ActionScript\Traits\SlotConstantTrait.cs" />
-    <Compile Include="Disassembler\ActionScript\Traits\TraitContainer.cs" />
-    <Compile Include="Disassembler\Dictionary\FlashDictionary.cs" />
-    <Compile Include="Disassembler\Dictionary\ICharacter.cs" />
-    <Compile Include="Disassembler\IO\FlashReader.cs" />
-    <Compile Include="Disassembler\IO\FlashWriter.cs" />
-    <Compile Include="Disassembler\Records\RectangleRecord.cs" />
-    <Compile Include="Disassembler\Records\TagRecord.cs" />
-    <Compile Include="Disassembler\ShockwaveFlash.cs" />
-    <Compile Include="Disassembler\Tags\DefineBinaryDataTag.cs" />
-    <Compile Include="Disassembler\Tags\DefineBitsLossless2Tag.cs" />
-    <Compile Include="Disassembler\Tags\DefineFontNameTag.cs" />
-    <Compile Include="Disassembler\Tags\DoABCTag.cs" />
-    <Compile Include="Disassembler\Tags\Enums\FlashTagType.cs" />
-    <Compile Include="Disassembler\Tags\ExportAssetsTag.cs" />
-    <Compile Include="Disassembler\Tags\FlashTag.cs" />
-    <Compile Include="Disassembler\Tags\FrameLabelTag.cs" />
-    <Compile Include="Disassembler\Tags\ProductInfoTag.cs" />
-    <Compile Include="Disassembler\Tags\ScriptLimitsTag.cs" />
-    <Compile Include="Disassembler\Tags\SetBackgroundColorTag.cs" />
-    <Compile Include="Disassembler\Tags\ShowFrameTag.cs" />
-    <Compile Include="Disassembler\Tags\SymbolClassTag.cs" />
-    <Compile Include="Disassembler\Tags\UnknownTag.cs" />
     <Compile Include="Habbo\Enums\HAction.cs" />
     <Compile Include="Habbo\Enums\HBan.cs" />
     <Compile Include="Habbo\Enums\HDance.cs" />
@@ -180,7 +107,6 @@
     <Compile Include="Habbo\Enums\HTheme.cs" />
     <Compile Include="Habbo\Headers\Incoming.cs" />
     <Compile Include="Habbo\Headers\Outgoing.cs" />
-    <Compile Include="Habbo\HFlash.cs" />
     <Compile Include="Habbo\HFurniture.cs" />
     <Compile Include="Habbo\HEntityAction.cs" />
     <Compile Include="Habbo\HEntity.cs" />
@@ -192,19 +118,6 @@
     <Compile Include="Habbo\Web\HRequest.cs" />
     <Compile Include="Internals\NativeMethods.cs" />
     <Compile Include="Internals\NetSettings.cs" />
-    <Compile Include="Compression\Ionic\Crc\CRC32.cs" />
-    <Compile Include="Compression\Ionic\Zlib\Deflate.cs" />
-    <Compile Include="Compression\Ionic\Zlib\DeflateStream.cs" />
-    <Compile Include="Compression\Ionic\Zlib\GZipStream.cs" />
-    <Compile Include="Compression\Ionic\Zlib\Inflate.cs" />
-    <Compile Include="Compression\Ionic\Zlib\InfTree.cs" />
-    <Compile Include="Compression\Ionic\Zlib\ParallelDeflateOutputStream.cs" />
-    <Compile Include="Compression\Ionic\Zlib\Tree.cs" />
-    <Compile Include="Compression\Ionic\Zlib\Zlib.cs" />
-    <Compile Include="Compression\Ionic\Zlib\ZlibBaseStream.cs" />
-    <Compile Include="Compression\Ionic\Zlib\ZlibCodec.cs" />
-    <Compile Include="Compression\Ionic\Zlib\ZlibConstants.cs" />
-    <Compile Include="Compression\Ionic\Zlib\ZlibStream.cs" />
     <Compile Include="Protocol\BigEndian.cs" />
     <Compile Include="Protocol\Encryption\HKeyExchange.cs" />
     <Compile Include="Protocol\Encryption\Rc4.cs" />
