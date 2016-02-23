@@ -116,8 +116,6 @@
     <Compile Include="Habbo\HStuffData.cs" />
     <Compile Include="Habbo\IHEntity.cs" />
     <Compile Include="Habbo\Web\HRequest.cs" />
-    <Compile Include="Internals\NativeMethods.cs" />
-    <Compile Include="Internals\NetSettings.cs" />
     <Compile Include="Protocol\BigEndian.cs" />
     <Compile Include="Protocol\Encryption\HKeyExchange.cs" />
     <Compile Include="Protocol\Encryption\Rc4.cs" />
