@@ -31,6 +31,7 @@ namespace Sulakore.Communication
         /// <param name="e">An <see cref="EventArgs"/> that contains the event data.</param>
         protected virtual void OnConnected(EventArgs e)
         {
+            SuppressDisconnectEvent = false;
             Connected?.Invoke(this, e);
         }
         /// <summary>
@@ -43,31 +44,38 @@ namespace Sulakore.Communication
         /// <param name="e">An <see cref="EventArgs"/> that contains the event data.</param>
         protected virtual void OnDisconnected(EventArgs e)
         {
-            Disconnected?.Invoke(this, e);
+            lock (_disconnectLock)
+            {
+                if (!SuppressDisconnectEvent)
+                {
+                    SuppressDisconnectEvent = true;
+                    Disconnected?.Invoke(this, e);
+                }
+            }
         }
         /// <summary>
         /// Occurs when outgoing data from the local <see cref="HNode"/> has been intercepted.
         /// </summary>
-        public event EventHandler<InterceptedEventArgs> DataOutgoing;
+        public event EventHandler<DataInterceptedEventArgs> DataOutgoing;
         /// <summary>
         /// Raises the <see cref="DataOutgoing"/> event.
         /// </summary>
-        /// <param name="e">An <see cref="InterceptedEventArgs"/> that contains the event data.</param>
+        /// <param name="e">An <see cref="DataInterceptedEventArgs"/> that contains the event data.</param>
         /// <returns></returns>
-        protected virtual void OnDataOutgoing(InterceptedEventArgs e)
+        protected virtual void OnDataOutgoing(DataInterceptedEventArgs e)
         {
             DataOutgoing?.Invoke(this, e);
         }
         /// <summary>
         /// Occurs when incoming data from the remote <see cref="HNode"/> has been intercepted.
         /// </summary>
-        public event EventHandler<InterceptedEventArgs> DataIncoming;
+        public event EventHandler<DataInterceptedEventArgs> DataIncoming;
         /// <summary>
         /// Raises the <see cref="DataIncoming"/> event.
         /// </summary>
-        /// <param name="e">An <see cref="InterceptedEventArgs"/> that contains the event data.</param>
+        /// <param name="e">An <see cref="DataInterceptedEventArgs"/> that contains the event data.</param>
         /// <returns></returns>
-        protected virtual void OnDataIncoming(InterceptedEventArgs e)
+        protected virtual void OnDataIncoming(DataInterceptedEventArgs e)
         {
             DataIncoming?.Invoke(this, e);
         }
@@ -104,13 +112,21 @@ namespace Sulakore.Communication
         public HNode Remote { get; private set; }
 
         /// <summary>
+        /// Gets a value that determines whether the <see cref="HConnection"/> has established a connection with the game.
+        /// </summary>
+        public bool IsConnected
+        {
+            get
+            {
+                return ((Local?.IsConnected ?? false) &&
+                    (Remote?.IsConnected ?? false));
+            }
+        }
+        /// <summary>
         /// Gets a value that determines whether the <see cref="HConnection"/> has been disposed.
         /// </summary>
         public bool IsDisposed { get; private set; }
-        /// <summary>
-        /// Gets a value that determines whether the <see cref="HConnection"/> has established a connection with the game.
-        /// </summary>
-        public bool IsConnected { get; private set; }
+        protected bool SuppressDisconnectEvent { get; set; } = true;
 
         static HConnection()
         {
@@ -149,12 +165,10 @@ namespace Sulakore.Communication
                     Remote?.Dispose();
                     Remote = null;
 
-                    TotalIncoming = TotalOutgoing = 0;
-                    if (IsConnected)
-                    {
-                        IsConnected = false;
-                        OnDisconnected(EventArgs.Empty);
-                    }
+                    TotalIncoming =
+                        TotalOutgoing = 0;
+
+                    OnDisconnected(EventArgs.Empty);
                 }
                 finally
                 {
@@ -237,13 +251,13 @@ namespace Sulakore.Communication
                     Remote = remote;
                     return;
                 }
-                if (BigEndian.ToUInt16(buffer, 4) == Outgoing.CLIENT_CONNECT)
+                if (BigEndian.ToUInt16(buffer, 4) == Outgoing.Global.GetClientVersion)
                 {
                     Port = port;
                     Local = local;
                     Remote = remote;
 
-                    IsConnected = true;
+                    RestoreHosts();
                     OnConnected(EventArgs.Empty);
 
                     Task readOutgoingTask = ReadOutgoingAsync();
@@ -314,28 +328,18 @@ namespace Sulakore.Communication
             HMessage packet = await Local.ReceiveAsync()
                 .ConfigureAwait(false);
 
-            if (packet == null) Disconnect();
-            else
+            if (IsConnected && packet != null && !packet.IsCorrupted)
             {
                 packet.Destination = HDestination.Server;
                 try { HandleOutgoing(packet, ++TotalOutgoing); }
                 catch { Disconnect(); }
             }
+            else Disconnect();
         }
         private void HandleOutgoing(HMessage packet, int count)
         {
-            var args = new InterceptedEventArgs(ReadOutgoingAsync, count, packet);
-            OnDataOutgoing(args);
-
-            if (!args.IsBlocked)
-            {
-                SendToServerAsync(args.Replacement.ToBytes()).Wait();
-                HandleExecutions(args.GetExecutions());
-            }
-            if (!args.WasContinued)
-            {
-                Task readOutTask = ReadOutgoingAsync();
-            }
+            HandleMessage(packet, count,
+                ReadOutgoingAsync, Remote, OnDataOutgoing);
         }
 
         private async Task ReadIncomingAsync()
@@ -343,34 +347,24 @@ namespace Sulakore.Communication
             HMessage packet = await Remote.ReceiveAsync()
                 .ConfigureAwait(false);
 
-            if (packet == null) Disconnect();
-            else
+            if (IsConnected && packet != null && !packet.IsCorrupted)
             {
                 packet.Destination = HDestination.Client;
                 try { HandleIncoming(packet, ++TotalIncoming); }
                 catch { Disconnect(); }
             }
+            else Disconnect();
         }
         private void HandleIncoming(HMessage packet, int count)
         {
-            var args = new InterceptedEventArgs(ReadIncomingAsync, count, packet);
-            OnDataIncoming(args);
-
-            if (!args.IsBlocked)
-            {
-                SendToClientAsync(args.Replacement.ToBytes()).Wait();
-                HandleExecutions(args.GetExecutions());
-            }
-            if (!args.WasContinued)
-            {
-                Task readInTask = ReadIncomingAsync();
-            }
+            HandleMessage(packet, count,
+                ReadIncomingAsync, Local, OnDataIncoming);
         }
 
-        protected void HandleExecutions(HMessage[] executions)
+        private void HandleExecutions(IList<HMessage> executions)
         {
-            var executeTaskList = new List<Task<int>>(executions.Length);
-            for (int i = 0; i < executions.Length; i++)
+            var executeTaskList = new List<Task<int>>(executions.Count);
+            for (int i = 0; i < executions.Count; i++)
             {
                 byte[] executionData =
                     executions[i].ToBytes();
@@ -383,28 +377,48 @@ namespace Sulakore.Communication
             }
             Task.WhenAll(executeTaskList).Wait();
         }
+        private void HandleMessage(HMessage packet, int count, Func<Task> continuation, HNode node, Action<DataInterceptedEventArgs> eventRaiser)
+        {
+            var args = new DataInterceptedEventArgs(packet, count, continuation);
+            eventRaiser(args);
+
+            if (!args.IsBlocked)
+            {
+                node.SendAsync(args.Packet).Wait();
+                HandleExecutions(args.Executions);
+            }
+
+            if (args.Continuations == 0)
+                args.Continue();
+        }
 
         /// <summary>
         /// Removes all lines from the hosts file containing: #Sulakore
         /// </summary>
         public static void RestoreHosts()
         {
-            IEnumerable<string> lines = File.ReadAllLines(_hostsFile)
-                .Where(line => !line.EndsWith("#Sulakore") &&
-                !string.IsNullOrWhiteSpace(line));
+            lock (_hostsFile)
+            {
+                IEnumerable<string> lines = File.ReadAllLines(_hostsFile)
+                    .Where(line => !line.EndsWith("#Sulakore") &&
+                    !string.IsNullOrWhiteSpace(line));
 
-            File.WriteAllLines(_hostsFile, lines);
+                File.WriteAllLines(_hostsFile, lines);
+            }
         }
         public static void WriteHosts(params string[] hosts)
         {
-            string hostsContent = string.Empty;
-            foreach (string host in hosts)
+            lock (_hostsFile)
             {
-                string mapping = $"127.0.0.1\t\t{host}\t\t#Sulakore\r\n";
-                if (hostsContent.Contains(mapping)) continue;
-                hostsContent += mapping;
+                string hostsContent = string.Empty;
+                foreach (string host in hosts)
+                {
+                    string mapping = $"127.0.0.1\t\t{host}\t\t#Sulakore\r\n";
+                    if (hostsContent.Contains(mapping)) continue;
+                    hostsContent += mapping;
+                }
+                File.AppendAllText(_hostsFile, hostsContent);
             }
-            File.AppendAllText(_hostsFile, hostsContent);
         }
 
         /// <summary>

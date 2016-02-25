@@ -43,7 +43,8 @@
     <DocumentationFile>bin\Release\Sulakore.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Communication\Event Args\InterceptedEventArgs.cs" />
+    <Compile Include="Communication\Event Args\ContinuableEventArgs.cs" />
+    <Compile Include="Communication\Event Args\DataInterceptedEventArgs.cs" />
     <Compile Include="Communication\Event Args\Incoming Event Args\FurnitureLoadEventArgs.cs" />
     <Compile Include="Communication\Event Args\Incoming Event Args\EntityActionEventArgs.cs" />
     <Compile Include="Communication\Event Args\Incoming Event Args\PlayerUpdateEventArgs.cs" />
@@ -89,7 +90,6 @@
     <Compile Include="Extensions\Enums\ExtensionActionType.cs" />
     <Compile Include="Extensions\Event Args\ExtensionActionEventArgs.cs" />
     <Compile Include="Extensions\Contractor.cs" />
-    <Compile Include="Extensions\ExtensionBridge.cs" />
     <Compile Include="Extensions\ExtensionInfo.cs" />
     <Compile Include="Extensions\ExtensionForm.cs">
       <SubType>Form</SubType>
@@ -127,7 +127,6 @@
     <Compile Include="Habbo\Web\HGroup.cs" />
     <Compile Include="Habbo\Web\HProfile.cs" />
     <Compile Include="Habbo\Web\HRoom.cs" />
-    <Compile Include="Habbo\Web\HSession.cs" />
     <Compile Include="Habbo\Web\HUser.cs" />
     <Compile Include="HHotel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

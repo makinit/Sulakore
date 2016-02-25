@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using System.ComponentModel;
 
-using Sulakore.Protocol;
 using Sulakore.Habbo.Web;
 using Sulakore.Communication;
 
@@ -103,16 +102,7 @@ namespace Sulakore.Extensions
             }
             else if (IsExternal)
             {
-                _contractor = new Contractor();
-                var externalContractor = HNode.ConnectAsync("127.0.0.1", 8787).Result;
-
-                HMessage initializationMessage = externalContractor.ReceiveAsync().Result;
-                _contractor.Hotel = (HHotel)initializationMessage.ReadShort();
-
-                _contractor.GameData = new HGameData(initializationMessage.ReadString());
-                _contractor.GameData.UniqueId = initializationMessage.ReadString();
-
-                _contractor.Connection = new ExtensionBridge(externalContractor, this);
+                // TODO: Extension socket handler thingy.
             }
         }
 

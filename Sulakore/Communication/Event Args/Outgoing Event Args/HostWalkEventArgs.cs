@@ -6,12 +6,12 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostWalkEventArgs : InterceptedEventArgs
+    public class HostWalkEventArgs : DataInterceptedEventArgs
     {
         public HPoint Tile { get; }
 
-        public HostWalkEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostWalkEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Tile = new HPoint(packet.ReadInteger(0),
                 packet.ReadInteger(4));

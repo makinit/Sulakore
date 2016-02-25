@@ -5,14 +5,14 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostMutePlayerEventArgs : InterceptedEventArgs
+    public class HostMutePlayerEventArgs : DataInterceptedEventArgs
     {
         public int Id { get; }
         public int RoomId { get; }
         public int Minutes { get; }
 
-        public HostMutePlayerEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostMutePlayerEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Id = packet.ReadInteger();
             RoomId = packet.ReadInteger();

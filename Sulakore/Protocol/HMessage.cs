@@ -2,6 +2,7 @@
 using System.Text;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Sulakore.Protocol
 {
@@ -9,6 +10,7 @@ namespace Sulakore.Protocol
     public sealed class HMessage
     {
         private readonly List<byte> _body;
+        private static readonly Regex _valueGrabber;
 
         private string _toStringCache;
         private byte[] _toBytesCache, _bodyBuffer;
@@ -34,8 +36,8 @@ namespace Sulakore.Protocol
             }
         }
 
-        public int Length => (_body.Count + (!IsCorrupted ? 2 : 0));
         public int Readable => (_body.Count - Position);
+        public int Length => (_body.Count + (!IsCorrupted ? 2 : 0));
 
         public bool IsCorrupted { get; }
         public HDestination Destination { get; set; }
@@ -46,20 +48,32 @@ namespace Sulakore.Protocol
         private readonly List<object> _written;
         public IReadOnlyList<object> ValuesWritten => _written;
 
+        static HMessage()
+        {
+            _valueGrabber = new Regex(@"{(?<type>u|s|i|b):(?<value>[^}]*)\}", RegexOptions.IgnoreCase);
+        }
         private HMessage()
         {
             _body = new List<byte>();
             _read = new List<object>();
             _written = new List<object>();
         }
-        public HMessage(byte[] data)
-            : this(data, HDestination.Client)
-        { }
+
+        public HMessage(ushort header, params object[] values)
+            : this(Construct(header, values), HDestination.Client)
+        {
+            _written.AddRange(values);
+        }
+
         public HMessage(string data)
-            : this(ToBytes(data), HDestination.Client)
+            : this(data, HDestination.Client)
         { }
         public HMessage(string data, HDestination destination)
             : this(ToBytes(data), destination)
+        { }
+
+        public HMessage(byte[] data)
+            : this(data, HDestination.Client)
         { }
         public HMessage(byte[] data, HDestination destination)
             : this()
@@ -76,13 +90,7 @@ namespace Sulakore.Protocol
                 Buffer.BlockCopy(data, 6, _bodyBuffer, 0, data.Length - 6);
             }
             else _bodyBuffer = data;
-
             _body.AddRange(_bodyBuffer);
-        }
-        public HMessage(ushort header, params object[] values)
-            : this(Construct(header, values), HDestination.Client)
-        {
-            _written.AddRange(values);
         }
 
         #region Read Methods
@@ -222,7 +230,7 @@ namespace Sulakore.Protocol
             WriteObject(value, value, position);
         }
 
-        public void WriteObjects(params object[] values)
+        private void WriteObjects(params object[] values)
         {
             _written.AddRange(values);
             _body.AddRange(GetBytes(values));
@@ -291,6 +299,60 @@ namespace Sulakore.Protocol
             Refresh();
         }
         #endregion
+        #region Replace Methods
+        public void ReplaceInteger(int value)
+        {
+            ReplaceInteger(value, _position);
+        }
+        public void ReplaceInteger(int value, int position)
+        {
+            RemoveInteger(position);
+            WriteInteger(value, position);
+        }
+
+        public void ReplaceShort(ushort value)
+        {
+            ReplaceShort(value, _position);
+        }
+        public void ReplaceShort(ushort value, int position)
+        {
+            RemoveShort(position);
+            WriteShort(value, position);
+        }
+
+        public void ReplaceBoolean(bool value)
+        {
+            ReplaceBoolean(value, _position);
+        }
+        public void ReplaceBoolean(bool value, int position)
+        {
+            RemoveBoolean(position);
+            WriteBoolean(value, position);
+        }
+
+        public void ReplaceString(string value)
+        {
+            ReplaceString(value, _position);
+        }
+        public void ReplaceString(string value, int position)
+        {
+            int oldLength = Length;
+
+            RemoveString(position);
+            WriteString(value, position);
+
+            if (position < _position)
+            {
+                _position +=
+                    ((oldLength - Length) * -1);
+            }
+        }
+        #endregion
+
+        public int ReadableAt(int position)
+        {
+            return (_body.Count - position);
+        }
 
         public bool CanReadString()
         {
@@ -307,16 +369,6 @@ namespace Sulakore.Protocol
             return (readable >= (stringLength + 2));
         }
 
-        public void ReplaceString(string value)
-        {
-            ReplaceString(value, _position);
-        }
-        public void ReplaceString(string value, int position)
-        {
-            RemoveString(position);
-            WriteString(value, position);
-        }
-
         private void Refresh()
         {
             ResetCache();
@@ -328,6 +380,22 @@ namespace Sulakore.Protocol
             _toStringCache = null;
         }
 
+        public override string ToString()
+        {
+            return _toStringCache ??
+                (_toStringCache = ToString(ToBytes()));
+        }
+        public static string ToString(byte[] data)
+        {
+            string result = Encoding.Default.GetString(data);
+            for (int i = 0; i <= 13; i++)
+            {
+                result = result.Replace(
+                    ((char)i).ToString(), "[" + i + "]");
+            }
+            return result;
+        }
+
         public byte[] ToBytes()
         {
             if (IsCorrupted)
@@ -336,97 +404,66 @@ namespace Sulakore.Protocol
             return _toBytesCache ??
                 (_toBytesCache = Construct(Header, _bodyBuffer));
         }
-        public static byte[] ToBytes(string value)
+        public static byte[] ToBytes(string packet)
         {
-            // TODO: All of this.
-            value = value.Replace("{b:}", "[0]")
-                .Replace("{u:}", "[0][0]")
-                .Replace("{s:}", "[0][0]")
-                .Replace("{i:}", "[0][0][0][0]");
-
             for (int i = 0; i <= 13; i++)
             {
-                value = value.Replace(
+                packet = packet.Replace(
                     "[" + i + "]", ((char)i).ToString());
             }
 
-            string objectValue = string.Empty;
-            while (!string.IsNullOrWhiteSpace(
-                objectValue = value.GetChild("{b:").GetParent("}")))
+            MatchCollection matches = _valueGrabber.Matches(packet);
+            foreach (Match match in matches)
             {
-                char byteChar = objectValue.ToLower()[0];
+                string type = match.Groups["type"].Value;
+                string value = match.Groups["value"].Value;
 
-                byte byteValue = (byte)(byteChar == 't' ||
-                    (byteChar == '1' && objectValue.Length == 1) ? 1 : 0);
-
-                if (byteChar != 'f' && byteValue != 1 &&
-                    !byte.TryParse(objectValue.ToLower(), out byteValue))
+                byte[] data = null;
+                #region Switch: type
+                switch (type)
                 {
-                    break;
+                    case "s":
+                    {
+                        data = BigEndian.GetBytes(value);
+                        break;
+                    }
+                    case "u":
+                    {
+                        ushort uValue = 0;
+                        ushort.TryParse(value, out uValue);
+                        data = BigEndian.GetBytes(uValue);
+                        break;
+                    }
+                    case "i":
+                    {
+                        int iValue = 0;
+                        int.TryParse(value, out iValue);
+                        data = BigEndian.GetBytes(iValue);
+                        break;
+                    }
+                    case "b":
+                    {
+                        byte bValue = 0;
+                        if (!byte.TryParse(value, out bValue))
+                        {
+                            data = BigEndian.GetBytes(
+                                (value.ToLower() == "true"));
+                        }
+                        else data = new byte[] { bValue };
+                        break;
+                    }
                 }
+                #endregion
 
-                string byteParam = $"{{b:{objectValue}}}";
-                value = value.Replace(byteParam, ((char)byteValue).ToString());
+                packet = packet.Replace(match.Value,
+                    Encoding.Default.GetString(data));
             }
-
-            while (!string.IsNullOrWhiteSpace(
-                objectValue = value.GetChild("{u:").GetParent("}")))
+            if (packet.StartsWith("{l}") && packet.Length >= 5)
             {
-                ushort shortValue = 0;
-                if (!ushort.TryParse(objectValue, out shortValue)) break;
-
-                byte[] ushortData = BigEndian.GetBytes(shortValue);
-                string ushortParam = $"{{u:{objectValue}}}";
-
-                value = value.Replace(ushortParam,
-                    Encoding.Default.GetString(ushortData));
+                byte[] lengthData = BigEndian.GetBytes(packet.Length - 3);
+                packet = Encoding.Default.GetString(lengthData) + packet.Substring(3);
             }
-
-            while (!string.IsNullOrWhiteSpace(
-                objectValue = value.GetChild("{i:").GetParent("}")))
-            {
-                int intValue = 0;
-                if (!int.TryParse(objectValue, out intValue)) break;
-
-                byte[] intData = BigEndian.GetBytes(intValue);
-                string intParam = $"{{i:{objectValue}}}";
-
-                value = value.Replace(intParam,
-                    Encoding.Default.GetString(intData));
-            }
-
-            while (!string.IsNullOrWhiteSpace(
-                objectValue = value.GetChild("{s:").GetParent("}")))
-            {
-                byte[] stringData = BigEndian.GetBytes(objectValue);
-                string stringParam = $"{{s:{objectValue}}}";
-
-                value = value.Replace(stringParam,
-                    Encoding.Default.GetString(stringData));
-            }
-
-            if (value.StartsWith("{l}") && value.Length >= 5)
-            {
-                byte[] lengthData = BigEndian.GetBytes(value.Length - 3);
-                value = Encoding.Default.GetString(lengthData) + value.Substring(3);
-            }
-            return Encoding.Default.GetBytes(value);
-        }
-
-        public override string ToString()
-        {
-            return _toStringCache ??
-                (_toStringCache = ToString(ToBytes()));
-        }
-        public static string ToString(byte[] value)
-        {
-            string result = Encoding.Default.GetString(value);
-            for (int i = 0; i <= 13; i++)
-            {
-                result = result.Replace(
-                    ((char)i).ToString(), "[" + i + "]");
-            }
-            return result;
+            return Encoding.Default.GetBytes(packet);
         }
 
         public static byte[] GetBytes(params object[] values)

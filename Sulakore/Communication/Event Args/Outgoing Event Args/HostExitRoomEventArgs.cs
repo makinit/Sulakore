@@ -5,10 +5,10 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostExitRoomEventArgs : InterceptedEventArgs
+    public class HostExitRoomEventArgs : DataInterceptedEventArgs
     {
-        public HostExitRoomEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostExitRoomEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         { }
 
         public override string ToString() =>

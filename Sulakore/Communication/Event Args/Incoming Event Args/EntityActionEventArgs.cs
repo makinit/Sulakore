@@ -8,15 +8,15 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class EntityActionEventArgs : InterceptedEventArgs, IReadOnlyList<HEntityAction>
+    public class EntityActionEventArgs : DataInterceptedEventArgs, IReadOnlyList<HEntityAction>
     {
         private readonly IReadOnlyList<HEntityAction> _entityActionList;
 
         public int Count => _entityActionList.Count;
         public HEntityAction this[int index] => _entityActionList[index];
 
-        public EntityActionEventArgs(Func<Task> continuation, int step, HMessage packet) :
-            base(continuation, step, packet)
+        public EntityActionEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             _entityActionList = HEntityAction.Parse(packet);
         }

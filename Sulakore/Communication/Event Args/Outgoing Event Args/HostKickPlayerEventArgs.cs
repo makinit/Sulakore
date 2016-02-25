@@ -5,12 +5,12 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostKickPlayerEventArgs : InterceptedEventArgs
+    public class HostKickPlayerEventArgs : DataInterceptedEventArgs
     {
         public int Id { get; }
 
-        public HostKickPlayerEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostKickPlayerEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Id = packet.ReadInteger();
         }

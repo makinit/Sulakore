@@ -51,15 +51,15 @@ namespace Sulakore.Extensions
             _initialExtensionPaths = new Dictionary<Assembly, string>();
         }
 
-        public void HandleIncoming(InterceptedEventArgs e)
+        public void HandleIncoming(DataInterceptedEventArgs e)
         {
             HandleInterception(false, e);
         }
-        public void HandleOutgoing(InterceptedEventArgs e)
+        public void HandleOutgoing(DataInterceptedEventArgs e)
         {
             HandleInterception(true, e);
         }
-        protected virtual void HandleInterception(bool isOutgoing, InterceptedEventArgs e)
+        protected virtual void HandleInterception(bool isOutgoing, DataInterceptedEventArgs e)
         {
             if (Extensions.Count < 1) return;
 

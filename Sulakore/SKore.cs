@@ -88,19 +88,7 @@ namespace Sulakore
 
             return HProfile.Create(profileJson);
         }
-
-        /// <summary>
-        /// Returns the primitive value for the specified <see cref="HSign"/>.
-        /// </summary>
-        /// <param name="sign">The <see cref="HSign"/> you wish to retrieve the primitive value from.</param>
-        /// <returns></returns>
-        public static int Juice(this HSign sign)
-        {
-            if (sign != HSign.Random)
-                return (int)sign;
-
-            return _randomSignGen.Next(0, 19);
-        }
+        
         /// <summary>
         /// Returns the primitive value for the specified <see cref="HBan"/>.
         /// </summary>
@@ -116,22 +104,6 @@ namespace Sulakore
                 case HBan.Hour: return "RWUAM_BAN_USER_HOUR";
                 case HBan.Permanent: return "RWUAM_BAN_USER_PERM";
             }
-        }
-        /// <summary>
-        /// Returns the primitive value for the specified <see cref="HTheme"/>.
-        /// </summary>
-        /// <param name="theme">The <see cref="HTheme"/> you wish to retrieve the primitive value from.</param>
-        /// <returns></returns>
-        public static int Juice(this HTheme theme)
-        {
-            if (theme != HTheme.Random)
-                return (int)theme;
-
-            int randomIndex = _randomThemeGen.Next(0,
-                _randomThemes.Length - 1);
-
-            return (int)_randomThemes
-                .GetValue(randomIndex);
         }
 
         /// <summary>

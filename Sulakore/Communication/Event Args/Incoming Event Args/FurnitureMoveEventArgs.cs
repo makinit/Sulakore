@@ -7,7 +7,7 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class FurnitureMoveEventArgs : InterceptedEventArgs
+    public class FurnitureMoveEventArgs : DataInterceptedEventArgs
     {
         public int Id { get; }
         public int TypeId { get; }
@@ -15,8 +15,8 @@ namespace Sulakore.Communication
         public HPoint Tile { get; }
         public HDirection Direction { get; }
 
-        public FurnitureMoveEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public FurnitureMoveEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Id = packet.ReadInteger();
             TypeId = packet.ReadInteger();

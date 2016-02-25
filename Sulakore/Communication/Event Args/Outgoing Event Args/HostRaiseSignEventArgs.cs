@@ -6,12 +6,12 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostRaiseSignEventArgs : InterceptedEventArgs
+    public class HostRaiseSignEventArgs : DataInterceptedEventArgs
     {
         public HSign Sign { get; }
 
-        public HostRaiseSignEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostRaiseSignEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Sign = (HSign)packet.ReadInteger();
         }

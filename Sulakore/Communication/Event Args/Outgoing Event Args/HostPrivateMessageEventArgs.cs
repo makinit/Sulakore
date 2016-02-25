@@ -5,13 +5,13 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostPrivateMessageEventArgs : InterceptedEventArgs
+    public class HostPrivateMessageEventArgs : DataInterceptedEventArgs
     {
         public int Id { get; }
         public string Message { get; }
 
-        public HostPrivateMessageEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostPrivateMessageEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Id = packet.ReadInteger();
             Message = packet.ReadString();

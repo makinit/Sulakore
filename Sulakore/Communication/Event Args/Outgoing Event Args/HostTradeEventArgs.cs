@@ -6,12 +6,12 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostTradeEventArgs : InterceptedEventArgs, IHEntity
+    public class HostTradeEventArgs : DataInterceptedEventArgs, IHEntity
     {
         public int Index { get; }
 
-        public HostTradeEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostTradeEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Index = packet.ReadInteger();
         }

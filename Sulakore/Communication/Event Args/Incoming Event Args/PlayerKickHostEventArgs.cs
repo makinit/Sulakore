@@ -5,10 +5,10 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class PlayerKickHostEventArgs : InterceptedEventArgs
+    public class PlayerKickHostEventArgs : DataInterceptedEventArgs
     {
-        public PlayerKickHostEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public PlayerKickHostEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         { }
 
         public override string ToString() =>

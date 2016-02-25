@@ -6,12 +6,12 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostUpdateStanceEventArgs : InterceptedEventArgs
+    public class HostUpdateStanceEventArgs : DataInterceptedEventArgs
     {
         public HStance Stance { get; }
 
-        public HostUpdateStanceEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostUpdateStanceEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Stance = (HStance)packet.ReadInteger();
         }

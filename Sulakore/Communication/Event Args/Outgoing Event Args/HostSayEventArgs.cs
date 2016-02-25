@@ -6,13 +6,13 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostSayEventArgs : InterceptedEventArgs
+    public class HostSayEventArgs : DataInterceptedEventArgs
     {
         public HTheme Theme { get; }
         public string Message { get; }
 
-        public HostSayEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostSayEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Message = packet.ReadString();
 

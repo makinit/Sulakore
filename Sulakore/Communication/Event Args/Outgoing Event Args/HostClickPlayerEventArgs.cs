@@ -6,13 +6,13 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostClickPlayerEventArgs : InterceptedEventArgs
+    public class HostClickPlayerEventArgs : DataInterceptedEventArgs
     {
         public int Id { get; }
         public HPoint Tile { get; }
 
-        public HostClickPlayerEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostClickPlayerEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Id = packet.ReadInteger();
             Tile = new HPoint(packet.ReadInteger(), packet.ReadInteger());

@@ -7,8 +7,8 @@ namespace Sulakore.Communication
     {
         event EventHandler<EventArgs> Connected;
         event EventHandler<EventArgs> Disconnected;
-        event EventHandler<InterceptedEventArgs> DataOutgoing;
-        event EventHandler<InterceptedEventArgs> DataIncoming;
+        event EventHandler<DataInterceptedEventArgs> DataOutgoing;
+        event EventHandler<DataInterceptedEventArgs> DataIncoming;
 
         ushort Port { get; }
         string Host { get; }

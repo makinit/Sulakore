@@ -6,10 +6,6 @@
     public enum HSign
     {
         /// <summary>
-        /// Represents a random sign within the range of (0 - 18)
-        /// </summary>
-        Random = -1,
-        /// <summary>
         /// Represents a sign with an image of the number zero.
         /// </summary>
         Zero = 0,

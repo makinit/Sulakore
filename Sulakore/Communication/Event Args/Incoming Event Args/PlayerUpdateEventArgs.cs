@@ -6,15 +6,15 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class PlayerUpdateEventArgs : InterceptedEventArgs, IHEntity
+    public class PlayerUpdateEventArgs : DataInterceptedEventArgs, IHEntity
     {
         public int Index { get; }
         public string Motto { get; }
         public HGender Gender { get; }
         public string FigureId { get; }
 
-        public PlayerUpdateEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public PlayerUpdateEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Index = packet.ReadInteger();
             FigureId = packet.ReadString();

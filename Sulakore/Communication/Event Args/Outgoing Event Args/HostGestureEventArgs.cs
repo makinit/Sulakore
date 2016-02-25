@@ -6,12 +6,12 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostGestureEventArgs : InterceptedEventArgs
+    public class HostGestureEventArgs : DataInterceptedEventArgs
     {
         public HGesture Gesture { get; }
 
-        public HostGestureEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostGestureEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Gesture = (HGesture)packet.ReadInteger();
         }

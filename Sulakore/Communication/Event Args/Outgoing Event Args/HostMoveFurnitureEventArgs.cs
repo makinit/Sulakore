@@ -6,14 +6,14 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostMoveFurnitureEventArgs : InterceptedEventArgs
+    public class HostMoveFurnitureEventArgs : DataInterceptedEventArgs
     {
         public int Id { get; }
         public HPoint Tile { get; }
         public HDirection Direction { get; }
 
-        public HostMoveFurnitureEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostMoveFurnitureEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Id = packet.ReadInteger();
             Tile = new HPoint(packet.ReadInteger(), packet.ReadInteger());

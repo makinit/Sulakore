@@ -5,13 +5,13 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostNavigateRoomEventArgs : InterceptedEventArgs
+    public class HostNavigateRoomEventArgs : DataInterceptedEventArgs
     {
         public int RoomId { get; }
         public string Password { get; }
 
-        public HostNavigateRoomEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostNavigateRoomEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             RoomId = packet.ReadInteger();
             Password = packet.ReadString();

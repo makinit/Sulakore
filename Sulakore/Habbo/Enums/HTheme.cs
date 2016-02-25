@@ -6,11 +6,6 @@
     public enum HTheme
     {
         /// <summary>
-        /// Represents a random speech bubble consisting of:
-        /// <para><see cref="White"/>, <see cref="Red"/>, <see cref="Blue"/>, <see cref="Yellow"/>, <see cref="Green"/>, <see cref="Black"/></para>
-        /// </summary>
-        Random = -1,
-        /// <summary>
         /// Represents the default(white) speech bubble.
         /// </summary>
         White = 0,

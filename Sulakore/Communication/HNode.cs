@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Sulakore.Protocol;
@@ -10,6 +11,8 @@ namespace Sulakore.Communication
 {
     public class HNode : IDisposable
     {
+        private readonly object _receiveLock;
+
         public Socket Client { get; }
         public bool IsConnected => Client.Connected;
         public EndPoint RemoteEndPoint => Client.RemoteEndPoint;
@@ -24,6 +27,8 @@ namespace Sulakore.Communication
         public HNode(Socket client)
         {
             Client = client;
+
+            _receiveLock = new object();
         }
 
         public Task<HMessage> PeekAsync()
@@ -50,6 +55,7 @@ namespace Sulakore.Communication
         }
         public async Task<int> SendAsync(byte[] data)
         {
+            int length = 0;
             try
             {
                 data = Encrypter?.SafeParse(data) ?? data;
@@ -57,12 +63,16 @@ namespace Sulakore.Communication
                 IAsyncResult result = Client.BeginSend(data, 0,
                     data.Length, SocketFlags.None, null, null);
 
-                int sentLength = await Task.Factory.FromAsync(
+                length = await Task.Factory.FromAsync(
                     result, Client.EndSend).ConfigureAwait(false);
-
-                return sentLength;
             }
-            catch { return 0; }
+            catch { length = 0; }
+            finally
+            {
+                if (length < 1)
+                    Disconnect();
+            }
+            return length;
         }
         public Task<int> SendAsync(ushort header, params object[] values)
         {
@@ -92,9 +102,9 @@ namespace Sulakore.Communication
         }
         public async Task<byte[]> ReceiveAsync(SocketFlags flags, int length, bool isStrict)
         {
+            var buffer = new byte[length];
             try
             {
-                var buffer = new byte[length];
                 int readLength = await ReceiveAsync(
                     buffer, 0, length, flags).ConfigureAwait(false);
 
@@ -102,7 +112,6 @@ namespace Sulakore.Communication
                 {
                     var readData = new byte[readLength];
                     Buffer.BlockCopy(buffer, 0, readData, 0, readLength);
-
                     buffer = readData;
                 }
                 while (isStrict && (readLength < length))
@@ -113,13 +122,22 @@ namespace Sulakore.Communication
                         readLength, bytesLeft, flags).ConfigureAwait(false);
 
                     if (readLength == 0 && bytesLeft > 0)
-                        return null;
+                    {
+                        buffer = null;
+                        break;
+                    }
                 }
 
-                Decrypter?.Parse(buffer);
-                return buffer;
+                if (buffer != null)
+                    Decrypter?.Parse(buffer);
             }
-            catch { return null; }
+            catch { buffer = null; }
+            finally
+            {
+                if (buffer == null)
+                    Disconnect();
+            }
+            return buffer;
         }
 
         private Task<int> ReceiveAsync(byte[] buffer, int offset, int size, SocketFlags flags)
@@ -129,6 +147,38 @@ namespace Sulakore.Communication
 
             return Task.Factory.FromAsync(
                 result, Client.EndReceive);
+        }
+
+        public void Disconnect()
+        {
+            if (Monitor.TryEnter(Client))
+            {
+                try
+                {
+                    Exchange?.Dispose();
+                    if (Client.Connected)
+                    {
+                        Client.Shutdown(SocketShutdown.Both);
+                        Client.Close();
+                    }
+                    Encrypter = Decrypter = null;
+                }
+                finally { Monitor.Exit(Client); }
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+        protected virtual void Dispose(bool disposing)
+        {
+            if (IsDisposed) return;
+            if (disposing)
+            {
+                Disconnect();
+            }
+            IsDisposed = true;
         }
 
         public static async Task<HNode> ListenAsync(int port)
@@ -156,25 +206,6 @@ namespace Sulakore.Communication
                 socket.EndConnect).ConfigureAwait(false);
 
             return new HNode(socket);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-        protected virtual void Dispose(bool disposing)
-        {
-            if (IsDisposed) return;
-            if (disposing)
-            {
-                Exchange?.Dispose();
-                Client.Shutdown(SocketShutdown.Both);
-                Client.Close();
-
-                Encrypter = null;
-                Decrypter = null;
-            }
-            IsDisposed = true;
         }
     }
 }

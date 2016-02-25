@@ -6,13 +6,13 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostUpdateClothesEventArgs : InterceptedEventArgs
+    public class HostUpdateClothesEventArgs : DataInterceptedEventArgs
     {
         public HGender Gender { get; }
         public string FigureId { get; }
 
-        public HostUpdateClothesEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostUpdateClothesEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Gender = SKore.ToGender(packet.ReadString());
             FigureId = packet.ReadString();

@@ -5,12 +5,12 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class HostUpdateMottoEventArgs : InterceptedEventArgs
+    public class HostUpdateMottoEventArgs : DataInterceptedEventArgs
     {
         public string Motto { get; }
 
-        public HostUpdateMottoEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public HostUpdateMottoEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Motto = packet.ReadString();
         }

@@ -6,13 +6,13 @@ using Sulakore.Protocol;
 
 namespace Sulakore.Communication
 {
-    public class PlayerDanceEventArgs : InterceptedEventArgs, IHEntity
+    public class PlayerDanceEventArgs : DataInterceptedEventArgs, IHEntity
     {
         public int Index { get; }
         public HDance Dance { get; }
 
-        public PlayerDanceEventArgs(Func<Task> continuation, int step, HMessage packet)
-            : base(continuation, step, packet)
+        public PlayerDanceEventArgs(HMessage packet, int step, Func<Task> continuation)
+            : base(packet, step, continuation)
         {
             Index = packet.ReadInteger();
             Dance = (HDance)packet.ReadInteger();
