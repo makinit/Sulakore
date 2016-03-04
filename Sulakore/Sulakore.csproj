@@ -12,7 +12,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <AssemblyVersion>6.5.0.0</AssemblyVersion>
+    <AssemblyVersion>7.1.0.0</AssemblyVersion>
     <PrimaryVersionType>AssemblyVersionAttribute</PrimaryVersionType>
     <AssemblyInfoFilePath>
     </AssemblyInfoFilePath>
@@ -80,20 +80,12 @@
     <Compile Include="Components\Event Args\TileEventArgs.cs" />
     <Compile Include="Components\SKoreButton.cs" />
     <Compile Include="Components\SKoreConstructView.cs" />
-    <Compile Include="Components\SKoreExtensionView.cs" />
     <Compile Include="Components\SKoreInjectionMenu.cs" />
     <Compile Include="Components\SKoreLabel.cs" />
     <Compile Include="Components\SKoreListView.cs" />
     <Compile Include="Components\SKoreMap.cs" />
     <Compile Include="Components\SKoreScheduleView.cs" />
     <Compile Include="Components\SKoreTabControl.cs" />
-    <Compile Include="Extensions\Enums\ExtensionActionType.cs" />
-    <Compile Include="Extensions\Event Args\ExtensionActionEventArgs.cs" />
-    <Compile Include="Extensions\Contractor.cs" />
-    <Compile Include="Extensions\ExtensionInfo.cs" />
-    <Compile Include="Extensions\ExtensionForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="Habbo\Enums\HAction.cs" />
     <Compile Include="Habbo\Enums\HBan.cs" />
     <Compile Include="Habbo\Enums\HDance.cs" />
