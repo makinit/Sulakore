@@ -96,7 +96,7 @@ namespace Sulakore.Habbo
 
                 HGender gender = HGender.Unisex;
                 string favoriteGroup = string.Empty;
-                #region Switch Statement: type
+                #region Switch: type
                 switch (type)
                 {
                     case 1:

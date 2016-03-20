@@ -6,7 +6,7 @@ namespace Sulakore.Habbo
     {
         public static void ReadStuffData(int category, HMessage packet)
         {
-            switch (category & 0xff)
+            switch (category & 255)
             {
                 case 0:
                 {

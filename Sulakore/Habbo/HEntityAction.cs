@@ -118,8 +118,7 @@ namespace Sulakore.Habbo
 
                     if (actionValues.Length < 2) continue;
                     if (string.IsNullOrWhiteSpace(actionValues[0])) continue;
-
-                    #region Switch Statement: actionValues[]
+                    #region Switch: actionValues
                     switch (actionValues[0])
                     {
                         case "flatctrl":
