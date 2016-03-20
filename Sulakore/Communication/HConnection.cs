@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Net;
 using System.Linq;
 using System.Threading;
@@ -18,7 +17,6 @@ namespace Sulakore.Communication
     public class HConnection : IHConnection, IDisposable
     {
         private readonly object _disconnectLock;
-        private static readonly string _hostsFile;
         private readonly IDictionary<ushort, TcpListener> _listeners;
 
         /// <summary>
@@ -128,16 +126,6 @@ namespace Sulakore.Communication
         public bool IsDisposed { get; private set; }
         protected bool SuppressDisconnectEvent { get; set; } = true;
 
-        static HConnection()
-        {
-            _hostsFile = Environment.GetFolderPath(
-                Environment.SpecialFolder.System) + "\\drivers\\etc\\hosts";
-
-            if (!File.Exists(_hostsFile))
-                File.Create(_hostsFile).Dispose();
-
-            File.SetAttributes(_hostsFile, FileAttributes.Normal);
-        }
         /// <summary>
         /// Initializes a new instance of the <see cref="HConnection"/> class.
         /// </summary>
@@ -165,16 +153,10 @@ namespace Sulakore.Communication
                     Remote?.Dispose();
                     Remote = null;
 
-                    TotalIncoming =
-                        TotalOutgoing = 0;
-
+                    TotalIncoming = TotalOutgoing = 0;
                     OnDisconnected(EventArgs.Empty);
                 }
-                finally
-                {
-                    Monitor.Exit(_disconnectLock);
-                    RestoreHosts();
-                }
+                finally { Monitor.Exit(_disconnectLock); }
             }
         }
         /// <summary>
@@ -190,9 +172,9 @@ namespace Sulakore.Communication
 
             Address = (await Dns.GetHostAddressesAsync(
                 Host).ConfigureAwait(false))[0].ToString();
-
-            WriteHosts(Host);
-            await InterceptClientAsync(ports).ConfigureAwait(false);
+            
+            await InterceptClientAsync(
+                ports).ConfigureAwait(false);
         }
 
         private async Task InterceptClientAsync(ushort port)
@@ -256,8 +238,6 @@ namespace Sulakore.Communication
                     Port = port;
                     Local = local;
                     Remote = remote;
-
-                    RestoreHosts();
                     OnConnected(EventArgs.Empty);
 
                     Task readOutgoingTask = ReadOutgoingAsync();
@@ -390,35 +370,6 @@ namespace Sulakore.Communication
 
             if (args.Continuations == 0)
                 args.Continue();
-        }
-
-        /// <summary>
-        /// Removes all lines from the hosts file containing: #Sulakore
-        /// </summary>
-        public static void RestoreHosts()
-        {
-            lock (_hostsFile)
-            {
-                IEnumerable<string> lines = File.ReadAllLines(_hostsFile)
-                    .Where(line => !line.EndsWith("#Sulakore") &&
-                    !string.IsNullOrWhiteSpace(line));
-
-                File.WriteAllLines(_hostsFile, lines);
-            }
-        }
-        public static void WriteHosts(params string[] hosts)
-        {
-            lock (_hostsFile)
-            {
-                string hostsContent = string.Empty;
-                foreach (string host in hosts)
-                {
-                    string mapping = $"127.0.0.1\t\t{host}\t\t#Sulakore\r\n";
-                    if (hostsContent.Contains(mapping)) continue;
-                    hostsContent += mapping;
-                }
-                File.AppendAllText(_hostsFile, hostsContent);
-            }
         }
 
         /// <summary>
