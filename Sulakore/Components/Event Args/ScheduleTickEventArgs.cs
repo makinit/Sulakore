@@ -6,7 +6,7 @@ namespace Sulakore.Components
 {
     public class ScheduleTickEventArgs : CancelEventArgs
     {
-        private readonly HSchedule _schedule;
+        private readonly SKoreScheduleView.HSchedule _schedule;
 
         public int CurrentCycle { get; }
         public int Cycles => _schedule.Cycles;
@@ -22,7 +22,7 @@ namespace Sulakore.Components
             set { _schedule.Packet = value; }
         }
 
-        public ScheduleTickEventArgs(HSchedule schedule, int currentCycle)
+        public ScheduleTickEventArgs(SKoreScheduleView.HSchedule schedule, int currentCycle)
         {
             _schedule = schedule;
 
