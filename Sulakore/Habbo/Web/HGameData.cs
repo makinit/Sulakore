@@ -1,13 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System.Diagnostics;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Sulakore.Habbo.Web
 {
+    [DebuggerDisplay("InfoHost: {InfoHost}, InfoPort: {InfoPort}")]
     public class HGameData
     {
-        private static readonly Regex _variableGrabber;
         private readonly Dictionary<string, string> _variables;
 
+        public string Source { get; private set; }
         public string InfoHost => _variables["connection.info.host"];
         public string InfoPort => _variables["connection.info.port"];
 
@@ -16,18 +18,26 @@ namespace Sulakore.Habbo.Web
             get { return _variables[key]; }
         }
 
-        static HGameData()
+        public HGameData()
         {
-            _variableGrabber = new Regex("\"(?<key>.*)\"(:| :|: | : )\"(?<value>.*)\"");
+            _variables = new Dictionary<string, string>();
         }
         public HGameData(string source)
+            : this()
         {
-            MatchCollection matches = _variableGrabber.Matches(source);
-            _variables = new Dictionary<string, string>(matches.Count);
+            Update(source);
+        }
+
+        public void Update(string source)
+        {
+            Source = source;
+            _variables.Clear();
+
+            MatchCollection matches = Regex.Matches(source,
+                "\"(?<key>.*)\"(:| :|: | : )\"(?<value>.*)\"", RegexOptions.Singleline);
 
             _variables["connection.info.host"] = string.Empty;
             _variables["connection.info.port"] = string.Empty;
-
             foreach (Match pair in matches)
             {
                 string key = pair.Groups["key"].Value;
@@ -35,7 +45,7 @@ namespace Sulakore.Habbo.Web
 
                 if (value.Contains("\\/"))
                     value = value.Replace("\\/", "/");
-                
+
                 _variables[key] = value;
             }
         }
