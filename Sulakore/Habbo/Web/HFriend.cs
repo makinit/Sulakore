@@ -1,8 +1,10 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Diagnostics;
+using System.Runtime.Serialization;
 
 namespace Sulakore.Habbo.Web
 {
     [DataContract]
+    [DebuggerDisplay("Name: {Name}")]
     public class HFriend
     {
         [DataMember(Name = "name")]

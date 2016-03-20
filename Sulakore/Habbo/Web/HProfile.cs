@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
@@ -7,6 +8,7 @@ using System.Runtime.Serialization.Json;
 namespace Sulakore.Habbo.Web
 {
     [DataContract]
+    [DebuggerDisplay("Name: {User?.Name}")]
     public class HProfile
     {
         private static readonly DataContractJsonSerializer _deserializer =
