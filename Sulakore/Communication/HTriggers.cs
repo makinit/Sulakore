@@ -187,6 +187,9 @@ namespace Sulakore.Communication
         public Incoming InHeaders { get; }
         public Outgoing OutHeaders { get; }
 
+        public HTriggers()
+            : this(false)
+        { }
         public HTriggers(bool isDetecting)
         {
             DetectOutgoing =
