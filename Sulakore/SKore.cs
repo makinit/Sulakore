@@ -88,7 +88,7 @@ namespace Sulakore
 
             return HProfile.Create(profileJson);
         }
-        
+
         /// <summary>
         /// Returns the primitive value for the specified <see cref="HBan"/>.
         /// </summary>
@@ -165,9 +165,11 @@ namespace Sulakore
             else if (identifier == "tr" || identifier == "br")
                 identifier = "com" + identifier;
 
-            if (!string.IsNullOrWhiteSpace(identifier))
-                Enum.TryParse(identifier, true, out hotel);
-
+            if (!Enum.TryParse(identifier, true, out hotel))
+            {
+                throw new ArgumentException(
+                    "The specified host is not a valid hotel.", nameof(host));
+            }
             return hotel;
         }
         /// <summary>
