@@ -11,22 +11,16 @@ namespace Sulakore.Communication
     /// </summary>
     public class DataInterceptedEventArgs : ContinuableEventArgs
     {
-        private readonly byte[] _originalData;
-        private readonly string _originalString;
+        private readonly byte[] _ogData;
+        private readonly string _ogString;
+        private readonly HDestination _ogDestination;
 
         public int Step { get; }
         public HMessage Packet { get; set; }
         public List<HMessage> Executions { get; }
 
-        public bool IsOriginal
-        {
-            get
-            {
-                return Packet.ToString()
-                    .Equals(_originalString);
-            }
-        }
         public bool IsBlocked { get; set; }
+        public bool IsOriginal => Packet.ToString().Equals(_ogString);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataInterceptedEventArgs"/> class.
@@ -37,14 +31,22 @@ namespace Sulakore.Communication
         public DataInterceptedEventArgs(HMessage packet, int step, Func<Task> continuation)
             : base(continuation)
         {
-            _originalData = packet.ToBytes();
-            _originalString = packet.ToString();
+            _ogData = packet.ToBytes();
+            _ogString = packet.ToString();
+            _ogDestination = packet.Destination;
 
             Step = step;
+            Packet = packet;
             Executions = new List<HMessage>();
+        }
 
-            Packet = new HMessage(
-                _originalData, packet.Destination);
+        /// <summary>
+        /// Restores the intercepted data to its initial form, before it was replaced/modified.
+        /// </summary>
+        public void Restore()
+        {
+            if (IsOriginal) return;
+            Packet = new HMessage(_ogData, _ogDestination);
         }
     }
 }
