@@ -165,63 +165,53 @@ namespace Sulakore.Communication
         /// <param name="host">The host to establish a connection with.</param>
         /// <param name="ports">The port(s) to intercept the local connection attempt.</param>
         /// <returns></returns>
-        public async Task ConnectAsync(string host, params ushort[] ports)
+        public async Task ConnectAsync(string host, ushort port)
         {
             Disconnect();
+
+            Port = port;
             Host = host.Split(':')[0];
 
             Address = (await Dns.GetHostAddressesAsync(
                 Host).ConfigureAwait(false))[0].ToString();
-            
+
             await InterceptClientAsync(
-                ports).ConfigureAwait(false);
+                port).ConfigureAwait(false);
         }
 
         private async Task InterceptClientAsync(ushort port)
         {
             try
             {
-                TcpListener listener = _listeners[port];
-                listener.Start();
+                TcpListener listener = null;
+                if (!_listeners.ContainsKey(port))
+                {
+                    listener = new TcpListener(IPAddress.Loopback, port);
+                    _listeners[port] = listener;
+                }
+                else listener = _listeners[port];
 
+                listener.Start();
                 while (!IsConnected)
                 {
                     Socket client = await listener
                         .AcceptSocketAsync().ConfigureAwait(false);
 
+                    HNode remote = Remote;
                     var local = new HNode(client);
-                    var remote = Remote ?? (await HNode.ConnectAsync(
-                        Address, port).ConfigureAwait(false));
+                    if (remote == null)
+                    {
+                        remote = await HNode.ConnectAsync(
+                            Address, port).ConfigureAwait(false);
+                    }
 
-                    await InterceptClientDataAsync(local,
-                        remote, port).ConfigureAwait(false);
+                    await InterceptClientDataAsync(
+                        local, remote).ConfigureAwait(false);
                 }
             }
             catch { /* Swallow exceptions. */ }
         }
-        private async Task InterceptClientAsync(ushort[] ports)
-        {
-            var interceptionTasks = new List<Task>(ports.Length);
-            foreach (ushort port in ports)
-            {
-                if (!_listeners.ContainsKey(port))
-                    _listeners.Add(port, new TcpListener(IPAddress.Any, port));
-
-                interceptionTasks.Add(InterceptClientAsync(port));
-            }
-
-            while (interceptionTasks.Count > 0 && !IsConnected)
-            {
-                Task completedInterception = await Task.WhenAny(
-                    interceptionTasks).ConfigureAwait(false);
-
-                interceptionTasks.Remove(completedInterception);
-            }
-
-            foreach (TcpListener listener in _listeners.Values) listener.Stop();
-            if (!IsConnected) Disconnect();
-        }
-        private async Task InterceptClientDataAsync(HNode local, HNode remote, ushort port)
+        private async Task InterceptClientDataAsync(HNode local, HNode remote)
         {
             try
             {
@@ -235,7 +225,6 @@ namespace Sulakore.Communication
                 }
                 if (BigEndian.ToUInt16(buffer, 4) == Outgoing.Global.GetClientVersion)
                 {
-                    Port = port;
                     Local = local;
                     Remote = remote;
                     OnConnected(EventArgs.Empty);
@@ -252,7 +241,7 @@ namespace Sulakore.Communication
                     await local.SendAsync(buffer).ConfigureAwait(false);
                 }
             }
-            catch { /* Swallow all exceptions. */ }
+            catch { /* Swallow exceptions. */ }
             finally
             {
                 if (Local != local)

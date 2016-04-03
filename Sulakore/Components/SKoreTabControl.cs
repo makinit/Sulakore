@@ -15,26 +15,6 @@ namespace Sulakore.Components
             set { _displayBoundary = value; Invalidate(); }
         }
 
-        [DefaultValue(typeof(Size), "95, 24")]
-        public new Size ItemSize
-        {
-            get
-            {
-                if (Alignment == TabAlignment.Left || Alignment == TabAlignment.Right)
-                    return new Size(base.ItemSize.Height, base.ItemSize.Width);
-                return base.ItemSize;
-            }
-            set
-            {
-                bool isHorizontal = (Alignment == TabAlignment.Left || Alignment == TabAlignment.Right);
-
-                if (isHorizontal) base.ItemSize = new Size(value.Height, value.Width);
-                else base.ItemSize = value;
-
-                Invalidate();
-            }
-        }
-
         private Color _skin = Color.SteelBlue;
         [DefaultValue(typeof(Color), "SteelBlue")]
         public Color Skin
@@ -70,6 +50,60 @@ namespace Sulakore.Components
             DrawMode = TabDrawMode.OwnerDrawFixed;
         }
 
+        protected Rectangle GetHorizontalTitleRegion(int tabIndex, int xOffset)
+        {
+            Rectangle tabRegion = GetTabRect(tabIndex);
+            var titleRegion = new Rectangle();
+            bool isFirstTab = (tabIndex == 0);
+
+            titleRegion.X = (tabRegion.X + xOffset);
+            titleRegion.Y = (tabRegion.Y + (isFirstTab ? 2 : 0));
+
+            titleRegion.Width = (tabRegion.Width - 2);
+            titleRegion.Height = (tabRegion.Height - (isFirstTab ? 4 : 2));
+
+            return titleRegion;
+        }
+        protected Rectangle GetHorizontalGlowRegion(Rectangle tabRegion, Rectangle titleRegion, int x)
+        {
+            var glowRegion = new Rectangle();
+
+            glowRegion.X = x;
+            glowRegion.Y = titleRegion.Y;
+
+            glowRegion.Width = 2;
+            glowRegion.Height = titleRegion.Height;
+
+            return glowRegion;
+        }
+
+        protected Rectangle GetVerticalTitleRegion(int tabIndex, int heightOffset)
+        {
+            Rectangle tabRegion = GetTabRect(tabIndex);
+            var titleRegion = new Rectangle();
+            bool isFirstTab = (tabIndex == 0);
+
+            titleRegion.X = (tabRegion.X + (isFirstTab ? 2 : 0));
+            titleRegion.Y = (tabRegion.Y + 2);
+
+            titleRegion.Width = (tabRegion.Width - (isFirstTab ? 4 : 2));
+            titleRegion.Height = (tabRegion.Height + heightOffset);
+
+            return titleRegion;
+        }
+        protected Rectangle GetVerticalGlowRegion(Rectangle tabRegion, Rectangle titleRegion, int yOffset)
+        {
+            var glowRegion = new Rectangle();
+
+            glowRegion.X = titleRegion.X;
+            glowRegion.Y = (tabRegion.Y + yOffset);
+
+            glowRegion.Width = titleRegion.Width;
+            glowRegion.Height = 2;
+
+            return glowRegion;
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.Clear(Backcolor);
@@ -78,72 +112,58 @@ namespace Sulakore.Components
                 using (var pen = new Pen(Skin))
                     e.Graphics.DrawLine(pen, 0, Height - 1, Width - 1, Height - 1);
             }
-            if (TabPages.Count < 1) { base.OnPaint(e); return; }
-
-            Rectangle tabRectangle, tabTitle, tabGlow;
-            using (var titleFormat = new StringFormat() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+            if (TabPages.Count > 0)
             {
-                for (int i = 0; i < TabPages.Count; i++)
+                Rectangle tabRegion, titleRegion, glowRegion;
+
+                using (var titleFormat = new StringFormat())
+                using (var skinBrush = new SolidBrush(Skin))
+                using (var titleBrush = new SolidBrush(TitleColor))
                 {
-                    tabRectangle = GetTabRect(i);
-                    switch (Alignment)
+                    titleFormat.Alignment = StringAlignment.Center;
+                    titleFormat.LineAlignment = StringAlignment.Center;
+                    for (int i = 0; i < TabPages.Count; i++)
                     {
-                        default:
-                        case TabAlignment.Top:
+                        tabRegion = GetTabRect(i);
+                        bool isSelected = (SelectedIndex == i);
+
+                        switch (Alignment)
                         {
-                            tabTitle = new Rectangle(
-                                tabRectangle.X + (i == 0 ? 2 : 0),
-                                tabRectangle.Y + 2,
-                                tabRectangle.Width - (i == 0 ? 4 : 2),
-                                tabRectangle.Height - 4);
-
-                            tabGlow = new Rectangle(tabTitle.X, (tabRectangle.Y + tabRectangle.Height) - 2, tabTitle.Width, 2);
-                            break;
+                            default:
+                            case TabAlignment.Top:
+                            {
+                                titleRegion = GetVerticalTitleRegion(i, -4);
+                                glowRegion = GetVerticalGlowRegion(tabRegion, titleRegion, tabRegion.Height - 2);
+                                break;
+                            }
+                            case TabAlignment.Bottom:
+                            {
+                                titleRegion = GetVerticalTitleRegion(i, 0);
+                                glowRegion = GetVerticalGlowRegion(tabRegion, titleRegion, 0);
+                                break;
+                            }
+                            case TabAlignment.Left:
+                            {
+                                titleFormat.Alignment = StringAlignment.Far;
+                                titleRegion = GetHorizontalTitleRegion(i, -2);
+                                glowRegion = GetHorizontalGlowRegion(tabRegion, titleRegion, (titleRegion.X + tabRegion.Width));
+                                break;
+                            }
+                            case TabAlignment.Right:
+                            {
+                                titleFormat.Alignment = StringAlignment.Near;
+                                titleRegion = GetHorizontalTitleRegion(i, 4);
+                                glowRegion = GetHorizontalGlowRegion(tabRegion, titleRegion, tabRegion.X);
+                                break;
+                            }
                         }
-                        case TabAlignment.Bottom:
-                        {
-                            tabTitle = new Rectangle(
-                                tabRectangle.X + (i == 0 ? 2 : 0),
-                                tabRectangle.Y + 2,
-                                tabRectangle.Width - (i == 0 ? 4 : 2),
-                                tabRectangle.Height);
 
-                            tabGlow = new Rectangle(tabTitle.X, tabRectangle.Y, tabTitle.Width, 2);
-                            break;
-                        }
-                        case TabAlignment.Left:
-                        {
-                            titleFormat.Alignment = StringAlignment.Far;
+                        e.Graphics.FillRectangle(
+                            (isSelected ? skinBrush : Brushes.Silver), glowRegion);
 
-                            tabTitle = new Rectangle(
-                                tabRectangle.X - 2,
-                                tabRectangle.Y + (i == 0 ? 2 : 0),
-                                tabRectangle.Width - 2,
-                                tabRectangle.Height - (i == 0 ? 4 : 2));
-
-                            tabGlow = new Rectangle(tabTitle.X + tabRectangle.Width, tabTitle.Y, 2, tabTitle.Height);
-                            break;
-                        }
-                        case TabAlignment.Right:
-                        {
-                            titleFormat.Alignment = StringAlignment.Near;
-
-                            tabTitle = new Rectangle(
-                                tabRectangle.X + 4,
-                                tabRectangle.Y + (i == 0 ? 2 : 0),
-                                tabRectangle.Width - 2,
-                                tabRectangle.Height - (i == 0 ? 4 : 2));
-
-                            tabGlow = new Rectangle(tabRectangle.X, tabTitle.Y, 2, tabTitle.Height);
-                            break;
-                        }
+                        e.Graphics.DrawString(TabPages[i].Text,
+                            Font, titleBrush, titleRegion, titleFormat);
                     }
-
-                    using (var solidBrush = new SolidBrush(SelectedIndex == i ? Skin : Color.Silver))
-                        e.Graphics.FillRectangle(solidBrush, tabGlow);
-
-                    using (var solidBrush = new SolidBrush(TitleColor))
-                        e.Graphics.DrawString(TabPages[i].Text, Font, solidBrush, tabTitle, titleFormat);
                 }
             }
             base.OnPaint(e);

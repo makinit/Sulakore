@@ -111,6 +111,10 @@ namespace Sulakore.Components
             if (HasSelectedItem)
                 RemoveItem(SelectedItem, true);
         }
+        public void RemoveItem(ListViewItem item)
+        {
+            RemoveItem(item, true);
+        }
         protected virtual void RemoveItem(ListViewItem item, bool selectNext)
         {
             int index = item.Index;

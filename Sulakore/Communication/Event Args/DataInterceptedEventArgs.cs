@@ -19,8 +19,15 @@ namespace Sulakore.Communication
         public HMessage Packet { get; set; }
         public List<HMessage> Executions { get; }
 
+        public bool IsOriginal
+        {
+            get
+            {
+                return (Packet.ToString().Equals(_ogString) &&
+                    Packet.Destination == _ogDestination);
+            }
+        }
         public bool IsBlocked { get; set; }
-        public bool IsOriginal => Packet.ToString().Equals(_ogString);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataInterceptedEventArgs"/> class.

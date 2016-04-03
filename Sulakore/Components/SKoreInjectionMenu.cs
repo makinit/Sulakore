@@ -26,7 +26,7 @@ namespace Sulakore.Components
         }
 
         #region Menu Items
-        protected ToolStripMenuItem RealignBtn;
+        protected ToolStripMenuItem RealignBtn { get; }
         protected ToolStripMenuItem InsertParametersBtn { get; }
 
         protected ToolStripMenuItem StringBtn { get; }
@@ -63,12 +63,9 @@ namespace Sulakore.Components
             ByteBooleanBtn = CreateItem("Byte/Boolean", Keys.B);
             ByteBooleanBtn.Click += ByteBooleanBtn_Click;
 
-            InsertParametersBtn.DropDownItems.AddRange(new ToolStripMenuItem[]
-            {
-                StringBtn,
-                IntegerBtn,
-                ByteBooleanBtn
-            });
+            InsertParametersBtn.DropDownItems.Add(StringBtn);
+            InsertParametersBtn.DropDownItems.Add(IntegerBtn);
+            InsertParametersBtn.DropDownItems.Add(ByteBooleanBtn);
 
             CutBtn = CreateItem("Cut", Keys.X);
             CutBtn.Click += CutBtn_Click;
