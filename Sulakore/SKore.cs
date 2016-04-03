@@ -1,4 +1,7 @@
 ﻿using System;
+using System.IO;
+using System.Net;
+using System.Drawing;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -12,24 +15,38 @@ namespace Sulakore
     /// </summary>
     public static class SKore
     {
-        private const string USER_API_FORMAT = "{0}/api/public/users?name={1}";
-        private const string PROFILE_API_FORMAT = "{0}/api/public/users/{1}/profile";
+        public const string USER_API_FORMAT = "{0}/api/public/users?name={1}";
+        public const string PROFILE_API_FORMAT = "{0}/api/public/users/{1}/profile";
         public const string ChromeAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36";
 
         private static readonly HRequest _hRequest;
-        private static readonly Array _randomThemes;
-        private static readonly Random _randomSignGen, _randomThemeGen;
         private static readonly IDictionary<HHotel, IDictionary<string, string>> _uniqueIds;
 
         static SKore()
         {
             _hRequest = new HRequest();
-            _randomSignGen = new Random();
-            _randomThemeGen = new Random();
-            _randomThemes = Enum.GetValues(typeof(HTheme));
             _uniqueIds = new Dictionary<HHotel, IDictionary<string, string>>();
         }
 
+        /// <summary>
+        /// Returns the avatar image of a specified size generated with the given figured id in an asynchronous operation.
+        /// </summary>
+        /// <param name="figureId">The figured id of the avatar.</param>
+        /// <param name="size">The output size of the avatar image.</param>
+        public static async Task<Bitmap> GetAvatarAsync(string figureId, HSize size)
+        {
+            using (var client = new WebClient())
+            {
+                client.Proxy = null;
+                client.Headers[HttpRequestHeader.UserAgent] = ChromeAgent;
+
+                byte[] bitmapData = await client.DownloadDataTaskAsync(
+                    $"https://www.habbo.com/habbo-imaging/avatarimage?size={(char)size}&figure={figureId}");
+
+                using (var bitmapStream = new MemoryStream(bitmapData))
+                    return (Bitmap)Image.FromStream(bitmapStream);
+            }
+        }
         /// <summary>
         /// Returns the user's basic information associated with the given name using the specified <see cref="HHotel"/> in an asynchronous operation.
         /// </summary>
@@ -39,6 +56,9 @@ namespace Sulakore
         {
             string userJson = await _hRequest.DownloadStringAsync(
                 string.Format(USER_API_FORMAT, hotel.ToUrl(true), name)).ConfigureAwait(false);
+
+            if (userJson.StartsWith("{\"error"))
+                return null;
 
             var user = HUser.Create(userJson);
 
@@ -64,7 +84,7 @@ namespace Sulakore
             HUser user = await GetUserAsync(
                 name, hotel).ConfigureAwait(false);
 
-            return user.UniqueId;
+            return user?.UniqueId;
         }
         /// <summary>
         /// Returns the user's public profile information associated with the given name using the specified <see cref="HHotel"/> in an asynchronous operation.
@@ -85,6 +105,9 @@ namespace Sulakore
         {
             string profileJson = await _hRequest.DownloadStringAsync(
                 string.Format(PROFILE_API_FORMAT, hotel.ToUrl(true), uniqueId)).ConfigureAwait(false);
+
+            if (profileJson.StartsWith("{\"error"))
+                return null;
 
             return HProfile.Create(profileJson);
         }
