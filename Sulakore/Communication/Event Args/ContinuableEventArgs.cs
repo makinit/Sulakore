@@ -8,6 +8,7 @@ namespace Sulakore.Communication
         internal readonly Func<Task> _continuation;
 
         public int Continuations { get; internal set; }
+        public bool HasContinued => (Continuations >= 1);
         public bool IsContinuable => (_continuation != null);
 
         public ContinuableEventArgs(Func<Task> continuation)

@@ -12,7 +12,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <AssemblyVersion>7.3.0.0</AssemblyVersion>
+    <AssemblyVersion>8.0.0.0</AssemblyVersion>
     <PrimaryVersionType>AssemblyVersionAttribute</PrimaryVersionType>
     <AssemblyInfoFilePath>
     </AssemblyInfoFilePath>
@@ -45,33 +45,6 @@
   <ItemGroup>
     <Compile Include="Communication\Event Args\ContinuableEventArgs.cs" />
     <Compile Include="Communication\Event Args\DataInterceptedEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Incoming Event Args\FurnitureLoadEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Incoming Event Args\EntityActionEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Incoming Event Args\PlayerUpdateEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Incoming Event Args\PlayerDanceEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Incoming Event Args\EntityLoadEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Incoming Event Args\FurnitureDropEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Incoming Event Args\PlayerGestureEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Incoming Event Args\PlayerKickHostEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Incoming Event Args\FurnitureMoveEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostBanPlayerEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostClickPlayerEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostDanceEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostExitRoomEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostGestureEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostKickPlayerEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostPrivateMessageEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostMoveFurnitureEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostMutePlayerEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostNavigateRoomEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostSayEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostShoutEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostRaiseSignEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostTradeEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostUpdateClothesEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostUpdateMottoEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostUpdateStanceEventArgs.cs" />
-    <Compile Include="Communication\Event Args\Outgoing Event Args\HostWalkEventArgs.cs" />
     <Compile Include="Communication\HConnection.cs" />
     <Compile Include="Communication\HNode.cs" />
     <Compile Include="Communication\HTriggers.cs" />

@@ -357,7 +357,7 @@ namespace Sulakore.Communication
                 HandleExecutions(args.Executions);
             }
 
-            if (args.Continuations == 0)
+            if (!args.HasContinued)
                 args.Continue();
         }
 
