@@ -41,6 +41,13 @@ namespace Sulakore.Components
             }
         }
 
+        protected virtual void OnScheduleHotkey(object sender, EventArgs e)
+        {
+            var schedule = (HSchedule)sender;
+            schedule.IsRunning = !schedule.IsRunning;
+            UpdateItem(schedule);
+        }
+
         protected HSchedule SelectedSchedule
         {
             get
@@ -116,6 +123,19 @@ namespace Sulakore.Components
                 }
             }
         }
+        public SKoreHotkey.KeyCombination SelectedHotkey
+        {
+            get { return SelectedSchedule?.Hotkey.Keys; }
+            set
+            {
+                if (!HasSelectedItem) return;
+                if (SelectedSchedule.Hotkey.Keys != value)
+                {
+                    SelectedSchedule.Hotkey.Keys = value;
+                    UpdateItem(SelectedSchedule);
+                }
+            }
+        }
 
         public SKoreScheduleView()
         {
@@ -125,18 +145,25 @@ namespace Sulakore.Components
             CheckBoxes = true;
         }
 
-        public void AddSchedule(HMessage packet, int interval, int cycles, bool autoStart)
+        public void AddSchedule(HMessage packet, int interval, int cycles, SKoreHotkey.KeyCombination hotkey, bool autoStart)
         {
             ListViewItem item = AddFocusedItem(packet,
-                packet.Destination, interval, cycles, "Stopped");
+                packet.Destination, interval, cycles, hotkey?.ToString() ?? "", "Stopped");
 
             var schedule = new HSchedule(packet, interval, cycles);
             schedule.ScheduleTick += OnScheduleTick;
+            schedule.Hotkey = new SKoreHotkey(hotkey);
+            schedule.ScheduleHotkey += OnScheduleHotkey;
 
             _items.Add(schedule, item);
 
             item.Tag = schedule;
             item.Checked = autoStart;
+        }
+
+        public void AddSchedule(HMessage packet, int interval, int cycles, bool autoStart)
+        {
+            AddSchedule(packet, interval, cycles, null, autoStart);
         }
 
         protected virtual void UpdateItem(HSchedule schedule)
@@ -153,6 +180,7 @@ namespace Sulakore.Components
                 item.SubItems[1].Text = schedule.Packet.Destination.ToString();
                 item.SubItems[2].Text = schedule.Interval.ToString();
                 item.SubItems[3].Text = schedule.Cycles.ToString();
+                item.SubItems[4].Text = schedule.Hotkey?.Keys.ToString() ?? "";
             }
         }
         protected override void OnItemChecked(ItemCheckedEventArgs e)
@@ -163,7 +191,7 @@ namespace Sulakore.Components
                 bool isRunning = e.Item.Checked;
                 schedule.IsRunning = isRunning;
 
-                e.Item.SubItems[4].Text =
+                e.Item.SubItems[5].Text =
                     (isRunning ? "Running" : "Stopped");
             }
             base.OnItemChecked(e);
@@ -214,6 +242,12 @@ namespace Sulakore.Components
                 }
             }
 
+            public event EventHandler<EventArgs> ScheduleHotkey;
+            private void Hotkey_Press(object sender, EventArgs e)
+            {
+                ScheduleHotkey?.Invoke(this, e);
+            }
+
             public int Interval
             {
                 get { return (int)_ticker.Interval; }
@@ -252,6 +286,24 @@ namespace Sulakore.Components
                 }
             }
 
+            private SKoreHotkey _hotkey;
+            public SKoreHotkey Hotkey
+            {
+                get { return _hotkey; }
+                set
+                {
+                    if (_hotkey != null)
+                    {
+                        _hotkey.Press -= Hotkey_Press;
+                    }
+                    _hotkey = value;
+                    if (_hotkey != null)
+                    {
+                        _hotkey.Press += Hotkey_Press;
+                    }
+                }
+            }
+
             public HMessage Packet { get; set; }
 
             public bool IsDisposed { get; private set; }
@@ -286,6 +338,7 @@ namespace Sulakore.Components
                 {
                     IsRunning = false;
                     _ticker.Dispose();
+                    _hotkey.Dispose();
                 }
                 SKore.Unsubscribe(ref ScheduleTick);
                 IsDisposed = true;

@@ -53,6 +53,8 @@
     <Compile Include="Components\Event Args\TileEventArgs.cs" />
     <Compile Include="Components\SKoreButton.cs" />
     <Compile Include="Components\SKoreConstructView.cs" />
+    <Compile Include="Components\SKoreHotkey.cs" />
+    <Compile Include="Components\SKoreKeyBox.cs" />
     <Compile Include="Components\SKoreInjectionMenu.cs" />
     <Compile Include="Components\SKoreLabel.cs" />
     <Compile Include="Components\SKoreListView.cs" />
